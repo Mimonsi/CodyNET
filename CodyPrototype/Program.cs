@@ -1,4 +1,7 @@
-﻿namespace CodyPrototype;
+﻿using System;
+using System.IO;
+
+namespace CodyPrototype;
 
 class Program
 {
