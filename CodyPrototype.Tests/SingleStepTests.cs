@@ -87,6 +87,8 @@ public class SingleStepTests
         foreach (var file in Directory.GetFiles(folder, "*.json", SearchOption.AllDirectories))
         {
             string json = File.ReadAllText(file);
+            if (string.IsNullOrEmpty(json))
+                continue;
 
             var testsInFile = JsonSerializer.Deserialize<RawSingleStepTest[]>(json, JsonOptions);
 
@@ -96,9 +98,8 @@ public class SingleStepTests
                 continue;
             }
 
-            for (int i = 0; i < testsInFile.Length; i++)
+            foreach (var raw in testsInFile)
             {
-                var raw = testsInFile[i];
                 var test = new SingleStepTest
                 {
                     Initial = ConvertState(raw.Initial),
