@@ -5,8 +5,6 @@ namespace CodyPrototype.Tests;
 [TestFixture]
 public class SingleStepTests
 {
-    public static IEnumerable<TestCaseData> Cases => LoadSingleStepTests();
-    public static IEnumerable<TestCaseData> CasesForBytecode => LoadSingleStepTests_Bytecode("0a");
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -28,18 +26,8 @@ public class SingleStepTests
         return folder;
     }
 
-    [TestCaseSource(nameof(Cases))]
-    public void ExecuteSingleStep(SingleStepTest test)
-    {
-        var cpu = Cpu.FromState(test.Initial);
-        
-        cpu.Step(); // TODO: Loop until finished
-        
-        Assert.That(cpu.GetState(), Is.EqualTo(test.Final));
-    }
-    
-    [TestCaseSource(nameof(CasesForBytecode))]
-    public void ExecuteSingleStep_Bytecode(SingleStepTest test)
+    [TestCaseSource(nameof(LoadAllSingleStepTests))]
+    public void TestAllBytecodes(SingleStepTest test)
     {
         Console.WriteLine("Running test: " + test.TestName);
         var cpu = Cpu.FromState(test.Initial);
@@ -49,7 +37,32 @@ public class SingleStepTests
         Assert.That(cpu.GetState(), Is.EqualTo(test.Final));
     }
     
-    private static IEnumerable<TestCaseData> LoadSingleStepTests_Bytecode(string bytecode)
+    public static IEnumerable<TestCaseData> CasesForBytecode => LoadSingleStepTestsBytecode("0a");
+    [TestCaseSource(nameof(CasesForBytecode))]
+    public void TestBytecode(SingleStepTest test)
+    {
+        Console.WriteLine("Running test: " + test.TestName);
+        var cpu = Cpu.FromState(test.Initial);
+        
+        cpu.Step(); // TODO: Loop until finished
+        
+        Assert.That(cpu.GetState(), Is.EqualTo(test.Final));
+    }
+
+    private static IEnumerable<TestCaseData> LoadAllSingleStepTests()
+    {
+        string folder = GetTestDataFolder();
+        foreach (var file in Directory.GetFiles(folder, "*.json", SearchOption.AllDirectories))
+        {
+            string bytecode = Path.GetFileNameWithoutExtension(file);
+            foreach (var test in LoadSingleStepTestsBytecode(bytecode))
+            {
+                yield return test;
+            }
+        }
+    }
+    
+    private static IEnumerable<TestCaseData> LoadSingleStepTestsBytecode(string bytecode)
     {
         string folder = GetTestDataFolder();
         var path = Path.Combine(folder, bytecode + ".json");
@@ -58,6 +71,9 @@ public class SingleStepTests
         {
             string json = File.ReadAllText(path);
 
+            if (string.IsNullOrEmpty(json))
+                yield break;
+            
             var testsInFile = JsonSerializer.Deserialize<RawSingleStepTest[]>(json, JsonOptions);
 
             if (testsInFile == null || testsInFile.Length == 0)
