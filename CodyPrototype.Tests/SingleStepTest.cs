@@ -1,4 +1,4 @@
-﻿namespace CodyPrototype.singleStepTests;
+﻿namespace CodyPrototype.Tests;
 
 public sealed class SingleStepTest
 {

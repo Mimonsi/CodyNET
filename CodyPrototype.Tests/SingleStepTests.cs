@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
-using NUnit.Framework;
 
-namespace CodyPrototype.singleStepTests;
+namespace CodyPrototype.Tests;
 
 [TestFixture]
 public class SingleStepTests
@@ -27,7 +26,7 @@ public class SingleStepTests
 
     private static IEnumerable<TestCaseData> LoadSingleStepTests()
     {
-        string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "tests", "wdc65c02");
+        string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "wdc65c02");
 
         foreach (var file in Directory.GetFiles(folder, "*.json", SearchOption.AllDirectories))
         {

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace CodyPrototype.singleStepTests;
+namespace CodyPrototype.Tests;
 
 public sealed class RawTestFile
 {
