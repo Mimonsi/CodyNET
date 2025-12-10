@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        var cpu = new Cpu65C02();
+        var cpu = new Cpu();
 
         if (args.Length == 1) // Load file
         {

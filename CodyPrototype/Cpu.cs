@@ -4,9 +4,10 @@ using static CodyPrototype.AddressingMode;
 
 namespace CodyPrototype;
 
-public class Cpu65C02
+public class Cpu
 {
     public byte A, X, Y, S; // 8 bit registers
+    // public byte P; Status used instead 
     public Status Status;
     public ushort PC; // 16 bit program counter
     public readonly byte[] Memory = new byte[65536];
@@ -23,6 +24,26 @@ public class Cpu65C02
     {
         Array.Copy(program, 0, Memory, startAddress, program.Length);
         Reset(startAddress);
+    }
+    
+    public static Cpu FromState(CpuState state)
+    {
+        var cpu = new Cpu()
+        {
+            A = state.A,
+            X = state.X,
+            Y = state.Y,
+            PC = state.PC,
+            S = state.S,
+            Status = CpuHelpers.StatusFromByte(state.P)
+        };
+        
+        foreach (var kvp in state.Memory)
+        {
+            cpu.Memory[kvp.Key] = kvp.Value;
+        }
+
+        return cpu;
     }
 
     public void Step()
