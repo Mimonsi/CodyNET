@@ -22,11 +22,13 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="singleStepTests\" />
+      <ProjectReference Include="..\CodyPrototype\CodyPrototype.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\CodyPrototype\CodyPrototype.csproj" />
+        <Content Include="wdc65c02\**\*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>

@@ -6,13 +6,27 @@ namespace CodyPrototype.Tests;
 public class SingleStepTests
 {
     public static IEnumerable<TestCaseData> Cases => LoadSingleStepTests();
+    public static IEnumerable<TestCaseData> CasesForBytecode => LoadSingleStepTests_Bytecode("0a");
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
-        AllowTrailingCommas = true
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        AllowTrailingCommas = true,
+        Converters = { new CycleRawConverter() }
     };
 
+    private static string GetTestDataFolder()
+    {
+        string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "wdc65c02", "v1");
+
+        if (!Directory.Exists(folder))
+        {
+            Assert.Inconclusive($"Test data not found. Ensure the 65x02 SingleStepTests data exists at '{folder}'.");
+        }
+
+        return folder;
+    }
 
     [TestCaseSource(nameof(Cases))]
     public void ExecuteSingleStep(SingleStepTest test)
@@ -21,30 +35,79 @@ public class SingleStepTests
         
         cpu.Step(); // TODO: Loop until finished
         
-        Assert.That(cpu.GetState(), Is.EqualTo(test.Expected));
+        Assert.That(cpu.GetState(), Is.EqualTo(test.Final));
+    }
+    
+    [TestCaseSource(nameof(CasesForBytecode))]
+    public void ExecuteSingleStep_Bytecode(SingleStepTest test)
+    {
+        Console.WriteLine("Running test: " + test.TestName);
+        var cpu = Cpu.FromState(test.Initial);
+        
+        cpu.Step(); // TODO: Loop until finished
+        
+        Assert.That(cpu.GetState(), Is.EqualTo(test.Final));
+    }
+    
+    private static IEnumerable<TestCaseData> LoadSingleStepTests_Bytecode(string bytecode)
+    {
+        string folder = GetTestDataFolder();
+        var path = Path.Combine(folder, bytecode + ".json");
+
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+
+            var testsInFile = JsonSerializer.Deserialize<RawSingleStepTest[]>(json, JsonOptions);
+
+            if (testsInFile == null || testsInFile.Length == 0)
+            {
+                Console.WriteLine("No tests found in file: " + path);
+                yield break;
+            }
+
+            foreach (var raw in testsInFile)
+            {
+                var test = new SingleStepTest
+                {
+                    Initial = ConvertState(raw.Initial),
+                    Final = ConvertState(raw.Final),
+                    TestName = Path.GetFileNameWithoutExtension(raw.Name)
+                };
+                
+                yield return new TestCaseData(test).SetName(test.TestName);
+            }
+        }
     }
 
     private static IEnumerable<TestCaseData> LoadSingleStepTests()
     {
-        string folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "wdc65c02");
+        string folder = GetTestDataFolder();
 
         foreach (var file in Directory.GetFiles(folder, "*.json", SearchOption.AllDirectories))
         {
             string json = File.ReadAllText(file);
 
-            var raw = JsonSerializer.Deserialize<RawTestFile>(json, JsonOptions);
+            var testsInFile = JsonSerializer.Deserialize<RawSingleStepTest[]>(json, JsonOptions);
 
-            if (raw == null)
-                continue;
-
-            var test = new SingleStepTest
+            if (testsInFile == null || testsInFile.Length == 0)
             {
-                Initial = ConvertState(raw.Initial),
-                Expected = ConvertState(raw.Expected),
-                TestName = Path.GetFileNameWithoutExtension(file)
-            };
+                Console.WriteLine("No tests found in file: " + file);
+                continue;
+            }
 
-            yield return new TestCaseData(test).SetName(test.TestName);
+            for (int i = 0; i < testsInFile.Length; i++)
+            {
+                var raw = testsInFile[i];
+                var test = new SingleStepTest
+                {
+                    Initial = ConvertState(raw.Initial),
+                    Final = ConvertState(raw.Final),
+                    TestName = raw.Name
+                };
+                
+                yield return new TestCaseData(test).SetName(test.TestName);
+            }
         }
     }
     
@@ -52,18 +115,19 @@ public class SingleStepTests
     {
         var state = new CpuState
         {
-            PC = ParseUShort(raw.pc),
-            A  = ParseByte(raw.a),
-            X  = ParseByte(raw.x),
-            Y  = ParseByte(raw.y),
-            S = ParseByte(raw.sp),
-            P  = ParseByte(raw.p)
+            A = raw.a,
+            X = raw.x,
+            Y = raw.y,
+            PC = raw.pc,
+            S = raw.s,
+            P = raw.p
+            
         };
 
         foreach (var kv in raw.ram)
         {
-            ushort addr = ParseUShort(kv.Key);
-            byte val = ParseByte(kv.Value);
+            ushort addr = kv[0];
+            byte val = (byte)kv[1];
             state.Memory[addr] = val;
         }
 

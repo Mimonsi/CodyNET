@@ -2,14 +2,12 @@
 
 public sealed class RawCpuState
 {
-    // Registers (hex-coded strings)
-    public string pc { get; set; } = "";
-    public string a  { get; set; } = "";
-    public string x  { get; set; } = "";
-    public string y  { get; set; } = "";
-    public string sp { get; set; } = "";
-    public string p  { get; set; } = "";
-
-    // Memory overrides (hex-coded strings)
-    public Dictionary<string, string> ram { get; set; } = new();
+    public ushort pc { get; set; }
+    public byte a  { get; set; }
+    public byte x  { get; set; }
+    public byte y  { get; set; }
+    public byte s { get; set; }
+    public byte p  { get; set; }
+    
+    public List<ushort[]> ram { get; set; } = new();
 }
