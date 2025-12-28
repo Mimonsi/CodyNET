@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using CodyPrototype.assembler;
 
 namespace CodyPrototype;
 
@@ -7,6 +8,8 @@ class Program
 {
     static void Main(string[] args)
     {
+        
+        /*
         var cpu = new Cpu();
 
         if (args.Length == 1) // Load file
@@ -28,12 +31,12 @@ class Program
 
             cpu.Reset(0x0600);
         }
-        
+
         Console.WriteLine("Starting CPU...");
         for (int i = 0; i < 20; i++)
         {
             Console.WriteLine($"PC={cpu.PC:X4} A={cpu.A:X2}");
             cpu.Step();
-        }
+        }*/
     }
 }

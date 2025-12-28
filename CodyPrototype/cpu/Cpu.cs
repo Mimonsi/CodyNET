@@ -6,12 +6,51 @@ namespace CodyPrototype;
 
 public class Cpu
 {
-    public byte A, X, Y, S; // 8 bit registers
+    private byte _a;
+    public byte A
+    {
+        get => _a;
+        private set
+        {
+            _a = value;
+            UpdateRegisterFlags();
+        }
+    }
+    
+    private byte _x;
+    public byte X
+    {
+        get => _x;
+        private set
+        {
+            _x = value;
+            UpdateRegisterFlags();
+        }
+    }
+    
+    private byte _y;
+    public byte Y
+    {
+        get => _y;
+        private set
+        {
+            _y = value;
+            UpdateRegisterFlags();
+        }
+    }
+
+    public byte S; // 8 bit registers
     // public byte P; Status used instead 
     public Status Status;
     public ushort PC; // 16 bit program counter
     public readonly byte[] Memory = new byte[65536];
     public readonly OpcodeLookup OpcodeLookup = new();
+    
+    private void UpdateRegisterFlags()
+    {
+        Status.Zero = (A == 0);
+        Status.Negative = (A & 0x80) != 0;
+    }
     
     public void Reset(ushort startAddress)
     {
@@ -45,18 +84,62 @@ public class Cpu
 
         return cpu;
     }
-
-    public void Step()
+    
+    public void RunUntilFinish()
     {
+        while (Step())
+        {
+        }
+    }
+
+    public bool Step()
+    {
+        if (PC >= Memory.Length)
+            return false;
         Instruction instruction = OpcodeLookup.FromOpcode(Memory[PC++]);
         int cycles = instruction.Cycles;
+        int extraCyles = 0;
 
         switch (instruction.Mnemonic)
         {
             // ADC
             case ADC:
-                ReadValueOperand(instruction.AddressingMode);
+                (var value, var pageCross) = ReadValueOperand(instruction.AddressingMode);
+                if (pageCross) extraCyles += 1;
+                if (Status.DecimalMode)
+                {
+                    extraCyles += 1;
+                    DoAdditionDecimal(value);
+                }
+                else
+                {
+                    DoAddition(value);
+                }
+                
                 break;
+            
+            case CLC:
+                Status.Carry = false;
+                break;
+            case CLD:
+                Status.DecimalMode = false;
+                break;
+            case CLI:
+                Status.InterruptDisable = false;
+                break;
+            case CLV:
+                Status.Overflow = false;
+                break;
+            case SEC:
+                Status.Carry = true;
+                break;
+            case SED: 
+                Status.DecimalMode = true;
+                break;
+            case SEI:
+                Status.InterruptDisable = true;
+                break;
+                
                 
             /*case 0xEA: // NOP
                 break;
@@ -81,6 +164,45 @@ public class Cpu
             default:
                 throw new NotSupportedException($"Unsupported instruction {instruction.Mnemonic}: Opcode {instruction.Opcode:X2} not implemented.");
         }
+
+        return true;
+    }
+
+    // Add Accumulator and Carry
+    private void DoAddition(byte value)
+    {
+        int carryIn = Status.Carry ? 1 : 0;
+        int sum = A + value + carryIn;
+
+        Status.Carry = sum > 0xFF;
+        byte result = (byte)(sum & 0xFF);
+
+        // Set Overflow flag
+        bool overflow = (~(A ^ value) & (A ^ result) & 0x80) != 0;
+        Status.Overflow = overflow;
+
+        A = result;
+    }
+
+    private void DoAdditionDecimal(byte value)
+    {
+        int carryIn = Status.Carry ? 1 : 0;
+        int lowNibbleSum = (A & 0x0F) + (value & 0x0F) + carryIn;
+        int adjustLow = (lowNibbleSum > 9) ? 6 : 0;
+
+        int highNibbleSum = (A >> 4) + (value >> 4) + ((lowNibbleSum + adjustLow) > 0x0F ? 1 : 0);
+        int adjustHigh = (highNibbleSum > 9) ? 6 : 0;
+
+        int total = lowNibbleSum + adjustLow + ((highNibbleSum + adjustHigh) << 4);
+
+        Status.Carry = total > 0xFF;
+        byte result = (byte)(total & 0xFF);
+
+        // Set Overflow flag
+        bool overflow = (~(A ^ value) & (A ^ result) & 0x80) != 0;
+        Status.Overflow = overflow;
+
+        A = result;
     }
 
     private (byte value, bool pageCross) ReadValueOperand(AddressingMode addressingMode)

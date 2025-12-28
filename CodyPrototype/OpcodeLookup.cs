@@ -153,7 +153,7 @@ public class OpcodeLookup
     public List<Instruction> Instructions;
 
     /// <summary>
-    /// Initializes all instructions accoding to 65C02 instruction set: https://feertech.com/legion/reference65c02.html#BRK
+    /// Initializes all instructions according to 65C02 instruction set: https://feertech.com/legion/reference65c02.html
     /// </summary>
     public OpcodeLookup()
     {
@@ -573,7 +573,15 @@ public class OpcodeLookup
 
     public Instruction FromOpcode(byte opcode)
     {
-        return Instructions.First(i => i.Opcode == opcode);
+        try
+        {
+            return Instructions.First(i => i.Opcode == opcode);
+        }
+        catch(Exception x)
+        {
+            Console.WriteLine("No instruction matching opcode: " + opcode.ToString("X2"));
+            throw x;
+        }
     }
 
     public List<Instruction> FromMnemonic(Mnemonic mnemonic)

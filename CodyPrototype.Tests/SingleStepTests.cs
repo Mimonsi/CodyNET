@@ -32,19 +32,19 @@ public class SingleStepTests
         Console.WriteLine("Running test: " + test.TestName);
         var cpu = Cpu.FromState(test.Initial);
         
-        cpu.Step(); // TODO: Loop until finished
+        cpu.RunUntilFinish();
         
         Assert.That(cpu.GetState(), Is.EqualTo(test.Final));
     }
     
-    public static IEnumerable<TestCaseData> CasesForBytecode => LoadSingleStepTestsBytecode("0a");
+    public static IEnumerable<TestCaseData> CasesForBytecode => LoadSingleStepTestsBytecode("18");
     [TestCaseSource(nameof(CasesForBytecode))]
     public void TestBytecode(SingleStepTest test)
     {
         Console.WriteLine("Running test: " + test.TestName);
         var cpu = Cpu.FromState(test.Initial);
         
-        cpu.Step(); // TODO: Loop until finished
+        cpu.RunUntilFinish();
         
         Assert.That(cpu.GetState(), Is.EqualTo(test.Final));
     }
