@@ -160,6 +160,7 @@ public class OpcodeLookup
         // Instructions sorted by Mnemonic alphabetically
         Instructions =
         [
+            // ADC (Add with Carry) ☑
             new(0x69, ADC, AddressingMode.Immediate, 2, 2),
             new(0x65, ADC, AddressingMode.ZeroPage, 2, 3),
             new(0x75, ADC, AddressingMode.ZeroPageIndexedX, 2, 4),
@@ -170,7 +171,7 @@ public class OpcodeLookup
             new(0x71, ADC, AddressingMode.ZeroPageIndirectIndexedY, 2, 5),
             new(0x72, ADC, AddressingMode.ZeroPageIndirect, 2, 5),
 
-            // AND (AND with Accumulator)
+            // AND (AND with Accumulator) ☑
             new(0x29, AND, AddressingMode.Immediate, 2, 2),
             new(0x25, AND, AddressingMode.ZeroPage, 2, 3),
             new(0x35, AND, AddressingMode.ZeroPageIndexedX, 2, 4),
@@ -181,14 +182,14 @@ public class OpcodeLookup
             new(0x21, AND, AddressingMode.ZeroPageIndexedIndirectX, 2, 6),
             new(0x31, AND, AddressingMode.ZeroPageIndirectIndexedY, 2, 5),
 
-            // ASL (Arithmetic Shift Left)
+            // ASL (Arithmetic Shift Left) ☑
             new(0x0A, ASL, AddressingMode.Accumulator, 1, 2),
             new(0x06, ASL, AddressingMode.ZeroPage, 2, 5),
             new(0x16, ASL, AddressingMode.ZeroPageIndexedX, 2, 6),
             new(0x0E, ASL, AddressingMode.Absolute, 3, 6),
             new(0x1E, ASL, AddressingMode.AbsoluteIndexedX, 3, 7),
 
-            // BBR (Branch On Bit Reset)
+            // BBR (Branch On Bit Reset) ☑
             new(0x0F, BBR0, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3,
                 4), // +1 if branch taken
             new(0x1F, BBR1, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
@@ -199,7 +200,7 @@ public class OpcodeLookup
             new(0x6F, BBR6, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
             new(0x7F, BBR7, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
 
-            // BBS (Branch On Bit Set)
+            // BBS (Branch On Bit Set) ☑
             new(0x8F, BBS0, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3,
                 4), // +1 if branch taken
             new(0x9F, BBS1, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
@@ -255,16 +256,16 @@ public class OpcodeLookup
             new(0x70, BVS, AddressingMode.ProgramCounterRelative, 2,
                 2), // +1 if branch taken, +2 if to a new page
 
-            // CLC (Clear Carry)
+            // CLC (Clear Carry) ☑
             new(0x18, CLC, AddressingMode.None, 1, 2),
 
-            // CLD (Clear Decimal Mode)
+            // CLD (Clear Decimal Mode) ☑
             new(0xD8, CLD, AddressingMode.None, 1, 2),
 
-            // CLI (Clear Interrupt Disable)
+            // CLI (Clear Interrupt Disable) ☑
             new(0x58, CLI, AddressingMode.None, 1, 2),
 
-            // CLV (Clear Overflow)
+            // CLV (Clear Overflow) ☑
             new(0xB8, CLV, AddressingMode.None, 1, 2),
 
             // CMP (Compare with Accumulator)
@@ -334,7 +335,7 @@ public class OpcodeLookup
             new(0x20, JSR, AddressingMode.Absolute, 3, 6),
             new(0xFC, JSR, AddressingMode.AbsoluteIndexedIndirectX, 3, 8),
 
-            // LDA (Load Accumulator)
+            // LDA (Load Accumulator) ☑
             new(0xA9, LDA, AddressingMode.Immediate, 2, 2),
             new(0xA5, LDA, AddressingMode.ZeroPage, 2, 3),
             new(0xB5, LDA, AddressingMode.ZeroPageIndexedX, 2, 4),
@@ -345,14 +346,14 @@ public class OpcodeLookup
             new(0xA1, LDA, AddressingMode.ZeroPageIndexedIndirectX, 2, 6),
             new(0xB1, LDA, AddressingMode.ZeroPageIndirectIndexedY, 2, 5), // +1 if page crossed
 
-            // LDX (Load X)
+            // LDX (Load X) ☑
             new(0xA2, LDX, AddressingMode.Immediate, 2, 2),
             new(0xA6, LDX, AddressingMode.ZeroPage, 2, 3),
             new(0xB6, LDX, AddressingMode.ZeroPageIndexedY, 2, 4),
             new(0xAE, LDX, AddressingMode.Absolute, 3, 4),
             new(0xBE, LDX, AddressingMode.AbsoluteIndexedY, 3, 4), // +1 if page crossed
 
-            // LDY (Load Y)
+            // LDY (Load Y) ☑
             new(0xA0, LDY, AddressingMode.Immediate, 2, 2),
             new(0xA4, LDY, AddressingMode.ZeroPage, 2, 3),
             new(0xB4, LDY, AddressingMode.ZeroPageIndexedX, 2, 4),
@@ -366,7 +367,7 @@ public class OpcodeLookup
             new(0x4E, LSR, AddressingMode.Absolute, 3, 6),
             new(0x5E, LSR, AddressingMode.AbsoluteIndexedX, 3, 7),
 
-            // NOP (No Operation)
+            // NOP (No Operation) ☑
             new(0xEA, NOP, AddressingMode.None, 1, 2),
 
             // ORA (OR with Accumulator)
@@ -437,13 +438,13 @@ public class OpcodeLookup
             new(0xE1, SBC, AddressingMode.ZeroPageIndexedIndirectX, 2, 6),
             new(0xF1, SBC, AddressingMode.ZeroPageIndirectIndexedY, 2, 5), // +1 if page crossed
 
-            // SEC (Set Carry)
+            // SEC (Set Carry) ☑
             new(0x38, SEC, AddressingMode.None, 1, 2),
 
-            // SED (Set Decimal Mode)
+            // SED (Set Decimal Mode) ☑
             new(0xF8, SED, AddressingMode.None, 1, 2),
 
-            // SEI (Set Interrupt Disable)
+            // SEI (Set Interrupt Disable) ☑
             new(0x78, SEI, AddressingMode.None, 1, 2),
 
             // SMB (Set Memory Bit)

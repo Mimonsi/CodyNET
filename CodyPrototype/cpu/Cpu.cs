@@ -7,6 +7,9 @@ namespace CodyPrototype;
 public class Cpu
 {
     private byte _a;
+    /// <summary>
+    /// Safe access to registers register that updates flags on set
+    /// </summary>
     public byte A
     {
         get => _a;
@@ -46,11 +49,25 @@ public class Cpu
     public readonly byte[] Memory = new byte[65536];
     public readonly OpcodeLookup OpcodeLookup = new();
     
+    /// <summary>
+    /// Update Zero and Negative flags based on the value of the Accumulator
+    /// </summary>
     private void UpdateRegisterFlags()
     {
         Status.Zero = (A == 0);
         Status.Negative = (A & 0x80) != 0;
     }
+    
+    /// <summary>
+    /// Update Zero and Negative flags based on the given value
+    /// </summary>
+    /// <param name="value"></param>
+    private void UpdateRegisterFlags(byte value)
+    {
+        Status.Zero = (value == 0);
+        Status.Negative = (value & 0x80) != 0;
+    }
+
     
     public void Reset(ushort startAddress)
     {
@@ -92,31 +109,44 @@ public class Cpu
         }
     }
 
+    private Instruction instruction;
+    private int cycles;
+    private int extraCycles;
     public bool Step()
     {
         if (PC >= Memory.Length)
             return false;
-        Instruction instruction = OpcodeLookup.FromOpcode(Memory[PC++]);
-        int cycles = instruction.Cycles;
-        int extraCyles = 0;
+        instruction = OpcodeLookup.FromOpcode(Memory[PC++]);
+        cycles = instruction.Cycles;
+        extraCycles = 0;
 
         switch (instruction.Mnemonic)
         {
-            // ADC
-            case ADC:
-                (var value, var pageCross) = ReadValueOperand(instruction.AddressingMode);
-                if (pageCross) extraCyles += 1;
-                if (Status.DecimalMode)
-                {
-                    extraCyles += 1;
-                    DoAdditionDecimal(value);
-                }
-                else
-                {
-                    DoAddition(value);
-                }
-                
-                break;
+            case ADC: DoADC(); break;
+            case AND: DoAND(); break;
+            case ASL: DoASL(); break;
+            
+            case BBR0: DoBBR(0); break;
+            case BBR1: DoBBR(1); break;
+            case BBR2: DoBBR(2); break;
+            case BBR3: DoBBR(3); break;
+            case BBR4: DoBBR(4); break;
+            case BBR5: DoBBR(5); break;
+            case BBR6: DoBBR(6); break;
+            case BBR7: DoBBR(7); break;
+            
+            case BBS0: DoBBS(0); break;
+            case BBS1: DoBBS(1); break;
+            case BBS2: DoBBS(2); break;
+            case BBS3: DoBBS(3); break;
+            case BBS4: DoBBS(4); break;
+            case BBS5: DoBBS(5); break;
+            case BBS6: DoBBS(6); break;
+            case BBS7: DoBBS(7); break;
+            
+            case BCC: DoBranch(!Status.Carry); break;
+            case BCS: DoBranch(Status.Carry); break;
+            case BEQ: DoBranch(Status.Zero); break;
             
             case CLC:
                 Status.Carry = false;
@@ -138,6 +168,13 @@ public class Cpu
                 break;
             case SEI:
                 Status.InterruptDisable = true;
+                break;
+            
+            case LDA: DoLDA(); break;
+            case LDX: DoLDX(); break;
+            case LDY: DoLDY(); break;
+            
+            case NOP:
                 break;
                 
                 
@@ -165,6 +202,126 @@ public class Cpu
                 throw new NotSupportedException($"Unsupported instruction {instruction.Mnemonic}: Opcode {instruction.Opcode:X2} not implemented.");
         }
 
+        return true;
+    }
+
+    private bool DoADC()
+    {
+        (var value, var pageCross) = ReadValueOperand(instruction.AddressingMode);
+        if (pageCross) extraCycles += 1;
+        if (Status.DecimalMode)
+        {
+            extraCycles += 1;
+            DoAdditionDecimal(value);
+        }
+        else
+        {
+            DoAddition(value);
+        }
+
+        return true;
+    }
+
+    private bool DoAND()
+    {
+        var (value, pageCross) = ReadValueOperand(instruction.AddressingMode);
+        if (pageCross) extraCycles += 1;
+        A = (byte)(A & value);
+        return true;
+    }
+    
+    private bool DoASL()
+    {
+        if (instruction.AddressingMode == Accumulator)
+        {
+            var oldA = A;
+            A = (byte)(A << 1);
+            Status.Carry = (oldA & 0x80) != 0;
+        }
+        else
+        {
+            var (address, pageCross) = ReadAddressOperand(instruction.AddressingMode);
+            if (pageCross) extraCycles += 1;
+            var value = ReadByte(address);
+            var newValue = (byte)(value << 1);
+            WriteByte(address, newValue);
+            UpdateRegisterFlags(newValue);
+            Status.Carry = (value & 0x80) != 0;
+        }
+        return true;
+    }
+    
+    /// <summary>
+    /// Branch if Bit Reset (bit = 0)
+    /// </summary>
+    /// <param name="bit"></param>
+    /// <returns></returns>
+    private bool DoBBR(byte bit)
+    {
+        var (value, _) = ReadValueOperand(ZeroPage);
+        var (target, _) = ReadAddressOperand(ProgramCounterRelative);
+        // If bit in value is 0 => branch
+        if (((value >> bit) & 0x01) == 0)
+        {
+            ushort oldPc = PC;
+            PC = target;
+
+            // Extra cycles: +1 if branch taken, +2 if page boundary crossed
+            extraCycles += (((oldPc ^ target) & 0xFF00) != 0 ? 2 : 1);
+        }
+
+        return true;
+    }
+    
+    /// <summary>
+    /// Branch if Bit Set (bit = 1)
+    /// </summary>
+    /// <param name="bit"></param>
+    /// <returns></returns>
+    private bool DoBBS(byte bit)
+    {
+        var (value, _) = ReadValueOperand(ZeroPage);
+        var (target, _) = ReadAddressOperand(ProgramCounterRelative);
+        // If bit in value is 1 => branch
+        if (((value >> bit) & 0x01) != 0)
+        {
+            ushort oldPc = PC;
+            PC = target;
+
+            // Extra cycles: +1 if branch taken, +2 if page boundary crossed
+            extraCycles += (((oldPc ^ target) & 0xFF00) != 0 ? 2 : 1);
+        }
+
+        return true;
+    }
+    
+    private bool DoBranch(bool p0)
+    {
+        // TODO
+        return true;
+    }
+
+    private bool DoLDA()
+    {
+        var (value, pageCross) = ReadValueOperand(instruction.AddressingMode);
+        if (pageCross) extraCycles += 1;
+        A = value;
+        return true;
+    }
+    
+    private bool DoLDX()
+    {
+        (var value, var pageCross) = ReadValueOperand(instruction.AddressingMode);
+        if (pageCross) extraCycles += 1;
+        X = value;
+        return true;
+    }
+    
+    private bool DoLDY()
+    {
+        (var value, var pageCross) = ReadValueOperand(instruction.AddressingMode);
+        if (pageCross) extraCycles += 1;
+        Y = value;
         return true;
     }
 
@@ -226,12 +383,19 @@ public class Cpu
     
     private ushort ReadShortIncPc()
     {
-        return ReadShort(PC+=2);
+        var addr = PC;
+        PC += 2;
+        return ReadShort(addr);
     }
     
     private byte ReadByte(ushort address)
     {
         return Memory[address];
+    }
+    
+    private void WriteByte(ushort address, byte newValue)
+    {
+        Memory[address] = newValue;
     }
     
     private ushort ReadShort(ushort address)

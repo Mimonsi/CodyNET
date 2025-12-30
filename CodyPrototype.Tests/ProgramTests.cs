@@ -5,6 +5,12 @@ namespace CodyPrototype.Tests;
 public class ProgramTests
 {
     [Test]
+    public void TestMisc()
+    {
+
+    }
+    
+    [Test]
     public void TestAssembler()
     {
         ICodyAssembler assembler = new TassAssembler();
@@ -31,8 +37,9 @@ public class ProgramTests
     public void TestMinimal()
     {
         Cpu cpu = new();
-        var bytes = File.ReadAllBytes("testdata/minimal.bin");
+        var bytes = GetBytesFromFile("testdata/minimal.bin");
         cpu.LoadProgram(bytes, 0x0600);
+        cpu.RunUntilFinish();
         Assert.Pass();
     }
 }
