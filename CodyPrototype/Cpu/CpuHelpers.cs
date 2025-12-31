@@ -4,28 +4,35 @@ namespace CodyPrototype.Cpu;
 
 public static class CpuHelpers
 {
-    public static void CheckState(this CpuState expected, CpuState actual)
+    public static (bool, string) CheckState(this CpuState expected, CpuState actual)
     {
-        if (actual.PC != expected.PC ||
-            actual.A != expected.A ||
-            actual.X != expected.X ||
-            actual.Y != expected.Y ||
-            actual.S != expected.S ||
-            actual.P != expected.P)
-        {
-            throw new Exception("CPU state does not match expected state.");
-        }
+        List<string> errors = new List<string>();
+        if (expected.A != actual.A)
+            errors.Add($"A is {actual.A:X2}, expected {expected.A:X2}");
+        if (expected.X != actual.X)
+            errors.Add($"X is {actual.X:X2}, expected {expected.X:X2}");
+        if (expected.Y != actual.Y)
+            errors.Add($"Y is {actual.Y:X2}, expected {expected.Y:X2}");
+        if (expected.PC != actual.PC)
+            errors.Add($"PC is {actual.PC:X4}, expected {expected.PC:X4}");
+        if (expected.S != actual.S)
+            errors.Add($"S is {actual.S:X2}, expected {expected.S:X2}");
+        if (expected.P != actual.P)
+            errors.Add($"P is {actual.P:X2}, expected {expected.P:X2}");
 
         foreach (var kvp in expected.Memory)
         {
             if (actual.Memory[kvp.Key] != kvp.Value)
             {
-                throw new Exception($"Memory at address {kvp.Key:X4} does not match expected value.");
+                errors.Add($"Memory at address {kvp.Key:X4} is {actual.Memory[kvp.Key]:X2}, expected {kvp.Value:X2}");
             }
         }
+        if (errors.Count > 0)
+            return (false, string.Join("\n", errors));
+        return (true, "States match");
     }
 
-    public static CpuState GetState(this CodyPrototype.Cpu.Cpu cpu)
+    public static CpuState GetState(this Cpu cpu)
     {
         var state = new CpuState
         {
@@ -36,10 +43,9 @@ public static class CpuHelpers
             S = cpu.S,
             P = ByteFromStatus(cpu.Status)
         };
-        
-        for (ushort addr = 0; addr < cpu.Memory.Length; addr++)
+        for(int addr = 0; addr < cpu.Memory.Length; addr++)
         {
-            state.Memory[addr] = cpu.Memory[addr];
+            state.Memory[(ushort) addr] = cpu.Memory[addr];
         }
 
         return state;

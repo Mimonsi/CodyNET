@@ -8,7 +8,7 @@ public class Cpu
 {
     private byte _a;
     /// <summary>
-    /// Safe access to registers register that updates flags on set
+    /// Safe access to registers that updates flags on set
     /// </summary>
     public byte A
     {
@@ -148,6 +148,8 @@ public class Cpu
             case BCS: DoBranch(Status.Carry); break;
             case BEQ: DoBranch(Status.Zero); break;
             
+            case BRK: return false; break; // TODO: Implement BRK, currently just ends program
+            
             case CLC:
                 Status.Carry = false;
                 break;
@@ -176,6 +178,8 @@ public class Cpu
             
             case NOP:
                 break;
+            
+            case STA: DoSTA(); break;
                 
                 
             /*case 0xEA: // NOP
@@ -204,6 +208,8 @@ public class Cpu
 
         return true;
     }
+    
+    #region Instruction Implementations
 
     private bool DoADC()
     {
@@ -311,7 +317,7 @@ public class Cpu
     
     private bool DoLDX()
     {
-        (var value, var pageCross) = ReadValueOperand(instruction.AddressingMode);
+        var (value, pageCross) = ReadValueOperand(instruction.AddressingMode);
         if (pageCross) extraCycles += 1;
         X = value;
         return true;
@@ -319,11 +325,20 @@ public class Cpu
     
     private bool DoLDY()
     {
-        (var value, var pageCross) = ReadValueOperand(instruction.AddressingMode);
+        var (value, pageCross) = ReadValueOperand(instruction.AddressingMode);
         if (pageCross) extraCycles += 1;
         Y = value;
         return true;
     }
+
+    private bool DoSTA()
+    {
+        var (addr, _) = ReadAddressOperand(instruction.AddressingMode);
+        WriteByte(addr, A);
+        return true;
+    }
+    
+    #endregion
 
     // Add Accumulator and Carry
     private void DoAddition(byte value)
