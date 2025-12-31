@@ -1,4 +1,6 @@
-﻿namespace CodyPrototype;
+﻿using System;
+
+namespace CodyPrototype.Cpu;
 
 public static class CpuHelpers
 {
@@ -23,7 +25,7 @@ public static class CpuHelpers
         }
     }
 
-    public static CpuState GetState(this Cpu cpu)
+    public static CpuState GetState(this CodyPrototype.Cpu.Cpu cpu)
     {
         var state = new CpuState
         {

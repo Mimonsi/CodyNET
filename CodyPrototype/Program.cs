@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using CodyPrototype.assembler;
+using CodyPrototype.Assembler;
 
 namespace CodyPrototype;
 

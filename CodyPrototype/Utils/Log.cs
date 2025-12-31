@@ -1,4 +1,6 @@
-﻿namespace CodyPrototype;
+﻿using System;
+
+namespace CodyPrototype.Utils;
 
 public class Log
 {

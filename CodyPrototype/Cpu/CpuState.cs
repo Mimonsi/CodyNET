@@ -1,4 +1,4 @@
-﻿namespace CodyPrototype;
+﻿namespace CodyPrototype.Cpu;
 
 /// <summary>
 /// A snapshot of the CPU state for testing

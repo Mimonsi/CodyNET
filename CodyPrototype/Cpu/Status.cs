@@ -1,4 +1,4 @@
-﻿namespace CodyPrototype;
+﻿namespace CodyPrototype.Cpu;
 
 /// <summary>
 /// Processor Flags

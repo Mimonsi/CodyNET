@@ -1,4 +1,4 @@
-﻿using CodyPrototype.assembler;
+﻿using CodyPrototype.Assembler;
 
 namespace CodyPrototype.Tests;
 
@@ -36,7 +36,7 @@ public class ProgramTests
     [Test]
     public void TestMinimal()
     {
-        Cpu cpu = new();
+        Cpu.Cpu cpu = new();
         var bytes = GetBytesFromFile("testdata/minimal.bin");
         cpu.LoadProgram(bytes, 0x0600);
         cpu.RunUntilFinish();

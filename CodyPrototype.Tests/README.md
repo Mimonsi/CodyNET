@@ -1,4 +1,18 @@
-﻿# single_step_tests
+﻿# CodyNET
+CodyNET is a .NET based emulator for the [Cody Computer](https://codycomputer.org), a retro-style computer based on the WDC65C02 microprocessor.
+
+This implementation is using [iTitus' Cody Emulator](https://github.com/iTitus/cody_emulator) as a reference.
+It aims to enhance the original emulator with extended features.
+
+# Original features
+- Emulation of Cody Basic and Assembly
+- ...
+
+# New features
+- Debugging tools for assembly programming
+- Emulator can be set to run in real time
+
+# single_step_tests
 
 Uses the [65x02 SingleStepTests](https://github.com/SingleStepTests/65x02) created by Thomas Harte et al., licensed under MIT.
 

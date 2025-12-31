@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using CodyPrototype.Cpu;
 
 namespace CodyPrototype.Tests;
 
@@ -30,7 +31,7 @@ public class SingleStepTests
     public void TestAllBytecodes(SingleStepTest test)
     {
         Console.WriteLine("Running test: " + test.TestName);
-        var cpu = Cpu.FromState(test.Initial);
+        var cpu = Cpu.Cpu.FromState(test.Initial);
         
         cpu.RunUntilFinish();
         
@@ -42,7 +43,7 @@ public class SingleStepTests
     public void TestBytecode(SingleStepTest test)
     {
         Console.WriteLine("Running test: " + test.TestName);
-        var cpu = Cpu.FromState(test.Initial);
+        var cpu = Cpu.Cpu.FromState(test.Initial);
         
         cpu.RunUntilFinish();
         

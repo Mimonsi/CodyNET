@@ -2,7 +2,7 @@
 using static CodyPrototype.Mnemonic;
 using static CodyPrototype.AddressingMode;
 
-namespace CodyPrototype;
+namespace CodyPrototype.Cpu;
 
 public class Cpu
 {

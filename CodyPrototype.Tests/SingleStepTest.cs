@@ -1,4 +1,6 @@
-﻿namespace CodyPrototype.Tests;
+﻿using CodyPrototype.Cpu;
+
+namespace CodyPrototype.Tests;
 
 public sealed class SingleStepTest
 {

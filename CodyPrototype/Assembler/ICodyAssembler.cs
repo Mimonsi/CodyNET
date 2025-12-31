@@ -1,4 +1,4 @@
-﻿namespace CodyPrototype.assembler;
+﻿namespace CodyPrototype.Assembler;
 
 public interface ICodyAssembler
 {
