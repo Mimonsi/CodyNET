@@ -107,6 +107,7 @@ public enum Mnemonic
     TXS,
     TYA,
     WAI,
+    // Debug Instructions
     DBP,
     DRS,
     DMP,
@@ -520,11 +521,11 @@ public class OpcodeLookup
         Instructions.AddRange(
         [
             // DBP (Debugger Breakpoint)
-            new (0x42, DBP, AddressingMode.None, 1, 2),
-            // DRS (Dump Registers)
-            new (0x43, DRS, AddressingMode.None, 1, 2),
+            new (0x42, DBP, AddressingMode.None, 1, 0),
+            // DRS #index (Dump Registers)
+            new (0x43, DRS, AddressingMode.Immediate, 2, 0),
             // DMP (Dump Memory Page)
-            new (0x44, DMP, AddressingMode.None, 1, 2),
+            new (0x44, DMP, AddressingMode.None, 1, 0),
         ]);
 
         // Unofficial / undefined opcodes that behave as NOPs on the 65C02

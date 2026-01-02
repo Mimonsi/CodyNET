@@ -1,4 +1,5 @@
 ﻿using System;
+using CodyPrototype.Utils;
 using static CodyPrototype.Mnemonic;
 using static CodyPrototype.AddressingMode;
 
@@ -48,6 +49,9 @@ public class Cpu
     public ushort PC; // 16 bit program counter
     public readonly byte[] Memory = new byte[65536];
     public readonly OpcodeLookup OpcodeLookup = new();
+
+    // When debugger pauses execution
+    public bool Paused = false;
     
     /// <summary>
     /// Update Zero and Negative flags based on the value of the Accumulator
@@ -104,8 +108,11 @@ public class Cpu
     
     public void RunUntilFinish()
     {
-        while (Step())
+        while (!Paused)
         {
+            var successful = Step();
+            if (!successful)
+                break;
         }
     }
 
@@ -202,6 +209,11 @@ public class Cpu
                 PC = (ushort)((h << 8) | l);
                 break;*/
 
+            // Artificial instructions
+            case DBP: DoDBP(); break;
+            case DRS: DoDRS(); break;
+            case DMP: DoDMP(); break;
+            
             default:
                 throw new NotSupportedException($"Unsupported instruction {instruction.Mnemonic}: Opcode {instruction.Opcode:X2} not implemented.");
         }
@@ -210,6 +222,66 @@ public class Cpu
     }
     
     #region Instruction Implementations
+
+    private bool DoDBP()
+    {
+        // TODO: Actual debugger implementation
+        Paused = true;
+        Log.Info("Debugger Paused Execution");
+        Log.Info("Enter 'c' or 'continue' to resume, 'regs' to print registers, 'step' to step one instruction.");
+        while (true)
+        {
+            string cmd = Console.ReadLine();
+            if (cmd == "c" || cmd == "continue")
+                break;
+            else if (cmd == "regs")
+            {
+                Log.Info($"PC={PC:X4} A={A:X2} X={X:X2} Y={Y:X2} S={S:X2} P={CpuHelpers.ByteFromStatus(Status):X2}");
+            }
+            else if (cmd == "step")
+            {
+                var result = Step();
+                if (result)
+                {
+                    Log.Info($"Stepped. PC={PC:X4}");
+                    // TODO: Checks if this breaks control flow
+                }
+                else
+                {
+                    Log.Info("Program has finished execution.");
+                    return false;
+                }
+            }
+        }
+        Log.Info("Debugger Resumed Execution");
+        Paused = false;
+        return true;
+    }
+    
+    private bool DoDRS()
+    {
+        var (index, _) = ReadValueOperand(instruction.AddressingMode);
+        Log.Info($"Register Dump #{index}\nPC={PC:X4} A={A:X2} X={X:X2} Y={Y:X2} S={S:X2} P={CpuHelpers.ByteFromStatus(Status):X2}");
+        return true;
+    }
+    
+    /// <summary>
+    /// Dumps all non-zero memory contents to the log
+    /// </summary>
+    /// <returns></returns>
+    private bool DoDMP()
+    {
+        string text = "Memory Dump:\n";
+        foreach(var kvp in Memory.Select((value, index) => new { value, index }))
+        {
+            if (kvp.value != 0)
+            {
+                text += $"[{kvp.index:X4}] = {kvp.value:X2}\n";
+            }
+        }
+        Log.Info(text);
+        return true;
+    }
 
     private bool DoADC()
     {
