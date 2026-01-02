@@ -12,6 +12,11 @@ It aims to enhance the original emulator with extended features.
 - Debugging tools for assembly programming
 - Emulator can be set to run in real time
 
+# Artificial mnemonics
+- DRS #index → Dump Registers in Logger
+- DBP → Create breakpoint, gives control to debugger when reached
+- DMP → Dump Memory in Logger
+
 # single_step_tests
 
 Uses the [65x02 SingleStepTests](https://github.com/SingleStepTests/65x02) created by Thomas Harte et al., licensed under MIT.
