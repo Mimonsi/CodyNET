@@ -106,14 +106,17 @@ public class Cpu
         return cpu;
     }
     
-    public void RunUntilFinish()
+    public int RunUntilFinish()
     {
+        int stepsPerformed = 0;
         while (!Paused)
         {
             var successful = Step();
+            stepsPerformed++;
             if (!successful)
                 break;
         }
+        return stepsPerformed;
     }
 
     private Instruction instruction;
@@ -232,9 +235,9 @@ public class Cpu
         while (true)
         {
             string cmd = Console.ReadLine();
-            if (cmd == "c" || cmd == "continue")
+            if (cmd is "c" or "continue")
                 break;
-            else if (cmd == "regs")
+            if (cmd == "regs")
             {
                 Log.Info($"PC={PC:X4} A={A:X2} X={X:X2} Y={Y:X2} S={S:X2} P={CpuHelpers.ByteFromStatus(Status):X2}");
             }

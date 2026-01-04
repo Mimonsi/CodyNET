@@ -140,4 +140,18 @@ public class ProgramTests
         var (success, message) = finalState.CheckState(state);
         Assert.IsTrue(success, message);
     }
+
+    [Test]
+    public void TestPerformance()
+    {
+        Log.Info("Starting TestPerformance");
+        Cpu.Cpu cpu = new();
+        var bytes = FileUtils.GetBytesFromFile("testdata/performance.bin");
+        cpu.LoadProgram(bytes, 0x0600);
+        var startTime = DateTime.Now;
+        var steps = cpu.RunUntilFinish();
+        var endTime = DateTime.Now;
+        var duration = endTime - startTime;
+        Log.Info($"Execution Time: {duration.TotalMilliseconds} ms for {steps} steps. Average {steps / duration.TotalSeconds} steps/s");
+    }
 }
