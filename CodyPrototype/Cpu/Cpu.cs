@@ -1,9 +1,17 @@
 ﻿using System;
+using System.Diagnostics;
 using CodyPrototype.Utils;
 using static CodyPrototype.Mnemonic;
 using static CodyPrototype.AddressingMode;
 
 namespace CodyPrototype.Cpu;
+
+public enum StepResult
+{
+    Continue,
+    Pause,
+    Finished,
+}
 
 public class Cpu
 {
@@ -49,9 +57,6 @@ public class Cpu
     public ushort PC; // 16 bit program counter
     public readonly byte[] Memory = new byte[65536];
     public readonly OpcodeLookup OpcodeLookup = new();
-
-    // When debugger pauses execution
-    public bool Paused = false;
     
     /// <summary>
     /// Update Zero and Negative flags based on the value of the Accumulator
@@ -105,27 +110,58 @@ public class Cpu
 
         return cpu;
     }
-    
+
+    private bool SingleStepMode = false;
     public int RunUntilFinish()
     {
         int stepsPerformed = 0;
-        while (!Paused)
+        StepResult lastResult = StepResult.Continue;
+        while (lastResult != StepResult.Finished)
         {
-            var successful = Step();
+            lastResult = Step();
             stepsPerformed++;
-            if (!successful)
-                break;
+            if (lastResult == StepResult.Pause || SingleStepMode)
+            {
+                Debugger();
+            }
         }
         return stepsPerformed;
+    }
+
+    private void Debugger()
+    {
+        // TODO: Actual debugger implementation
+        //Log.Info("Debugger Paused Execution");
+        Log.Info("Enter 'c' or 'continue' to resume, 'regs' to print registers, 'step' to step one instruction.");
+        while (true)
+        {
+            string cmd = Console.ReadLine();
+            if (cmd is "c" or "continue")
+            {
+                SingleStepMode = false;
+                break;
+            }
+            if (cmd == "regs")
+            {
+                Log.Info($"PC={PC:X4} A={A:X2} X={X:X2} Y={Y:X2} S={S:X2} P={CpuHelpers.ByteFromStatus(Status):X2}");
+            }
+            else if (cmd == "step")
+            {
+                SingleStepMode = true;
+                Log.Info("Single Step Mode Enabled");
+                break;
+            }
+        }
+        //Log.Info("Debugger Resumed Execution");
     }
 
     private Instruction instruction;
     private int cycles;
     private int extraCycles;
-    public bool Step()
+    public StepResult Step()
     {
         if (PC >= Memory.Length)
-            return false;
+            return StepResult.Finished;
         instruction = OpcodeLookup.FromOpcode(Memory[PC++]);
         cycles = instruction.Cycles;
         extraCycles = 0;
@@ -158,7 +194,7 @@ public class Cpu
             case BCS: DoBranch(Status.Carry); break;
             case BEQ: DoBranch(Status.Zero); break;
             
-            case BRK: return false; break; // TODO: Implement BRK, currently just ends program
+            case BRK: return StepResult.Finished; break; // TODO: Implement BRK, currently just ends program
             
             case CLC:
                 Status.Carry = false;
@@ -213,7 +249,7 @@ public class Cpu
                 break;*/
 
             // Artificial instructions
-            case DBP: DoDBP(); break;
+            case DBP: return StepResult.Pause;
             case DRS: DoDRS(); break;
             case DMP: DoDMP(); break;
             
@@ -221,45 +257,10 @@ public class Cpu
                 throw new NotSupportedException($"Unsupported instruction {instruction.Mnemonic}: Opcode {instruction.Opcode:X2} not implemented.");
         }
 
-        return true;
+        return StepResult.Continue;
     }
     
     #region Instruction Implementations
-
-    private bool DoDBP()
-    {
-        // TODO: Actual debugger implementation
-        Paused = true;
-        Log.Info("Debugger Paused Execution");
-        Log.Info("Enter 'c' or 'continue' to resume, 'regs' to print registers, 'step' to step one instruction.");
-        while (true)
-        {
-            string cmd = Console.ReadLine();
-            if (cmd is "c" or "continue")
-                break;
-            if (cmd == "regs")
-            {
-                Log.Info($"PC={PC:X4} A={A:X2} X={X:X2} Y={Y:X2} S={S:X2} P={CpuHelpers.ByteFromStatus(Status):X2}");
-            }
-            else if (cmd == "step")
-            {
-                var result = Step();
-                if (result)
-                {
-                    Log.Info($"Stepped. PC={PC:X4}");
-                    // TODO: Checks if this breaks control flow
-                }
-                else
-                {
-                    Log.Info("Program has finished execution.");
-                    return false;
-                }
-            }
-        }
-        Log.Info("Debugger Resumed Execution");
-        Paused = false;
-        return true;
-    }
     
     private bool DoDRS()
     {
