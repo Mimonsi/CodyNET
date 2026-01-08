@@ -146,8 +146,10 @@ public class ProgramTests
     {
         Log.Info("Starting TestPerformance");
         Cpu.Cpu cpu = new();
-        var bytes = FileUtils.GetBytesFromFile("testdata/performance.bin");
+        var bytes = FileUtils.GetBytesFromFile("testdata/performance_big.bin");
         cpu.LoadProgram(bytes, 0x0600);
+        cpu.CyclesPerSecond = 1_00000; // 100 kHz for testing
+        Log.Level = LogLevel.Debug;
         var startTime = DateTime.Now;
         var steps = cpu.RunUntilFinish();
         var endTime = DateTime.Now;

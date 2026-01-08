@@ -57,6 +57,15 @@ public class Cpu
     public ushort PC; // 16 bit program counter
     public readonly byte[] Memory = new byte[65536];
     public readonly OpcodeLookup OpcodeLookup = new();
+    //public long CyclesPerSecond = 1_000_000; // 1 MHz, typical for 65C02
+    public long CyclesPerSecond = 10;
+    public bool DebuggerEnabled = false;
+    
+    // When "step" command is given in debugger, enable single step mode
+    private bool _singleStepMode = false;
+    private int _totalCycles = 0;
+    private DateTime _startTime;
+    private TimeSpan TimeElapsed => DateTime.Now - _startTime;
     
     /// <summary>
     /// Update Zero and Negative flags based on the value of the Accumulator
@@ -87,6 +96,8 @@ public class Cpu
     
     public void LoadProgram(byte[] program, ushort startAddress)
     {
+        if (startAddress + program.Length > Memory.Length)
+            throw new ArgumentException($"Program does not fit in memory at the given start address. ({startAddress} + {program.Length} > {Memory.Length})");
         Array.Copy(program, 0, Memory, startAddress, program.Length);
         Reset(startAddress);
     }
@@ -110,22 +121,45 @@ public class Cpu
 
         return cpu;
     }
-
-    private bool SingleStepMode = false;
     public int RunUntilFinish()
     {
         int stepsPerformed = 0;
+        _startTime = DateTime.Now;
         StepResult lastResult = StepResult.Continue;
         while (lastResult != StepResult.Finished)
         {
             lastResult = Step();
+            Log.Trace("STEP");
             stepsPerformed++;
-            if (lastResult == StepResult.Pause || SingleStepMode)
+            if (DebuggerEnabled && (lastResult == StepResult.Pause || _singleStepMode))
             {
                 Debugger();
             }
+            
+            WaitCycles(cycles + extraCycles);
+            // Wait for instruction cycles
+            
         }
+        var actualFrequency = Utils.Math.AdjustSLI(_totalCycles / TimeElapsed.TotalSeconds, "Hz");
+        Log.Debug($"Program performed {stepsPerformed} steps, total cycles: {_totalCycles} in {TimeElapsed.TotalMilliseconds} ms. Average frequency: {actualFrequency}");
         return stepsPerformed;
+    }
+
+    private void WaitCycles(int cycles)
+    {
+        _totalCycles += cycles;
+        if (CyclesPerSecond <= 0) return; // No waiting if speed is 0 or negative
+        if (cycles <= 0) return; // No waiting for 0 or negative cycles
+
+        long ticksPerCycle = Stopwatch.Frequency / CyclesPerSecond;
+        long totalTicks = ticksPerCycle * cycles;
+
+        var sw = Stopwatch.StartNew();
+        while (sw.ElapsedTicks < totalTicks)
+        {
+            // Busy wait
+        }
+        Log.Trace("Waited for " + cycles + " cycles (" + totalTicks + " ticks)");
     }
 
     private void Debugger()
@@ -138,7 +172,7 @@ public class Cpu
             string cmd = Console.ReadLine();
             if (cmd is "c" or "continue")
             {
-                SingleStepMode = false;
+                _singleStepMode = false;
                 break;
             }
             if (cmd == "regs")
@@ -147,9 +181,18 @@ public class Cpu
             }
             else if (cmd == "step")
             {
-                SingleStepMode = true;
+                _singleStepMode = true;
                 Log.Info("Single Step Mode Enabled");
                 break;
+            }
+            else if (cmd.StartsWith("speed"))
+            {
+                var parts = cmd.Split(' ');
+                if (parts.Length == 2 && long.TryParse(parts[1], out long newSpeed))
+                {                    
+                    CyclesPerSecond = newSpeed;
+                    Log.Info($"Set CPU speed to {CyclesPerSecond} cycles/second ({CyclesPerSecond / 1000000.0} MHz)");
+                }
             }
         }
         //Log.Info("Debugger Resumed Execution");
