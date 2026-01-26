@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="CodyNET/CodyNET.csproj" />
+  <Project Path="TestProject1/TestProject1.csproj" />
+</Solution>
