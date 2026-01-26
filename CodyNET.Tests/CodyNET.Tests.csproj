@@ -18,4 +18,9 @@
         <Using Include="Xunit"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Program\testdata\" />
+      <Folder Include="SingleStep\" />
+    </ItemGroup>
+
 </Project>

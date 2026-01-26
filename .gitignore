@@ -34,3 +34,10 @@ riderModule.iml
 [Oo]bj/
 _UpgradeReport_Files/
 [Pp]ackages/
+
+
+/.idea/.idea.CodyNET/.idea/copilot.data.migration.agent.xml
+/.idea/.idea.CodyNET/.idea/copilot.data.migration.ask2agent.xml
+/.idea/.idea.CodyNET/.idea/copilot.data.migration.edit.xml
+# Single Step Test Files
+/CodyNET.Tests/SingleStep/testdata/wdc65c02/v1
