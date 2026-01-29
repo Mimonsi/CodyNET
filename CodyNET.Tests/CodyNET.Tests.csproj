@@ -22,4 +22,8 @@
       <Folder Include="Program\testdata\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\CodyNET\CodyNET.csproj" />
+    </ItemGroup>
+
 </Project>
