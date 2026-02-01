@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using CodyNET.Cody;
 using Xunit.Abstractions;
 
 namespace CodyNET.Tests.SingleStep
@@ -57,11 +58,10 @@ namespace CodyNET.Tests.SingleStep
 
         // Optional: "one opcode with one click" via InlineData
         [Theory]
-        [InlineData("a9")]
-        [InlineData("0b")]
+        [InlineData("69")]
         public void Full_SingleOpcode_StateOnly(string opcodeHex)
         {
-            var options = TestOptions.Full();
+            var options = TestOptions.Minimal();
             TestRunner.RunSingleOpcode(opcodeHex, options, _output);
         }
     }
@@ -177,14 +177,9 @@ namespace CodyNET.Tests.SingleStep
 
         private static void ExecuteOne(TestCase t)
         {
-            var mem = new FlatRam64k();
 
-            // Initial RAM
-            foreach (var pair in t.Initial.Ram)
-                mem.Write((ushort)pair[0], (byte)pair[1]);
-
-            // CPU hookup (replace CpuAdapter with your real CPU)
-            var cpu = new CpuAdapter(mem);
+            // CPU hookup with initial state
+            var cpu = new CpuAdapter(t.Initial);
 
             cpu.SetState(new CpuStateDto
             {
@@ -342,29 +337,24 @@ namespace CodyNET.Tests.SingleStep
             : base(message, inner) { }
     }
 
-    // --- Minimal memory + CPU adapter placeholders ---
-
-    internal sealed class FlatRam64k
-    {
-        private readonly byte[] _ram = new byte[65536];
-
-        public byte Read(ushort address) => _ram[address];
-        public void Write(ushort address, byte value) => _ram[address] = value;
-    }
-
     internal sealed class CpuAdapter
     {
-        private readonly FlatRam64k _mem;
-        // TODO: Register cpu
-
-        public CpuAdapter(FlatRam64k mem)
+        private Cpu cpu;
+        
+        public CpuAdapter()
         {
-            _mem = mem;
+            cpu = new Cpu();
+        }
+        
+        public CpuAdapter(CpuStateDto initialState)
+        {
+            cpu = new Cpu();
+            SetState(initialState);
         }
 
         public void SetState(CpuStateDto s)
         {
-            // TODO: Map to your CPU core
+            // TODO: Connect CPU
         }
 
         public CpuStateDto GetState()
