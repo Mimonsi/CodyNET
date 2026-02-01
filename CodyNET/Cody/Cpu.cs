@@ -1,4 +1,6 @@
-﻿namespace CodyNET.Cody;
+﻿using CodyNET.Utils;
+
+namespace CodyNET.Cody;
 
 public enum StepResult
 {
@@ -108,9 +110,9 @@ public class Cpu
 
     private Instruction instruction;
     private int cycles;
-    private StepResult Step()
+    public StepResult Step()
     {
-        if (PC >= Memory.Size)
+        if (PC >= Memory.Size - 1)
             return StepResult.Finished;
         instruction = OpcodeLookup.FromOpcode(Memory.Read(PC++));
         cycles = instruction.Cycles;

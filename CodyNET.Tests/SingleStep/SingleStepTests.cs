@@ -76,7 +76,6 @@ namespace CodyNET.Tests.SingleStep
             Path.GetFullPath(Path.Combine(
                 AppContext.BaseDirectory,
                 "..", "..", "..",
-                "SingleStep",
                 "testdata",
                 "wdc65c02",
                 "v1"));

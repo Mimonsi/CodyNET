@@ -19,11 +19,13 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Program\testdata\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\CodyNET\CodyNET.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Content Include="testdata\**\*.*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>
