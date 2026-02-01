@@ -40,4 +40,4 @@ _UpgradeReport_Files/
 /.idea/.idea.CodyNET/.idea/copilot.data.migration.ask2agent.xml
 /.idea/.idea.CodyNET/.idea/copilot.data.migration.edit.xml
 # Single Step Test Files
-/CodyNET.Tests/SingleStep/testdata/wdc65c02/v1
+/CodyNET.Tests/testdata/wdc65c02/v1
