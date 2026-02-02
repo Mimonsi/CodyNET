@@ -66,6 +66,16 @@ namespace CodyNET.Tests.SingleStep
             var options = TestOptions.Smoke();
             TestRunner.RunSingleOpcode(opcodeHex, options, _output);
         }
+        
+        [Theory]
+        [InlineData("69 0f 65")]
+        public void Full_SingleTestByName_StateOnly(string testName)
+        {
+            var options = TestOptions.Full();
+            var opcode = testName.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
+            TestRunner.RunSingleTestByName(opcode, testName, options, _output);
+        }
+
     }
 
     // --- Runner ---
@@ -128,6 +138,63 @@ namespace CodyNET.Tests.SingleStep
 
             RunFile(file, opcodeHex, options, output);
         }
+        
+        public static void RunSingleTestByName(
+            string opcodeHex,
+            string testName,
+            TestOptions options,
+            ITestOutputHelper? output)
+        {
+            opcodeHex = opcodeHex.Trim().ToLowerInvariant();
+            testName = testName.Trim();
+
+            var file = Path.Combine(TestDataDir, $"{opcodeHex}.json");
+            if (!File.Exists(file))
+                throw new FileNotFoundException($"Opcode test file not found: {file}");
+
+            var tests = LoadTests(file);
+            if (tests.Count == 0)
+                throw new InvalidOperationException($"No tests found in file: {file}");
+
+            var matches = tests
+                .Select((test, index) => new { test, index })
+                .Where(match => string.Equals(match.test.Name, testName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (matches.Count == 0)
+                throw new InvalidOperationException(
+                    $"No test case named \"{testName}\" found in opcode {opcodeHex.ToUpperInvariant()}.");
+
+            if (matches.Count > 1)
+                throw new InvalidOperationException(
+                    $"Multiple test cases named \"{testName}\" found in opcode {opcodeHex.ToUpperInvariant()}.");
+
+            var selected = matches[0];
+            output?.WriteLine(
+                $"Opcode {opcodeHex.ToUpperInvariant()}: Running test index={selected.index} name=\"{selected.test.Name}\"");
+
+            try
+            {
+                ExecuteOne(selected.test);
+            }
+            catch (Exception ex)
+            {
+                if (options.StopOnFirstFailure)
+                {
+                    throw new SingleStepTestFailureException(
+                        $"Single-step test failed. opcode={opcodeHex.ToUpperInvariant()} index={selected.index} name=\"{selected.test.Name}\"",
+                        ex);
+                }
+                var message = $"Test failed. opcode={opcodeHex.ToUpperInvariant()} index={selected.index} name=\"{selected.test.Name}\"";
+                output?.WriteLine(message);
+                output?.WriteLine(ex.ToString());
+                throw;
+            }
+
+            output?.WriteLine(
+                $"Opcode {opcodeHex.ToUpperInvariant()}: DONE");
+        }
+
 
         private static void RunFile(
             string filePath,
