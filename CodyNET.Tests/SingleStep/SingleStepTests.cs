@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using CodyNET.Assembler;
 using CodyNET.Cody;
 using Xunit.Abstractions;
 
@@ -164,7 +165,7 @@ namespace CodyNET.Tests.SingleStep
                             $"Single-step test failed. opcode={opcodeHex.ToUpperInvariant()} index={idx} name=\"{test.Name}\"",
                             ex);
                     }
-                    var message = $"Test failed. opcode={opcodeHex.ToUpperInvariant()} index={idx} name=\"{test.Name}\"";
+                    var message = $"Test failed. opcode={opcodeHex.ToUpperInvariant()} index={idx} name=\"{test.Name}\"\nProgram: \n {GetDisassembledProgram(test)}"; //TODO: Add disassembled program
                     output?.WriteLine(message);
                     output?.WriteLine(ex.ToString());
 
@@ -184,6 +185,20 @@ namespace CodyNET.Tests.SingleStep
             output?.WriteLine(
                 $"  Successful: {successful}/{total} ({(successful * 100.0 / total):F2}%)");
             Assert.Equal(successful, total);
+        }
+        
+        private static string GetDisassembledProgram(TestCase t)
+        {
+            var ram = t.Initial.Ram;
+            var programBytes = new List<byte>();
+            foreach (var pair in ram)
+            {
+                var addr = (ushort)pair[0];
+                var value = (byte)pair[1];
+                if (addr >= t.Initial.Pc)
+                    programBytes.Add(value);
+            }
+            return CodyDisassembler.Disassemble(programBytes.ToArray());
         }
 
         // ===============================

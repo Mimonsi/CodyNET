@@ -28,4 +28,22 @@ public class AssemblerTests
         var assembler = new TassAssembler();
         Assert.Throws<InvalidOperationException>(() => assembler.AssembleFile(FileUtils.GetTestDataPath("invalidOpcode.s")));
     }
+
+    [Fact]
+    public void TestDisassemblerSingle()
+    {
+        var result = CodyDisassembler.Disassemble([0x69, 0x53, 0x00]);
+        result = result.Replace("\r\n", "\n").TrimEnd();
+        var expected = "ADC #$53\nBRK\n";
+        Assert.Equal(expected, result);
+    }
+    
+    [Fact]
+    public void TestDisassemblerMinimal()
+    {
+        var result = CodyDisassembler.Disassemble([0xA9, 0x01 , 0x8D , 0x00 , 0x02 , 0xA9 , 0x05 , 0x8D , 0x01 , 0x02 , 0xA9 , 0x08 , 0x8D , 0x02 , 0x02]);
+        result = result.Replace("\r\n", "\n").TrimEnd();
+        var expected = "LDA #$01\nSTA $0200\nLDA #$05\nSTA $0201\nLDA #$08\nSTA $0202";
+        Assert.Equal(expected, result);
+    }
 }
