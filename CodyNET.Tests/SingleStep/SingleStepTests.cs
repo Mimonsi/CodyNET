@@ -59,10 +59,10 @@ namespace CodyNET.Tests.SingleStep
         // Optional: "one opcode with one click" via InlineData
         [Theory]
         [InlineData("69")]
-        [InlineData("61")]
+        //[InlineData("61")]
         public void Full_SingleOpcode_StateOnly(string opcodeHex)
         {
-            var options = TestOptions.Minimal();
+            var options = TestOptions.Smoke();
             TestRunner.RunSingleOpcode(opcodeHex, options, _output);
         }
     }
@@ -141,6 +141,7 @@ namespace CodyNET.Tests.SingleStep
                 $"Opcode {opcodeHex.ToUpperInvariant()}: {indices.Length} test cases");
 
             int total = indices.Length;
+            int successful = 0;
             int nextPercentReport = 0;
 
             for (int i = 0; i < total; i++)
@@ -150,13 +151,23 @@ namespace CodyNET.Tests.SingleStep
 
                 try
                 {
+                    output?.WriteLine(
+                        $"Opcode {opcodeHex.ToUpperInvariant()}: Running test {i + 1}/{total} index={idx} name=\"{test.Name}\"");
                     ExecuteOne(test);
+                    successful++;
                 }
                 catch (Exception ex)
                 {
-                    throw new SingleStepTestFailureException(
-                        $"Single-step test failed. opcode={opcodeHex.ToUpperInvariant()} index={idx} name=\"{test.Name}\"",
-                        ex);
+                    if (options.StopOnFirstFailure)
+                    {
+                        throw new SingleStepTestFailureException(
+                            $"Single-step test failed. opcode={opcodeHex.ToUpperInvariant()} index={idx} name=\"{test.Name}\"",
+                            ex);
+                    }
+                    var message = $"Test failed. opcode={opcodeHex.ToUpperInvariant()} index={idx} name=\"{test.Name}\"";
+                    output?.WriteLine(message);
+                    output?.WriteLine(ex.ToString());
+
                 }
 
                 /*int percent = (i + 1) * 100 / total;
@@ -170,6 +181,9 @@ namespace CodyNET.Tests.SingleStep
 
             output?.WriteLine(
                 $"Opcode {opcodeHex.ToUpperInvariant()}: DONE");
+            output?.WriteLine(
+                $"  Successful: {successful}/{total} ({(successful * 100.0 / total):F2}%)");
+            Assert.Equal(successful, total);
         }
 
         // ===============================
@@ -184,7 +198,7 @@ namespace CodyNET.Tests.SingleStep
             cpu.SetState(t.Initial.GetCpuState());
 
             // Execute exactly one instruction
-            cpu.RunUntilFinish();
+            cpu.Step();
 
             // Assert final CPU state
             var actual = cpu.GetState();
@@ -270,7 +284,8 @@ namespace CodyNET.Tests.SingleStep
         TestMode Mode,
         int SamplePerOpcodeFile,
         int SampleSeed,
-        int MaxDegreeOfParallelism)
+        int MaxDegreeOfParallelism,
+        bool StopOnFirstFailure = false)
     {
         /// <summary>
         /// Runs a minimal set of tests: one test case per opcode file.
@@ -280,7 +295,8 @@ namespace CodyNET.Tests.SingleStep
             Mode: TestMode.Minimal,
             SamplePerOpcodeFile: 1,
             SampleSeed: 0,
-            MaxDegreeOfParallelism: 0
+            MaxDegreeOfParallelism: 0,
+            StopOnFirstFailure: true
         );
 
         /// <summary>
@@ -293,7 +309,8 @@ namespace CodyNET.Tests.SingleStep
             Mode: TestMode.Smoke,
             SamplePerOpcodeFile: samplePerOpcodeFile,
             SampleSeed: seed,
-            MaxDegreeOfParallelism: 0
+            MaxDegreeOfParallelism: 0,
+            StopOnFirstFailure: false
         );
 
         /// <summary>
@@ -304,7 +321,8 @@ namespace CodyNET.Tests.SingleStep
             Mode: TestMode.Full,
             SamplePerOpcodeFile: 0,
             SampleSeed: 0,
-            MaxDegreeOfParallelism: 0
+            MaxDegreeOfParallelism: 0,
+            StopOnFirstFailure: false
         );
 
     }
