@@ -1,0 +1,21 @@
+﻿flowchart LR
+    User[Benutzer/Entwickler] --> Debugger
+    User --> Loader
+
+    subgraph CodyNET[Emulator]
+        CPU[CPU-Emulator]
+        Memory[Memory / RAM]
+        Screen[Screen/Video Output]
+        Input[Keyboard/Input]
+        Debugger[Debugger]
+        Loader[Loader/Parser]
+        Logger[Logger/Tracing]
+    end
+
+    Debugger <--> CPU
+    Debugger <--> Memory
+    CPU <--> Memory
+    CPU --> Screen
+    Input --> CPU
+    Loader --> Memory
+    CPU --> Logger

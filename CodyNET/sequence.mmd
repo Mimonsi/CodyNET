@@ -1,0 +1,16 @@
+﻿sequenceDiagram
+    participant User as Benutzer
+    participant Debugger
+    participant CPU
+    participant Memory
+    participant Screen
+
+    User->>Debugger: Step/Continue
+    Debugger->>CPU: Debug-Command
+    CPU->>Memory: Fetch Instruction / Read
+    Memory-->>CPU: Instruction/Data
+    CPU->>Memory: Write (optional)
+    CPU->>Screen: Render Output
+    Screen-->>User: Display
+    CPU-->>Debugger: Register/Status
+    Debugger-->>User: Update UI/State

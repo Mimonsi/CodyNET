@@ -59,4 +59,43 @@ public class Memory
     {
         Array.Copy(program, 0, ram, startAddress, program.Length);
     }
+
+    /// <summary>
+    /// Sets memory values from a list of address-value pairs.
+    /// </summary>
+    /// <param name="addressValueList"></param>
+    /// <param name="zeroFill">If enabled (default) zero any other value</param>
+    public void SetFromList(List<int[]> addressValueList, bool zeroFill = true)
+    {
+        if (zeroFill)
+        {
+            for(int i = 0; i < ram.Length; i++)
+            {
+                ram[i] = 0;
+            }
+        }
+        foreach (var pair in addressValueList)
+        {
+            ushort address = (ushort)pair[0];
+            byte value = (byte)pair[1];
+            Write(address, value);
+        }
+    }
+    
+    /// <summary>
+    /// Converts non-zero memory values to a list of address-value pairs.
+    /// </summary>
+    /// <returns></returns>
+    public List<int[]> GetAsList()
+    {
+        var list = new List<int[]>();
+        for (int i = 0; i < ram.Length; i++)
+        {
+            if (ram[i] != 0)
+            {
+                list.Add([i, ram[i]]);
+            }
+        }
+        return list;
+    }
 }

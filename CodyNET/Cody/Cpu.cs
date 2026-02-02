@@ -9,7 +9,7 @@ public enum StepResult
     Finished,
 }
 
-public class Cpu
+public class Cpu()
 {
     private byte _a;
     /// <summary>
@@ -50,19 +50,44 @@ public class Cpu
     public byte S; // Stack Pointer
     public Status Status;
     public ushort PC; // 16 bit program counter
-    public readonly Memory Memory; // 64KB memory
-    public readonly OpcodeLookup OpcodeLookup;
+    public readonly Memory Memory = new(); // 64KB memory
+    public readonly OpcodeLookup OpcodeLookup = new();
     //public long CyclesPerSecond = 1_000_000; // 1 MHz, typical for 65C02
     public long CyclesPerSecond = 10;
-    
     public long TotalCyclesExecuted = 0;
 
 
-    public Cpu()
+    public Cpu(CpuState initialState) : this()
     {
-        Memory = new Memory();
-        OpcodeLookup = new OpcodeLookup();
+        SetState(initialState);
     }
+
+    #region CpuState
+    public void SetState(CpuState state)
+    {
+        _a = state.A;
+        _x = state.X;
+        _y = state.Y;
+        S = state.S;
+        Status = new Status(state.P);
+        PC = state.PC;
+        Memory.SetFromList(state.Ram);
+    }
+
+    public CpuState GetState()
+    {
+        return new CpuState()
+        {
+            A = A,
+            X = X,
+            Y = Y,
+            S = S,
+            P = Status.ToByte(),
+            PC = PC,
+            Ram = Memory.GetAsList()
+        };
+    }
+    #endregion
     
     /// <summary>
     /// Update Zero and Negative flags based on the value of the Accumulator
@@ -108,7 +133,7 @@ public class Cpu
         Reset(startAddress);
     }
 
-    private Instruction instruction;
+    private Instruction? instruction;
     private int cycles;
     public StepResult Step()
     {
@@ -122,5 +147,15 @@ public class Cpu
             default:
                 return StepResult.UnknownOpcode;
         }
+    }
+    
+    public void RunUntilFinish()
+    {
+        StepResult lastResult = StepResult.Success;
+        while (lastResult != StepResult.Finished)
+        {
+            lastResult = Step();
+        }
+        Log.Info("Program finished execution.");
     }
 }

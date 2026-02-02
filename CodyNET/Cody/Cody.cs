@@ -20,7 +20,7 @@ public class Cody
     {
         var program = assembler.AssembleFile(path);
         LoadProgram(program);
-        RunUntilFinish();
+        cpu.RunUntilFinish();
     }
     
     /// <summary>
@@ -30,16 +30,6 @@ public class Cody
     public void LoadProgram(byte[] program)
     {
         cpu.LoadRam(program, 0x600);
-    }
-
-    public void RunUntilFinish()
-    {
-        StepResult lastResult = StepResult.Success;
-        while (lastResult != StepResult.Finished)
-        {
-            lastResult = cpu.Step();
-        }
-        Log.Info("Program finished execution.");
     }
 
     public void Start()

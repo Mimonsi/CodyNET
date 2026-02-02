@@ -179,20 +179,11 @@ namespace CodyNET.Tests.SingleStep
         {
 
             // CPU hookup with initial state
-            var cpu = new CpuAdapter(t.Initial);
-
-            cpu.SetState(new CpuStateDto
-            {
-                PC = (ushort)t.Initial.Pc,
-                S = (byte)t.Initial.S,
-                A = (byte)t.Initial.A,
-                X = (byte)t.Initial.X,
-                Y = (byte)t.Initial.Y,
-                P = (byte)t.Initial.P
-            });
+            var cpu = new Cpu(t.Initial.GetCpuState());
+            cpu.SetState(t.Initial.GetCpuState());
 
             // Execute exactly one instruction
-            cpu.StepInstruction();
+            cpu.RunUntilFinish();
 
             // Assert final CPU state
             var actual = cpu.GetState();
@@ -202,14 +193,10 @@ namespace CodyNET.Tests.SingleStep
             {
                 var addr = (ushort)pair[0];
                 var expected = (byte)pair[1];
-                var actualVal = mem.Read(addr);
-                //Assert.Equal(expected, actualVal); TODO Re-enable
+                var actualVal = cpu.Memory.Read(addr);
+                Assert.Equal(expected, actualVal);
             }
-
-            if (new Random().Next(500) == 2)
-            {
-                Assert.True(false, "Random");
-            }
+            
             Assert.True(true);
 
             // Optional: cycle count compare (state-only friendly)
@@ -277,6 +264,10 @@ namespace CodyNET.Tests.SingleStep
         int SampleSeed,
         int MaxDegreeOfParallelism)
     {
+        /// <summary>
+        /// Runs a minimal set of tests: one test case per opcode file.
+        /// </summary>
+        /// <returns></returns>
         public static TestOptions Minimal() => new(
             Mode: TestMode.Minimal,
             SamplePerOpcodeFile: 1,
@@ -284,6 +275,12 @@ namespace CodyNET.Tests.SingleStep
             MaxDegreeOfParallelism: 0
         );
 
+        /// <summary>
+        /// Runs a smoke test: samples a number of test cases per opcode file.
+        /// </summary>
+        /// <param name="samplePerOpcodeFile"></param>
+        /// <param name="seed"></param>
+        /// <returns></returns>
         public static TestOptions Smoke(int samplePerOpcodeFile = 50, int seed = 1337) => new(
             Mode: TestMode.Smoke,
             SamplePerOpcodeFile: samplePerOpcodeFile,
@@ -291,6 +288,10 @@ namespace CodyNET.Tests.SingleStep
             MaxDegreeOfParallelism: 0
         );
 
+        /// <summary>
+        /// Runs the full set of tests: all test cases per opcode file.
+        /// </summary>
+        /// <returns></returns>
         public static TestOptions Full() => new(
             Mode: TestMode.Full,
             SamplePerOpcodeFile: 0,
@@ -302,19 +303,19 @@ namespace CodyNET.Tests.SingleStep
 
     // --- JSON DTOs matching your structure ---
 
-    internal sealed class TestCase
+    internal class TestCase
     {
         public string Name { get; set; } = "";
-        public TestState Initial { get; set; } = new();
-        public TestState Final { get; set; } = new();
+        public CpuStateDto Initial { get; set; } = new();
+        public CpuStateDto Final { get; set; } = new();
 
         // [ [address, value, "read"/"write"], ... ]
         public List<object[]>? Cycles { get; set; }
     }
 
-    internal sealed class TestState
+    internal sealed record CpuStateDto
     {
-        public int Pc { get; set; }
+        public ushort Pc { get; set; }
         public int S { get; set; }
         public int A { get; set; }
         public int X { get; set; }
@@ -322,7 +323,21 @@ namespace CodyNET.Tests.SingleStep
         public int P { get; set; }
 
         // [ [address, value], ... ]
-        public List<int[]> Ram { get; set; } = new();
+        public List<int[]> Ram { get; set; } = [];
+
+        public CpuState GetCpuState()
+        {
+            return new CpuState()
+            {
+                PC = Pc,
+                S = (byte)S,
+                A = (byte)A,
+                X = (byte)X,
+                Y = (byte)Y,
+                P = (byte)P,
+                Ram = Ram
+            };
+        }
     }
 
     internal static class JsonOptions
@@ -335,47 +350,5 @@ namespace CodyNET.Tests.SingleStep
     {
         public SingleStepTestFailureException(string message, Exception inner)
             : base(message, inner) { }
-    }
-
-    internal sealed class CpuAdapter
-    {
-        private Cpu cpu;
-        
-        public CpuAdapter()
-        {
-            cpu = new Cpu();
-        }
-        
-        public CpuAdapter(CpuStateDto initialState)
-        {
-            cpu = new Cpu();
-            SetState(initialState);
-        }
-
-        public void SetState(CpuStateDto s)
-        {
-            // TODO: Connect CPU
-        }
-
-        public CpuStateDto GetState()
-        {
-            // TODO: Map from your CPU core
-            return new CpuStateDto();
-        }
-
-        public void StepInstruction()
-        {
-            // TODO: Execute exactly one instruction
-        }
-    }
-
-    internal sealed record CpuStateDto
-    {
-        public ushort PC { get; init; }
-        public byte S { get; init; }
-        public byte A { get; init; }
-        public byte X { get; init; }
-        public byte Y { get; init; }
-        public byte P { get; init; }
     }
 }
