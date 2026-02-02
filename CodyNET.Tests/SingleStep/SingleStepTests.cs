@@ -175,7 +175,7 @@ namespace CodyNET.Tests.SingleStep
 
             try
             {
-                ExecuteOne(selected.test);
+                ExecuteOne(selected.test, output);
             }
             catch (Exception ex)
             {
@@ -221,7 +221,7 @@ namespace CodyNET.Tests.SingleStep
                 {
                     output?.WriteLine(
                         $"Opcode {opcodeHex.ToUpperInvariant()}: Running test {i + 1}/{total} index={idx} name=\"{test.Name}\"");
-                    ExecuteOne(test);
+                    ExecuteOne(test, output);
                     successful++;
                 }
                 catch (Exception ex)
@@ -272,9 +272,8 @@ namespace CodyNET.Tests.SingleStep
         // Test execution
         // ===============================
 
-        private static void ExecuteOne(TestCase t)
+        private static void ExecuteOne(TestCase t, ITestOutputHelper? output)
         {
-
             // CPU hookup with initial state
             var cpu = new Cpu(t.Initial.GetCpuState());
             cpu.SetState(t.Initial.GetCpuState());
@@ -284,6 +283,8 @@ namespace CodyNET.Tests.SingleStep
 
             // Assert final CPU state
             var actual = cpu.GetState();
+
+            output?.WriteLine(PrettyPrintStates(t.Initial.GetCpuState(), t.Final.GetCpuState(), actual));
 
             Assert.Equal(t.Final.A, actual.A);
             Assert.Equal(t.Final.X, actual.X);
@@ -312,6 +313,42 @@ namespace CodyNET.Tests.SingleStep
         // ===============================
         // Helpers
         // ===============================
+
+        private static string PrettyPrintStates(CpuState initial, CpuState final, CpuState actual)
+        {
+            // Format table with intial, actual and final state next to each other like this
+            // Register | Initial | Actual | Expected
+            // ---------------------------------------
+            // A        | 0x12    | 0x34   | 0x56
+            
+            var text = "Register | Initial | Actual  | Expected\n";
+            text += "---------------------------------------\n";
+            if (final.A != actual.A)
+                text += $"A (FAIL) | 0x{initial.A:X2}    | 0x{actual.A:X2}   | 0x{final.A:X2}\n";
+            else
+                text += $"A        | 0x{initial.A:X2}    | 0x{actual.A:X2}   | 0x{final.A:X2}\n";
+            if (final.X != actual.X)
+                text += $"X (FAIL) | 0x{initial.X:X2}    | 0x{actual.X:X2}   | 0x{final.X:X2}\n";
+            else
+                text += $"X        | 0x{initial.X:X2}    | 0x{actual.X:X2}   | 0x{final.X:X2}\n";
+            if (final.Y != actual.Y)
+                text += $"Y (FAIL) | 0x{initial.Y:X2}    | 0x{actual.Y:X2}   | 0x{final.Y:X2}\n";
+            else
+                text += $"Y        | 0x{initial.Y:X2}    | 0x{actual.Y:X2}   | 0x{final.Y:X2}\n";
+            if (final.S != actual.S)
+                text += $"S (FAIL) | 0x{initial.S:X2}    | 0x{actual.S:X2}   | 0x{final.S:X2}\n";
+            else
+                text += $"S        | 0x{initial.S:X2}    | 0x{actual.S:X2}   | 0x{final.S:X2}\n";
+            if (final.P != actual.P)
+                text += $"P (FAIL) | 0x{initial.P:X2}    | 0x{actual.P:X2}   | 0x{final.P:X2}\n";
+            else
+                text += $"P        | 0x{initial.P:X2}    | 0x{actual.P:X2}   | 0x{final.P:X2}\n";
+            if (final.PC != actual.PC)
+                text += $"PC(FAIL) | 0x{initial.PC:X4} | 0x{actual.PC:X4} | 0x{final.PC:X4}\n";
+            else
+                text += $"PC       | 0x{initial.PC:X4} | 0x{actual.PC:X4} | 0x{final.PC:X4}\n";
+            return text;
+        }
 
         private static List<TestCase> LoadTests(string filePath)
         {
