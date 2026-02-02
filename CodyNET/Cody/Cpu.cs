@@ -203,26 +203,40 @@ public class Cpu()
         A = result;
     }
 
-    private void DoAdditionDecimal(byte value)
+    private void DoAdditionDecimal(byte operand)
     {
+        byte accumulator = A;
         int carryIn = Status.Carry ? 1 : 0;
-        int lowNibbleSum = (A & 0x0F) + (value & 0x0F) + carryIn;
-        int adjustLow = (lowNibbleSum > 9) ? 6 : 0;
 
-        int highNibbleSum = (A >> 4) + (value >> 4) + ((lowNibbleSum + adjustLow) > 0x0F ? 1 : 0);
-        int adjustHigh = (highNibbleSum > 9) ? 6 : 0;
+        // Low BCD Digits
+        int lowDigitSum = (accumulator & 0x0F) + (operand & 0x0F) + carryIn;
 
-        int total = lowNibbleSum + adjustLow + ((highNibbleSum + adjustHigh) << 4);
+        int decimalCarryFromLow = (lowDigitSum > 9) ? 1 : 0;
+        if (decimalCarryFromLow != 0) // Normalize to valid BCD digit (0..9)
+            lowDigitSum = (lowDigitSum - 10) & 0x0F;
 
-        Status.Carry = total > 0xFF;
-        byte result = (byte)(total & 0xFF);
+        // High BCD digit (tens place)
+        int highDigitSum = (accumulator >> 4) + (operand >> 4) + decimalCarryFromLow;
 
-        // Set Overflow flag
-        bool overflow = (~(A ^ value) & (A ^ result) & 0x80) != 0;
-        Status.Overflow = overflow;
+        // Overflow precursor (pre-adjust)
+        byte overflowReference = (byte)((highDigitSum & 0x08) << 4);
 
+        int decimalCarryOut = (highDigitSum > 9) ? 1 : 0;
+        if (decimalCarryOut != 0) // Normalize to valid BCD digit (0..9)
+            highDigitSum = (highDigitSum - 10) & 0x0F;
+
+        // Compose final BCD result
+        byte result =
+            (byte)((highDigitSum << 4) | lowDigitSum);
         A = result;
+        // Decimal carry out of the most significant digit
+        Status.Carry = decimalCarryOut != 0;
+        Status.Overflow =
+            ((accumulator ^ overflowReference) &
+             (operand     ^ overflowReference) &
+             0x80) != 0;
     }
+
     
     #endregion
     
