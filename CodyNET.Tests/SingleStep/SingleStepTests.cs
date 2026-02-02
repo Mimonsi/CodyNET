@@ -59,6 +59,7 @@ namespace CodyNET.Tests.SingleStep
         // Optional: "one opcode with one click" via InlineData
         [Theory]
         [InlineData("69")]
+        [InlineData("61")]
         public void Full_SingleOpcode_StateOnly(string opcodeHex)
         {
             var options = TestOptions.Minimal();
@@ -188,6 +189,13 @@ namespace CodyNET.Tests.SingleStep
             // Assert final CPU state
             var actual = cpu.GetState();
 
+            Assert.Equal(t.Final.A, actual.A);
+            Assert.Equal(t.Final.X, actual.X);
+            Assert.Equal(t.Final.Y, actual.Y);
+            Assert.Equal(t.Final.S, actual.S);
+            Assert.Equal(t.Final.P, actual.P);
+            Assert.Equal(t.Final.Pc, actual.PC);
+            
             // Assert final RAM pairs
             foreach (var pair in t.Final.Ram)
             {

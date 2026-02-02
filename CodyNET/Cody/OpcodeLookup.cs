@@ -580,7 +580,8 @@ public class OpcodeLookup
         catch(Exception x)
         {
             Console.WriteLine("No instruction matching opcode: " + opcode.ToString("X2"));
-            throw x;
+            return new Instruction(opcode, NOP, AddressingMode.None, 1, 2); // TODO: Check if this is the right approach
+            //throw x;
         }
     }
 
