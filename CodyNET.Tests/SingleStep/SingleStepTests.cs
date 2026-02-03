@@ -59,12 +59,61 @@ namespace CodyNET.Tests.SingleStep
 
         // Optional: "one opcode with one click" via InlineData
         [Theory]
-        [InlineData("69")]
-        //[InlineData("61")]
+        [InlineData("79")]
         public void Full_SingleOpcode_StateOnly(string opcodeHex)
         {
             var options = TestOptions.Smoke();
-            TestRunner.RunSingleOpcode(opcodeHex, options, _output);
+            var result = TestRunner.RunSingleOpcode(opcodeHex, options, _output);
+            _output.WriteLine($"Opcode 0x{opcodeHex}: {result.successful}/{result.total} tests passed.");
+        }
+        
+        /// <summary>
+        /// Runs all opcodes for a given mnemonic.
+        /// </summary>
+        /// <param name="mnemonic"></param>
+        [Theory]
+        [InlineData(Mnemonic.ADC)]
+        public void TestMnemonicSmoke(Mnemonic mnemonic)
+        {
+            var options = TestOptions.Smoke();
+            //options = options with { StopOnFirstFailure = true };
+            var opcodes = OpcodeLookup.FromMnemonic(mnemonic).Select(x => x.Opcode);
+            Dictionary<string, bool> opcodeResults = new Dictionary<string, bool>();
+            foreach (var opcodeHex in opcodes)
+            {
+                //TestRunner.RunSingleOpcode(opcodeHex.ToString("x2"), options, _output);
+                var opcodeStr = opcodeHex.ToString("x2");
+                _output.WriteLine($"0x{opcodeStr}: Starting Tests");
+                try
+                {
+                    TestRunner.RunSingleOpcode(opcodeStr, options, _output);
+                    _output.WriteLine($"0x{opcodeStr}: Tests Completed");
+                    opcodeResults.Add(opcodeStr, true);
+                }
+                catch (Exception ex)
+                {
+                    _output.WriteLine($"0x{opcodeStr}: Tests Failed");
+                    _output.WriteLine(ex.ToString());
+                    opcodeResults.Add(opcodeStr, false);
+                }
+            }
+            _output.WriteLine("=== MNEMONIC TESTS DONE ===");
+            var resultText = "";
+            int fails = 0;
+            foreach(var result in opcodeResults)
+            {
+                resultText += $"0x{result.Key}: {(result.Value ? "PASS" : "FAIL")}\n";
+                if (!result.Value)
+                    fails++;
+            }
+            _output.WriteLine(resultText);
+            if (fails > 0)
+                throw new Exception($"{fails/opcodeResults.Count} Tests failed for mnemonic {mnemonic}:\n{resultText}");
+            /*if (failedOpcodes.Count > 0)
+            {
+                var failedList = string.Join(", ", "0x" + failedOpcodes);
+                throw new Exception($"Some opcodes failed for mnemonic {mnemonic}: {failedList}");
+            }*/
         }
         
         [Theory]
@@ -125,7 +174,7 @@ namespace CodyNET.Tests.SingleStep
             output?.WriteLine("=== ALL OPCODES DONE ===");
         }
 
-        public static void RunSingleOpcode(
+        public static (int successful, int total) RunSingleOpcode(
             string opcodeHex,
             TestOptions options,
             ITestOutputHelper? output)
@@ -136,7 +185,7 @@ namespace CodyNET.Tests.SingleStep
             if (!File.Exists(file))
                 throw new FileNotFoundException($"Opcode test file not found: {file}");
 
-            RunFile(file, opcodeHex, options, output);
+            return RunFile(file, opcodeHex, options, output);
         }
         
         public static void RunSingleTestByName(
@@ -196,7 +245,7 @@ namespace CodyNET.Tests.SingleStep
         }
 
 
-        private static void RunFile(
+        private static (int successful, int total) RunFile(
             string filePath,
             string opcodeHex,
             TestOptions options,
@@ -252,6 +301,7 @@ namespace CodyNET.Tests.SingleStep
             output?.WriteLine(
                 $"  Successful: {successful}/{total} ({(successful * 100.0 / total):F2}%)");
             Assert.Equal(successful, total);
+            return (successful, total);
         }
         
         private static string GetDisassembledProgram(TestCase t)
