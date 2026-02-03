@@ -139,8 +139,6 @@ public class Cpu()
     private int cycles;
     public StepResult Step()
     {
-        if (PC >= Memory.Size - 1)
-            return StepResult.PcOverflow;
         instruction = OpcodeLookup.FromOpcode(Memory.Read(PC++));
         if (instruction.Opcode == 0)
             return StepResult.EmptyBytecode;
