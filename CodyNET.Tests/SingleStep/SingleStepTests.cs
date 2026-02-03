@@ -7,48 +7,20 @@ using Xunit.Abstractions;
 
 namespace CodyNET.Tests.SingleStep
 {
-    // --- One-click entry points ---
-
-    public class MinimalTests(ITestOutputHelper output)
+    public class SingleStepTests(ITestOutputHelper output)
     {
+        /// <summary>
+        /// Tests all opcodes. (Level 4, final goal)
+        /// </summary>
         [Fact]
-        public void Minimal_AllOpcodes_StateOnly()
-        {
-            var options = TestOptions.Minimal();
-            TestRunner.RunAllOpcodes(options, output);
-        }
-    }
-
-    public class SmokeTests(ITestOutputHelper output)
-    {
-        [Fact]
-        public void Smoke_AllOpcodes_StateOnly()
-        {
-            var options = TestOptions.Smoke();
-            TestRunner.RunAllOpcodes(options, output);
-        }
-    }
-
-    public class FullTests(ITestOutputHelper output)
-    {
-        [Fact]
-        public void Full_AllOpcodes_StateOnly()
+        public void TestAllOpcodesFull()
         {
             var options = TestOptions.Full();
             TestRunner.RunAllOpcodes(options, output);
         }
-
-        [Theory]
-        [InlineData("79")]
-        public void Full_SingleOpcode_StateOnly(string opcodeHex)
-        {
-            var options = TestOptions.Smoke();
-            var result = TestRunner.RunSingleOpcode(opcodeHex, options, output);
-            output.WriteLine($"Opcode 0x{opcodeHex}: {result.successful}/{result.total} tests passed.");
-        }
         
         /// <summary>
-        /// Runs all opcodes for a given mnemonic.
+        /// Tests all opcodes for a given mnemonic. (Level 3)
         /// </summary>
         /// <param name="mnemonic"></param>
         [Theory]
@@ -96,9 +68,29 @@ namespace CodyNET.Tests.SingleStep
             }*/
         }
         
+        /// <summary>
+        /// Tests a selection of test cases for a single opcode. (Level 2)
+        /// Minimal: one test case
+        /// Smoke: sampled test cases (50 by default)
+        /// Full: all test cases
+        /// </summary>
+        /// <param name="opcodeHex"></param>
+        [Theory]
+        [InlineData("79")]
+        public void TestOpcode(string opcodeHex)
+        {
+            var options = TestOptions.Smoke();
+            var result = TestRunner.RunSingleOpcode(opcodeHex, options, output);
+            output.WriteLine($"Opcode 0x{opcodeHex}: {result.successful}/{result.total} tests passed.");
+        }
+        
+        /// <summary>
+        /// Tests a single test case by its name. (Level 1)
+        /// </summary>
+        /// <param name="testName"></param>
         [Theory]
         [InlineData("69 0f 65")]
-        public void Full_SingleTestByName_StateOnly(string testName)
+        public void TestSingleTestCase(string testName)
         {
             var options = TestOptions.Full();
             var opcode = testName.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
