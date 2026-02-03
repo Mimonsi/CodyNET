@@ -4,8 +4,6 @@ using CodyNET.Assembler;
 using CodyNET.Cody;
 using JetBrains.Annotations;
 using Xunit.Abstractions;
-using Xunit.Sdk;
-using static CodyNET.Cody.Mnemonic;
 
 namespace CodyNET.Tests.SingleStep
 {
@@ -21,91 +19,6 @@ namespace CodyNET.Tests.SingleStep
             TestRunner.RunAllOpcodes(options, output);
         }
 
-        [Theory]
-        [InlineData(ADC)]
-        [InlineData(AND)]
-        [InlineData(ASL)]
-        [InlineData(BBR0)]
-        [InlineData(BBR1)]
-        [InlineData(BBR2)]
-        [InlineData(BBR3)]
-        [InlineData(BBR4)]
-        [InlineData(BBR5)]
-        [InlineData(BBR6)]
-        [InlineData(BBR7)]        
-        [InlineData(BBS0)]
-        [InlineData(BBS1)]
-        [InlineData(BBS2)]
-        [InlineData(BBS3)]
-        [InlineData(BBS4)]
-        [InlineData(BBS5)]
-        [InlineData(BBS6)]
-        [InlineData(BBS7)]
-        [InlineData(BCC)]
-        [InlineData(BCS)]
-        [InlineData(BEQ)]
-        [InlineData(LDA)]
-        [InlineData(LDX)]
-        [InlineData(LDY)]
-        public void TestWorkingMnemonics(Mnemonic mnemonic)
-        {
-            TestMnemonic(mnemonic);
-        }
-        
-        /// <summary>
-        /// Tests all opcodes for a given mnemonic. (Level 3)
-        /// </summary>
-        /// <param name="mnemonic"></param>
-        [Theory]
-        [InlineData(AND)]
-        public void TestMnemonic(Mnemonic mnemonic)
-        {
-            var options = TestOptions.Full();
-            bool outputEnabled = false;
-            
-            //options = options with { StopOnFirstFailure = true };
-            var instructions = OpcodeLookup.FromMnemonic(mnemonic);
-            Dictionary<Instruction, bool> opcodeResults = new Dictionary<Instruction, bool>();
-            foreach (var instruction in instructions)
-            {
-                //TestRunner.RunSingleOpcode(opcodeHex.ToString("x2"), options, _output);
-                var opcodeStr = instruction.Opcode.ToString("x2");
-                output.WriteLine($"0x{opcodeStr}: Starting Tests");
-                try
-                {
-                    if (outputEnabled)
-                        TestRunner.RunSingleOpcode(opcodeStr, options, output);
-                    else
-                        TestRunner.RunSingleOpcode(opcodeStr, options, null);
-                    output.WriteLine($"0x{opcodeStr}: Tests Completed");
-                    opcodeResults.Add(instruction, true);
-                }
-                catch (Exception ex)
-                {
-                    output.WriteLine($"0x{opcodeStr}: Tests Failed");
-                    output.WriteLine(ex.ToString());
-                    opcodeResults.Add(instruction, false);
-                }
-            }
-            output.WriteLine("=== MNEMONIC TESTS DONE ===");
-            var resultText = "";
-            int fails = 0;
-            foreach(var result in opcodeResults)
-            {
-                resultText += $"0x{result.Key.Opcode.ToString("x2")} ({result.Key.AddressingMode}): {(result.Value ? "PASS" : "FAIL")}\n";
-                if (!result.Value)
-                    fails++;
-            }
-            output.WriteLine(resultText);
-            if (fails > 0)
-                throw new Exception($"{fails} Tests failed for mnemonic {mnemonic}:\n{resultText}");
-            /*if (failedOpcodes.Count > 0)
-            {
-                var failedList = string.Join(", ", "0x" + failedOpcodes);
-                throw new Exception($"Some opcodes failed for mnemonic {mnemonic}: {failedList}");
-            }*/
-        }
-        
         /// <summary>
         /// Tests a selection of test cases for a single opcode. (Level 2)
         /// Minimal: one test case
@@ -135,6 +48,53 @@ namespace CodyNET.Tests.SingleStep
             TestRunner.RunSingleTestByName(opcode, testName, options, output);
         }
 
+    }
+
+    internal static class SingleStepMnemonicRunner
+    {
+        /// <summary>
+        /// Tests all opcodes for a given mnemonic. (Level 3)
+        /// </summary>
+        public static void Run(Mnemonic mnemonic, TestOptions options, ITestOutputHelper? output)
+        {
+            bool outputEnabled = false;
+
+            //options = options with { StopOnFirstFailure = true };
+            var instructions = OpcodeLookup.FromMnemonic(mnemonic);
+            Dictionary<Instruction, bool> opcodeResults = new Dictionary<Instruction, bool>();
+            foreach (var instruction in instructions)
+            {
+                var opcodeStr = instruction.Opcode.ToString("x2");
+                output?.WriteLine($"0x{opcodeStr}: Starting Tests");
+                try
+                {
+                    if (outputEnabled)
+                        TestRunner.RunSingleOpcode(opcodeStr, options, output);
+                    else
+                        TestRunner.RunSingleOpcode(opcodeStr, options, null);
+                    output?.WriteLine($"0x{opcodeStr}: Tests Completed");
+                    opcodeResults.Add(instruction, true);
+                }
+                catch (Exception ex)
+                {
+                    output?.WriteLine($"0x{opcodeStr}: Tests Failed");
+                    output?.WriteLine(ex.ToString());
+                    opcodeResults.Add(instruction, false);
+                }
+            }
+            output?.WriteLine("=== MNEMONIC TESTS DONE ===");
+            var resultText = "";
+            int fails = 0;
+            foreach (var result in opcodeResults)
+            {
+                resultText += $"0x{result.Key.Opcode.ToString("x2")} ({result.Key.AddressingMode}): {(result.Value ? "PASS" : "FAIL")}\n";
+                if (!result.Value)
+                    fails++;
+            }
+            output?.WriteLine(resultText);
+            if (fails > 0)
+                throw new Exception($"{fails} Tests failed for mnemonic {mnemonic}:\n{resultText}");
+        }
     }
 
     // --- Runner ---
