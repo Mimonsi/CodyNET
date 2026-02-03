@@ -54,7 +54,6 @@ public class Cpu()
     public Status Status;
     public ushort PC; // 16 bit program counter
     public readonly Memory Memory = new(); // 64KB memory
-    public readonly OpcodeLookup OpcodeLookup = new();
     //public long CyclesPerSecond = 1_000_000; // 1 MHz, typical for 65C02
     public long CyclesPerSecond = 10;
     public long TotalCyclesExecuted = 0;
@@ -136,7 +135,7 @@ public class Cpu()
         Reset(startAddress);
     }
 
-    private Instruction? instruction;
+    private Instruction instruction;
     private int cycles;
     public StepResult Step()
     {
@@ -151,6 +150,7 @@ public class Cpu()
         switch (instruction.Mnemonic)
         {
             case ADC: DoADC(); break;
+            case AND: DoAND(); break;
             default:
                 return StepResult.UnknownOpcode;
         }
@@ -184,6 +184,14 @@ public class Cpu()
             DoAddition(value);
         }
 
+        return true;
+    }
+
+    private bool DoAND()
+    {
+        var (value, pageCross) = ReadValueOperand(instruction.AddressingMode);
+        if (pageCross) cycles += 1;
+        A = (byte)(A & value);
         return true;
     }
     

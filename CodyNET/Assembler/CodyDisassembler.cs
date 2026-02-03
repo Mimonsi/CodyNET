@@ -9,15 +9,14 @@ public class CodyDisassembler
     {
         if (bytes == null)
             throw new ArgumentNullException(nameof(bytes));
-
-        var lookup = new OpcodeLookup();
+        
         var builder = new StringBuilder();
         int index = 0;
 
         while (index < bytes.Length)
         {
             byte opcode = bytes[index++];
-            var instruction = lookup.Instructions.FirstOrDefault(item => item.Opcode == opcode);
+            var instruction = OpcodeLookup.Instructions.FirstOrDefault(item => item.Opcode == opcode);
 
             if (instruction == null)
             {
@@ -113,31 +112,5 @@ public class CodyDisassembler
             AddressingMode.AbsoluteIndexedIndirectX => 2,
             _ => 0
         };
-    }
-
-    public string OldDisassemble(byte[] bytecode)
-    {
-        var assemblyCode = new List<string>();
-        var opcodes = new OpcodeLookup();
-
-        for (int i = 0; i < bytecode.Length; i++)
-        {
-
-            var opcode = bytecode[i];
-            var instruction = opcodes.FromOpcode(opcode);
-            var line = instruction.Mnemonic.ToString();
-            if (instruction.AddressingMode != AddressingMode.None)
-            {
-                i++;
-                line += " " + bytecode[i];
-            }
-            if (instruction.AddressingMode2 != null)
-            {
-                i++;
-                line += " " + bytecode[i];
-            }
-            assemblyCode.Add(line);
-        }
-        return string.Join("\n", assemblyCode);
     }
 }

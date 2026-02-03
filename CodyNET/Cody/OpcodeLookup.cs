@@ -147,14 +147,14 @@ public enum AddressingMode
     ZeroPageIndirectIndexedY,
 }
 
-public class OpcodeLookup
+public static class OpcodeLookup
 {
-    public List<Instruction> Instructions;
+    public static List<Instruction> Instructions;
 
     /// <summary>
     /// Initializes all instructions according to 65C02 instruction set: https://feertech.com/legion/reference65c02.html
     /// </summary>
-    public OpcodeLookup()
+    static OpcodeLookup()
     {
         // Instructions sorted by Mnemonic alphabetically
         Instructions =
@@ -513,7 +513,7 @@ public class OpcodeLookup
     /// <summary>
     /// Add custom opcodes for Emulator Debugger
     /// </summary>
-    public void AddDebugInstructions()
+    private static void AddDebugInstructions()
     {
         Instructions.AddRange(
         [
@@ -571,7 +571,7 @@ public class OpcodeLookup
         // new (0xFB, Mnemonic.NOP, AddressingMode.None, 1, 2),
     }
 
-    public Instruction FromOpcode(byte opcode)
+    public static Instruction FromOpcode(byte opcode)
     {
         try
         {
@@ -585,7 +585,7 @@ public class OpcodeLookup
         }
     }
 
-    public List<Instruction> FromMnemonic(Mnemonic mnemonic)
+    public static List<Instruction> FromMnemonic(Mnemonic mnemonic)
     {
         return Instructions.Where(i => i.Mnemonic == mnemonic).ToList();
     }
