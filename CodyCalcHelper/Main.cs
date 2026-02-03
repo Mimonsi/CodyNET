@@ -16,10 +16,12 @@ public partial class Main : Form
         
     }
 
+    private bool StatusUpdating = false;
     private void txtStatusHex_TextChanged(object sender, EventArgs e)
     {
         try
         {
+            StatusUpdating = true;
             var status = new Status(Convert.ToByte(txtStatusHex.Text, 16));
             cbStatusCarry.Checked = status.Carry;
             cbStatusZero.Checked = status.Zero;
@@ -34,10 +36,13 @@ public partial class Main : Form
         {
             btnStatusHex.Text = "Err";
         }
+        StatusUpdating = false;
     }
     
     private void UpdateStatusFromCheckboxes()
     {
+        if (StatusUpdating)
+            return;
         var status = new Status()
         {
             Carry = cbStatusCarry.Checked,
