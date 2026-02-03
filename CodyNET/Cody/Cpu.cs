@@ -149,6 +149,39 @@ public class Cpu()
         {
             case ADC: DoADC(); break;
             case AND: DoAND(); break;
+            case ASL: DoASL(); break;
+            
+            case BBR0: DoBBR(0); break;
+            case BBR1: DoBBR(1); break;
+            case BBR2: DoBBR(2); break;
+            case BBR3: DoBBR(3); break;
+            case BBR4: DoBBR(4); break;
+            case BBR5: DoBBR(5); break;
+            case BBR6: DoBBR(6); break;
+            case BBR7: DoBBR(7); break;
+            
+            case BBS0: DoBBS(0); break;
+            case BBS1: DoBBS(1); break;
+            case BBS2: DoBBS(2); break;
+            case BBS3: DoBBS(3); break;
+            case BBS4: DoBBS(4); break;
+            case BBS5: DoBBS(5); break;
+            case BBS6: DoBBS(6); break;
+            case BBS7: DoBBS(7); break;
+            
+            case BCC: DoBranch(!Status.Carry); break;
+            case BCS: DoBranch(Status.Carry); break;
+            case BEQ: DoBranch(Status.Zero); break;
+            
+            case LDA: DoLDA(); break;
+            case LDX: DoLDX(); break;
+            case LDY: DoLDY(); break;
+            
+            case NOP:
+                break;
+            
+            case STA: DoSTA(); break;
+            
             default:
                 return StepResult.UnknownOpcode;
         }
@@ -190,6 +223,108 @@ public class Cpu()
         var (value, pageCross) = ReadValueOperand(instruction.AddressingMode);
         if (pageCross) cycles += 1;
         A = (byte)(A & value);
+        return true;
+    }
+
+    private bool DoASL()
+    {
+        if (instruction.AddressingMode == Accumulator)
+        {
+            var oldA = A;
+            A = (byte)(A << 1);
+            Status.Carry = (oldA & 0x80) != 0;
+        }
+        else
+        {
+            var (address, pageCross) = ReadAddressOperand(instruction.AddressingMode);
+            if (pageCross) cycles += 1;
+            var value = ReadByte(address);
+            var newValue = (byte)(value << 1);
+            Memory.Write(address, newValue);
+            UpdateRegisterFlags(newValue);
+            Status.Carry = (value & 0x80) != 0;
+        }
+        return true;
+    }
+    
+    /// <summary>
+    /// Branch if Bit Reset (bit = 0)
+    /// </summary>
+    /// <param name="bit"></param>
+    /// <returns></returns>
+    private bool DoBBR(byte bit)
+    {
+        var (value, _) = ReadValueOperand(ZeroPage);
+        var (target, _) = ReadAddressOperand(ProgramCounterRelative);
+        // If bit in value is 0 => branch
+        if (((value >> bit) & 0x01) == 0)
+        {
+            ushort oldPc = PC;
+            PC = target;
+
+            // Extra cycles: +1 if branch taken, +2 if page boundary crossed
+            cycles += (((oldPc ^ target) & 0xFF00) != 0 ? 2 : 1);
+        }
+
+        return true;
+    }
+    
+    /// <summary>
+    /// Branch if Bit Set (bit = 1)
+    /// </summary>
+    /// <param name="bit"></param>
+    /// <returns></returns>
+    private bool DoBBS(byte bit)
+    {
+        var (value, _) = ReadValueOperand(ZeroPage);
+        var (target, _) = ReadAddressOperand(ProgramCounterRelative);
+        // If bit in value is 1 => branch
+        if (((value >> bit) & 0x01) != 0)
+        {
+            ushort oldPc = PC;
+            PC = target;
+
+            // Extra cycles: +1 if branch taken, +2 if page boundary crossed
+            cycles += (((oldPc ^ target) & 0xFF00) != 0 ? 2 : 1);
+        }
+
+        return true;
+    }
+    
+    private bool DoBranch(bool p0)
+    {
+        // TODO
+        return true;
+    }
+    
+    private bool DoLDA()
+    {
+        var (value, pageCross) = ReadValueOperand(instruction.AddressingMode);
+        if (pageCross) cycles += 1;
+        A = value;
+        return true;
+    }
+    
+    private bool DoLDX()
+    {
+        var (value, pageCross) = ReadValueOperand(instruction.AddressingMode);
+        if (pageCross) cycles += 1;
+        X = value;
+        return true;
+    }
+    
+    private bool DoLDY()
+    {
+        var (value, pageCross) = ReadValueOperand(instruction.AddressingMode);
+        if (pageCross) cycles += 1;
+        Y = value;
+        return true;
+    }
+
+    private bool DoSTA()
+    {
+        var (addr, _) = ReadAddressOperand(instruction.AddressingMode);
+        Memory.Write(addr, A);
         return true;
     }
     

@@ -4,6 +4,8 @@ using CodyNET.Assembler;
 using CodyNET.Cody;
 using JetBrains.Annotations;
 using Xunit.Abstractions;
+using Xunit.Sdk;
+using static CodyNET.Cody.Mnemonic;
 
 namespace CodyNET.Tests.SingleStep
 {
@@ -20,8 +22,31 @@ namespace CodyNET.Tests.SingleStep
         }
 
         [Theory]
-        [InlineData(Mnemonic.ADC)]
-        [InlineData(Mnemonic.AND)]
+        [InlineData(ADC)]
+        [InlineData(AND)]
+        [InlineData(ASL)]
+        [InlineData(BBR0)]
+        [InlineData(BBR1)]
+        [InlineData(BBR2)]
+        [InlineData(BBR3)]
+        [InlineData(BBR4)]
+        [InlineData(BBR5)]
+        [InlineData(BBR6)]
+        [InlineData(BBR7)]        
+        [InlineData(BBS0)]
+        [InlineData(BBS1)]
+        [InlineData(BBS2)]
+        [InlineData(BBS3)]
+        [InlineData(BBS4)]
+        [InlineData(BBS5)]
+        [InlineData(BBS6)]
+        [InlineData(BBS7)]
+        [InlineData(BCC)]
+        [InlineData(BCS)]
+        [InlineData(BEQ)]
+        [InlineData(LDA)]
+        [InlineData(LDX)]
+        [InlineData(LDY)]
         public void TestWorkingMnemonics(Mnemonic mnemonic)
         {
             TestMnemonic(mnemonic);
@@ -32,10 +57,12 @@ namespace CodyNET.Tests.SingleStep
         /// </summary>
         /// <param name="mnemonic"></param>
         [Theory]
-        [InlineData(Mnemonic.AND)]
+        [InlineData(AND)]
         public void TestMnemonic(Mnemonic mnemonic)
         {
             var options = TestOptions.Full();
+            bool outputEnabled = false;
+            
             //options = options with { StopOnFirstFailure = true };
             var instructions = OpcodeLookup.FromMnemonic(mnemonic);
             Dictionary<Instruction, bool> opcodeResults = new Dictionary<Instruction, bool>();
@@ -46,7 +73,10 @@ namespace CodyNET.Tests.SingleStep
                 output.WriteLine($"0x{opcodeStr}: Starting Tests");
                 try
                 {
-                    TestRunner.RunSingleOpcode(opcodeStr, options, output);
+                    if (outputEnabled)
+                        TestRunner.RunSingleOpcode(opcodeStr, options, output);
+                    else
+                        TestRunner.RunSingleOpcode(opcodeStr, options, null);
                     output.WriteLine($"0x{opcodeStr}: Tests Completed");
                     opcodeResults.Add(instruction, true);
                 }
