@@ -43,8 +43,8 @@ namespace CodyNET.Tests.SingleStep
         public void Full_SingleOpcode_StateOnly(string opcodeHex)
         {
             var options = TestOptions.Smoke();
-            var result = TestRunner.RunSingleOpcode(opcodeHex, options, _output);
-            _output.WriteLine($"Opcode 0x{opcodeHex}: {result.successful}/{result.total} tests passed.");
+            var result = TestRunner.RunSingleOpcode(opcodeHex, options, output);
+            output.WriteLine($"Opcode 0x{opcodeHex}: {result.successful}/{result.total} tests passed.");
         }
         
         /// <summary>
@@ -66,7 +66,7 @@ namespace CodyNET.Tests.SingleStep
                 output.WriteLine($"0x{opcodeStr}: Starting Tests");
                 try
                 {
-                    TestRunner.RunSingleOpcode(opcodeStr, options, _output);
+                    TestRunner.RunSingleOpcode(opcodeStr, options, output);
                     output.WriteLine($"0x{opcodeStr}: Tests Completed");
                     opcodeResults.Add(opcodeStr, true);
                 }
