@@ -34,7 +34,7 @@ public class AssemblerTests
     {
         var result = CodyDisassembler.Disassemble([0x69, 0x53, 0x00]);
         result = result.Replace("\r\n", "\n").TrimEnd();
-        var expected = "ADC #$53\nBRK\n";
+        var expected = "ADC #$53\nBRK";
         Assert.Equal(expected, result);
     }
     

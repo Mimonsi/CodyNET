@@ -12,5 +12,10 @@ public class CpuTests
         
         Cpu cpu = new Cpu();
         cpu.LoadRam(ram, address);
+        
+        Assert.Equal(0x01, cpu.Memory.Read(0x3000));
+        Assert.Equal(0x02, cpu.Memory.Read(0x3001));
+        Assert.Equal(0x03, cpu.Memory.Read(0x3002));
+        Assert.Equal(0x04, cpu.Memory.Read(0x3003));
     }
 }
