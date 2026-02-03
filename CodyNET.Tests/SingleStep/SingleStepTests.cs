@@ -16,6 +16,7 @@ namespace CodyNET.Tests.SingleStep
         /// Tests all opcodes. (Level 4, final goal)
         /// </summary>
         [Test]
+        [Explicit("Dev Test")]
         public void TestAllOpcodesFull()
         {
             var options = TestOptions.Full();
@@ -29,11 +30,11 @@ namespace CodyNET.Tests.SingleStep
         /// Full: all test cases
         /// </summary>
         /// <param name="opcodeHex"></param>
-        [TestCase("61")]
-        [TestCase("69")]
+        [Explicit("Dev Test")]
+        [TestCase("90")]
         public void TestOpcode(string opcodeHex)
         {
-            var options = TestOptions.Full() with { Verbose = true};
+            var options = TestOptions.Full() with { Verbose = true, StopOnFirstFailure = true};
             var result = TestRunner.RunSingleOpcode(opcodeHex, options, Output);
             Output.WriteLine($"Opcode 0x{opcodeHex}: {result.successful}/{result.total} tests passed.");
         }
@@ -42,6 +43,7 @@ namespace CodyNET.Tests.SingleStep
         /// Tests a single test case by its name. (Level 1)
         /// </summary>
         /// <param name="testName"></param>
+        [Explicit("Dev Test")]
         [TestCase("32 d9 38")]
         public void TestSingleTestCase(string testName)
         {
@@ -311,7 +313,7 @@ namespace CodyNET.Tests.SingleStep
             if (!string.IsNullOrEmpty(mismatch))
             {
                 output?.WriteLine(mismatch);
-                throw new SingleStepTestFailureException($"CPU state mismatch in test case {t.Name}", new Exception(mismatch));
+                throw new SingleStepTestFailureException($"CPU state mismatch in test case {t.Name}:", new Exception(mismatch));
             }
 
             // Assert final RAM pairs
@@ -363,7 +365,7 @@ namespace CodyNET.Tests.SingleStep
             // ---------------------------------------
             // A        | 0x12    | 0x34   | 0x56
             
-            var text = "Register | Initial | Actual  | Expected\n";
+            var text = "\nRegister | Initial | Actual  | Expected\n";
             text += "---------------------------------------\n";
             if (final.A != actual.A)
                 text += $"A (FAIL) | 0x{initial.A:X2}    | 0x{actual.A:X2}   | 0x{final.A:X2}\n";

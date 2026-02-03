@@ -6,6 +6,7 @@ namespace CodyNET.Tests.SingleStep;
 public class TestGenerator
 {
     [Test]
+    [Explicit("Generates SingleStepMnemonicTests.g.cs")]
     public static void GenerateTests()
     {
         var source = GenerateSource();
