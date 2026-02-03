@@ -27,7 +27,7 @@ namespace CodyNET.Tests.SingleStep
         [InlineData(Mnemonic.ADC)]
         public void TestMnemonic(Mnemonic mnemonic)
         {
-            var options = TestOptions.Minimal();
+            var options = TestOptions.Full();
             //options = options with { StopOnFirstFailure = true };
             var instructions = OpcodeLookup.FromMnemonic(mnemonic);
             Dictionary<Instruction, bool> opcodeResults = new Dictionary<Instruction, bool>();
@@ -76,7 +76,7 @@ namespace CodyNET.Tests.SingleStep
         /// </summary>
         /// <param name="opcodeHex"></param>
         [Theory]
-        [InlineData("72")]
+        [InlineData("61")]
         public void TestOpcode(string opcodeHex)
         {
             var options = TestOptions.Smoke();
@@ -89,7 +89,7 @@ namespace CodyNET.Tests.SingleStep
         /// </summary>
         /// <param name="testName"></param>
         [Theory]
-        [InlineData("72 8d 9e")]
+        [InlineData("61 d1 9e")]
         public void TestSingleTestCase(string testName)
         {
             var options = TestOptions.Full();
@@ -273,7 +273,7 @@ namespace CodyNET.Tests.SingleStep
                 $"Opcode {opcodeHex.ToUpperInvariant()}: DONE");
             output?.WriteLine(
                 $"  Successful: {successful}/{total} ({(successful * 100.0 / total):F2}%)");
-            Assert.Equal(successful, total);
+            Assert.Equal(total, successful);
             return (successful, total);
         }
         

@@ -321,20 +321,20 @@ public class Cpu()
             case ZeroPageIndirect: // 8 bit address in first 256 bytes of memory pointing to another address
             {
                 byte zpAddress = ReadByteIncPc();
-                ushort address = ReadShort(zpAddress);
+                ushort address = ReadShortZeroPage(zpAddress);
                 return (address, false);
             }
             case ZeroPageIndexedIndirectX: // 8 bit address + X register offset in first 256 bytes of memory pointing to another address
             {
                 byte zpBaseAddress = ReadByteIncPc();
                 byte zpAddress = (byte)(zpBaseAddress + X);
-                ushort address = ReadShort(zpAddress);
+                ushort address = ReadShortZeroPage(zpAddress);
                 return (address, false);
             }
             case ZeroPageIndirectIndexedY: // 8 bit address in first 256 bytes of memory pointing to another address + Y register offset
             {
                 byte zpAddress = ReadByteIncPc();
-                ushort baseAddress = ReadShort(zpAddress);
+                ushort baseAddress = ReadShortZeroPage(zpAddress);
                 ushort address = (ushort)(baseAddress + Y);
                 bool pageCross = (baseAddress & 0xFF00) != (address & 0xFF00);
                 return (address, pageCross);
@@ -367,5 +367,14 @@ public class Cpu()
         byte high = ReadByte((ushort)(address + 1));
         return (ushort)((high << 8) | low);
     }
+    
+    private ushort ReadShortZeroPage(byte address)
+    {
+        // Zero-page indirect pointers wrap at 0xFF -> 0x00 for the high byte.
+        byte low = ReadByte(address);
+        byte high = ReadByte((byte)(address + 1));
+        return (ushort)((high << 8) | low);
+    }
+    
     #endregion
 }
