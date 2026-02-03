@@ -60,7 +60,7 @@ namespace CodyNET.Tests.SingleStep
             }
             output.WriteLine(resultText);
             if (fails > 0)
-                throw new Exception($"{fails}/{opcodeResults.Count} Tests failed for mnemonic {mnemonic}:\n{resultText}");
+                throw new Exception($"{fails} Tests failed for mnemonic {mnemonic}:\n{resultText}");
             /*if (failedOpcodes.Count > 0)
             {
                 var failedList = string.Join(", ", "0x" + failedOpcodes);
@@ -103,15 +103,8 @@ namespace CodyNET.Tests.SingleStep
 
     internal static class TestRunner
     {
-        // Adjust path to where your opcode json files live.
-        // Example: testdata/single_step_65c02/a9.json, 0b.json, ...
-        private static readonly string TestDataDir =
-            Path.GetFullPath(Path.Combine(
-                AppContext.BaseDirectory,
-                "..", "..", "..",
-                "testdata",
-                "wdc65c02",
-                "v1"));
+        // Prefer testdata copied to the output directory; fallback to repo path for local runs.
+        private static readonly string TestDataDir = ResolveTestDataDir();
 
         public static void RunAllOpcodes(TestOptions options, ITestOutputHelper? output)
         {
@@ -127,12 +120,15 @@ namespace CodyNET.Tests.SingleStep
             
             output?.WriteLine($"Starting test run: {options.Mode}, opcode files = {files.Length}");
             
-            var parallelOptions = new ParallelOptions
-            {
-                MaxDegreeOfParallelism = options.MaxDegreeOfParallelism <= 0
-                    ? Environment.ProcessorCount
-                    : options.MaxDegreeOfParallelism
-            };
+            var degree = options.MaxDegreeOfParallelism <= 0
+                ? Environment.ProcessorCount
+                : options.MaxDegreeOfParallelism;
+
+            // Keep output readable when running with an output helper.
+            if (output is not null && degree > 1)
+                degree = 1;
+
+            var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = degree };
 
             Parallel.ForEach(files, parallelOptions, file =>
             {
@@ -196,7 +192,7 @@ namespace CodyNET.Tests.SingleStep
 
             try
             {
-                ExecuteOne(selected.test, output);
+                ExecuteOne(selected.test, options, output);
             }
             catch (Exception ex)
             {
@@ -226,8 +222,11 @@ namespace CodyNET.Tests.SingleStep
             var tests = LoadTests(filePath);
             var indices = SelectIndices(tests.Count, options).ToArray();
 
-            output?.WriteLine(
-                $"Opcode {opcodeHex.ToUpperInvariant()}: {indices.Length} test cases");
+            if (options.Verbose)
+            {
+                output?.WriteLine(
+                    $"Opcode {opcodeHex.ToUpperInvariant()}: {indices.Length} test cases");
+            }
 
             int total = indices.Length;
             int successful = 0;
@@ -239,9 +238,12 @@ namespace CodyNET.Tests.SingleStep
 
                 try
                 {
-                    output?.WriteLine(
-                        $"Opcode {opcodeHex.ToUpperInvariant()}: Running test {i + 1}/{total} index={idx} name=\"{test.Name}\"");
-                    ExecuteOne(test, output);
+                    if (options.Verbose)
+                    {
+                        output?.WriteLine(
+                            $"Opcode {opcodeHex.ToUpperInvariant()}: Running test {i + 1}/{total} index={idx} name=\"{test.Name}\"");
+                    }
+                    ExecuteOne(test, options, output);
                     successful++;
                 }
                 catch (Exception ex)
@@ -293,7 +295,7 @@ namespace CodyNET.Tests.SingleStep
         // Test execution
         // ===============================
 
-        private static void ExecuteOne(TestCase t, ITestOutputHelper? output)
+        private static void ExecuteOne(TestCase t, TestOptions options, ITestOutputHelper? output)
         {
             // CPU hookup with initial state
             var cpu = new Cpu(t.Initial.GetCpuState());
@@ -304,26 +306,30 @@ namespace CodyNET.Tests.SingleStep
 
             // Assert final CPU state
             var actual = cpu.GetState();
+            var mismatch = GetMismatchMessage(t.Initial.GetCpuState(), t.Final.GetCpuState(), actual);
 
-            output?.WriteLine(PrettyPrintStates(t.Initial.GetCpuState(), t.Final.GetCpuState(), actual));
+            if (!string.IsNullOrEmpty(mismatch))
+            {
+                output?.WriteLine(mismatch);
+                throw new SingleStepTestFailureException("CPU state mismatch.", new Exception(mismatch));
+            }
 
-            Assert.Equal(t.Final.A, actual.A);
-            Assert.Equal(t.Final.X, actual.X);
-            Assert.Equal(t.Final.Y, actual.Y);
-            Assert.Equal(t.Final.S, actual.S);
-            Assert.Equal(t.Final.P, actual.P);
-            Assert.Equal(t.Final.Pc, actual.PC);
-            
             // Assert final RAM pairs
             foreach (var pair in t.Final.Ram)
             {
                 var addr = (ushort)pair[0];
                 var expected = (byte)pair[1];
                 var actualVal = cpu.Memory.Read(addr);
-                Assert.Equal(expected, actualVal);
+                if (expected != actualVal)
+                {
+                    var message = $"RAM mismatch at 0x{addr:X4}: expected 0x{expected:X2} actual 0x{actualVal:X2}";
+                    output?.WriteLine(message);
+                    throw new SingleStepTestFailureException(message, new Exception(message));
+                }
             }
-            
-            Assert.True(true);
+
+            if (options.Verbose)
+                output?.WriteLine(PrettyPrintStates(t.Initial.GetCpuState(), t.Final.GetCpuState(), actual));
 
             // Optional: cycle count compare (state-only friendly)
             // If your CPU exposes cycles used for last instruction, you can check:
@@ -334,6 +340,21 @@ namespace CodyNET.Tests.SingleStep
         // ===============================
         // Helpers
         // ===============================
+
+        private static string GetMismatchMessage(CpuState initial, CpuState final, CpuState actual)
+        {
+            if (final.A == actual.A &&
+                final.X == actual.X &&
+                final.Y == actual.Y &&
+                final.S == actual.S &&
+                final.P == actual.P &&
+                final.PC == actual.PC)
+            {
+                return string.Empty;
+            }
+
+            return PrettyPrintStates(initial, final, actual);
+        }
 
         private static string PrettyPrintStates(CpuState initial, CpuState final, CpuState actual)
         {
@@ -407,6 +428,27 @@ namespace CodyNET.Tests.SingleStep
 
             return set.OrderBy(i => i);
         }
+
+        private static string ResolveTestDataDir()
+        {
+            var outputDir = Path.GetFullPath(Path.Combine(
+                AppContext.BaseDirectory,
+                "testdata",
+                "wdc65c02",
+                "v1"));
+
+            if (Directory.Exists(outputDir))
+                return outputDir;
+
+            var repoDir = Path.GetFullPath(Path.Combine(
+                AppContext.BaseDirectory,
+                "..", "..", "..",
+                "testdata",
+                "wdc65c02",
+                "v1"));
+
+            return repoDir;
+        }
     }
 
     // ===============================
@@ -425,7 +467,8 @@ namespace CodyNET.Tests.SingleStep
         int SamplePerOpcodeFile,
         int SampleSeed,
         int MaxDegreeOfParallelism,
-        bool StopOnFirstFailure = false)
+        bool StopOnFirstFailure = false,
+        bool Verbose = false)
     {
         /// <summary>
         /// Runs a minimal set of tests: one test case per opcode file.
@@ -436,7 +479,8 @@ namespace CodyNET.Tests.SingleStep
             SamplePerOpcodeFile: 1,
             SampleSeed: 0,
             MaxDegreeOfParallelism: 0,
-            StopOnFirstFailure: true
+            StopOnFirstFailure: true,
+            Verbose: false
         );
 
         /// <summary>
@@ -450,7 +494,8 @@ namespace CodyNET.Tests.SingleStep
             SamplePerOpcodeFile: samplePerOpcodeFile,
             SampleSeed: seed,
             MaxDegreeOfParallelism: 0,
-            StopOnFirstFailure: false
+            StopOnFirstFailure: false,
+            Verbose: false
         );
 
         /// <summary>
@@ -462,7 +507,8 @@ namespace CodyNET.Tests.SingleStep
             SamplePerOpcodeFile: 0,
             SampleSeed: 0,
             MaxDegreeOfParallelism: 0,
-            StopOnFirstFailure: false
+            StopOnFirstFailure: false,
+            Verbose: false
         );
 
     }
