@@ -1,5 +1,17 @@
-﻿#!/usr/bin/env bash
+# !/usr/bin/env bash
 set -euo pipefail
+
+# Self-healing: Remove BOM if present
+if [ -f "$0" ]; then
+    sed -i '1s/^\xEF\xBB\xBF//' "$0" 2>/dev/null || true
+fi
+
+# Check if unzip is available, install if missing
+if ! command -v unzip &> /dev/null; then
+    echo "unzip is required to automatically download and unpack the test data. Please confirm the installation."
+    echo "unzip not found. Installing..."
+    sudo apt update && sudo apt install -y unzip
+fi
 
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TARGET_DIR="${ROOT_DIR}/wdc65c02/v1"
@@ -18,6 +30,7 @@ trap cleanup EXIT
 ARCHIVE="${TMP_DIR}/65x02.zip"
 SOURCE_URL="https://github.com/SingleStepTests/65x02/archive/refs/heads/main.zip"
 
+echo "Downloading single step test data... This may take a few minutes"
 curl -L -o "${ARCHIVE}" "${SOURCE_URL}"
 unzip -q "${ARCHIVE}" -d "${TMP_DIR}"
 
