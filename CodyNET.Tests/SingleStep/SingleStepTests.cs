@@ -60,7 +60,7 @@ namespace CodyNET.Tests.SingleStep
             }
             output.WriteLine(resultText);
             if (fails > 0)
-                throw new Exception($"{fails/opcodeResults.Count} Tests failed for mnemonic {mnemonic}:\n{resultText}");
+                throw new Exception($"{fails}/{opcodeResults.Count} Tests failed for mnemonic {mnemonic}:\n{resultText}");
             /*if (failedOpcodes.Count > 0)
             {
                 var failedList = string.Join(", ", "0x" + failedOpcodes);
