@@ -275,7 +275,7 @@ namespace CodyNET.Tests.SingleStep
                 $"Opcode {opcodeHex.ToUpperInvariant()}: DONE");
             output?.WriteLine(
                 $"  Successful: {successful}/{total} ({(successful * 100.0 / total):F2}%)");
-            Assert.AreEqual(total, successful);
+            Assert.AreEqual(total, successful, $"{total-successful} Test Cases failed.");
             return (successful, total);
         }
         

@@ -21,7 +21,17 @@ It aims to enhance the original emulator with extended features.
 
 Uses the [65x02 SingleStepTests](https://github.com/SingleStepTests/65x02) created by Thomas Harte et al., licensed under MIT.
 
-Download the test definitions for the WDC65C02 from [here](https://github.com/SingleStepTests/65x02/archive/refs/heads/main.zip) and unpack them in CodyNET.Tests/SingleStep/testdata to run the tests. The project copies everything under `wdc65c02/` to the test output directory so tests can run from the compiled bin folder.
+Download the test definitions for the WDC65C02 from [here](https://github.com/SingleStepTests/65x02/archive/refs/heads/main.zip) and unpack them in CodyNET.Tests/testdata to run the tests. The project copies everything under `wdc65c02/` to the test output directory so tests can run from the compiled bin folder.
+
+Prefer the helper scripts for minimal effort:
+
+```bash
+./CodyNET.Tests/testdata/fetch-singlestep-tests.sh
+```
+
+```powershell
+./CodyNET.Tests/testdata/fetch-singlestep-tests.ps1
+```
 
 This folder `testdata` should contain the path `wdc65c02/v1/*.json`
 

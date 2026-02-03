@@ -24,7 +24,7 @@ public class Cpu()
         private set
         {
             _a = value;
-            UpdateRegisterFlags();
+            UpdateRegisterFlags(value);
         }
     }
     
@@ -35,7 +35,7 @@ public class Cpu()
         private set
         {
             _x = value;
-            UpdateRegisterFlags();
+            UpdateRegisterFlags(value);
         }
     }
     
@@ -46,7 +46,7 @@ public class Cpu()
         private set
         {
             _y = value;
-            UpdateRegisterFlags();
+            UpdateRegisterFlags(value);
         }
     }
 
@@ -90,15 +90,6 @@ public class Cpu()
         };
     }
     #endregion
-    
-    /// <summary>
-    /// Update Zero and Negative flags based on the value of the Accumulator
-    /// </summary>
-    private void UpdateRegisterFlags()
-    {
-        Status.Zero = (A == 0);
-        Status.Negative = (A & 0x80) != 0;
-    }
     
     /// <summary>
     /// Update Zero and Negative flags based on the given value
