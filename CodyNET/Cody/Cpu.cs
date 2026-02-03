@@ -279,6 +279,17 @@ public class Cpu()
                 bool pageCross = (baseAddress & 0xFF00) != (address & 0xFF00);
                 return (address, pageCross);
             }
+            case AbsoluteIndexedY:
+            {
+                ushort baseAddress = ReadShortIncPc();
+                ushort address = (ushort)(baseAddress + Y);
+                bool pageCross = (baseAddress & 0xFF00) != (address & 0xFF00);
+                return (address, pageCross);
+            }
+            case AbsoluteIndirect:
+            {
+                return (ReadShortIncPc(), false);
+            }
             default:
                 throw new NotSupportedException($"Unsupported addressing mode: {addressingMode}");
             // TODO: Add more addressing modes
