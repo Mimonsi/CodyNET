@@ -282,9 +282,18 @@ public class Cpu()
         return true;
     }
     
-    private bool DoBranch(bool p0)
+    private bool DoBranch(bool condition)
     {
-        // TODO
+        var (target, _) = ReadAddressOperand(ProgramCounterRelative);
+        if (condition)
+        {
+            var oldPc = PC;
+            PC = target;
+            if (oldPc >> 8 != target >> 8)
+                cycles += 2; // Page crossed
+            else
+                cycles += 1; // No page crossed
+        }
         return true;
     }
     
