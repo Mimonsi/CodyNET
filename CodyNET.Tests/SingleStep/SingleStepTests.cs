@@ -1,60 +1,41 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using CodyNET.Assembler;
 using CodyNET.Cody;
+using JetBrains.Annotations;
 using Xunit.Abstractions;
 
 namespace CodyNET.Tests.SingleStep
 {
     // --- One-click entry points ---
 
-    public class MinimalTests
+    public class MinimalTests(ITestOutputHelper output)
     {
-        private readonly ITestOutputHelper _output;
-
-        public MinimalTests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
         [Fact]
         public void Minimal_AllOpcodes_StateOnly()
         {
             var options = TestOptions.Minimal();
-            TestRunner.RunAllOpcodes(options, _output);
+            TestRunner.RunAllOpcodes(options, output);
         }
     }
 
-    public class SmokeTests
+    public class SmokeTests(ITestOutputHelper output)
     {
-        private readonly ITestOutputHelper _output;
-
-        public SmokeTests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
         [Fact]
         public void Smoke_AllOpcodes_StateOnly()
         {
             var options = TestOptions.Smoke();
-            TestRunner.RunAllOpcodes(options, _output);
+            TestRunner.RunAllOpcodes(options, output);
         }
     }
 
-    public class FullTests
+    public class FullTests(ITestOutputHelper output)
     {
-        private readonly ITestOutputHelper _output;
-
-        public FullTests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
         [Fact]
         public void Full_AllOpcodes_StateOnly()
         {
             var options = TestOptions.Full();
-            TestRunner.RunAllOpcodes(options, _output);
+            TestRunner.RunAllOpcodes(options, output);
         }
 
         // Optional: "one opcode with one click" via InlineData
@@ -64,7 +45,7 @@ namespace CodyNET.Tests.SingleStep
         public void Full_SingleOpcode_StateOnly(string opcodeHex)
         {
             var options = TestOptions.Smoke();
-            TestRunner.RunSingleOpcode(opcodeHex, options, _output);
+            TestRunner.RunSingleOpcode(opcodeHex, options, output);
         }
         
         [Theory]
@@ -73,7 +54,7 @@ namespace CodyNET.Tests.SingleStep
         {
             var options = TestOptions.Full();
             var opcode = testName.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
-            TestRunner.RunSingleTestByName(opcode, testName, options, _output);
+            TestRunner.RunSingleTestByName(opcode, testName, options, output);
         }
 
     }
@@ -210,7 +191,6 @@ namespace CodyNET.Tests.SingleStep
 
             int total = indices.Length;
             int successful = 0;
-            int nextPercentReport = 0;
 
             for (int i = 0; i < total; i++)
             {
@@ -370,7 +350,7 @@ namespace CodyNET.Tests.SingleStep
             return options.Mode switch
             {
                 TestMode.Full => Enumerable.Range(0, count),
-                TestMode.Minimal => new[] { 0 },
+                TestMode.Minimal => [0],
                 TestMode.Smoke => DeterministicSample(count, options.SamplePerOpcodeFile, options.SampleSeed),
                 _ => throw new ArgumentOutOfRangeException()
             };
@@ -448,6 +428,7 @@ namespace CodyNET.Tests.SingleStep
 
     // --- JSON DTOs matching your structure ---
 
+    [UsedImplicitly]
     internal class TestCase
     {
         public string Name { get; set; } = "";
@@ -458,6 +439,7 @@ namespace CodyNET.Tests.SingleStep
         public List<object[]>? Cycles { get; set; }
     }
 
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
     internal sealed record CpuStateDto
     {
         public ushort Pc { get; set; }
@@ -491,9 +473,5 @@ namespace CodyNET.Tests.SingleStep
             new() { PropertyNameCaseInsensitive = true };
     }
 
-    internal sealed class SingleStepTestFailureException : Exception
-    {
-        public SingleStepTestFailureException(string message, Exception inner)
-            : base(message, inner) { }
-    }
+    internal sealed class SingleStepTestFailureException(string message, Exception inner) : Exception(message, inner);
 }
