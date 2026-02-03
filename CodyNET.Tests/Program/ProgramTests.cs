@@ -1,6 +1,8 @@
 ﻿using CodyNET.Assembler;
 using CodyPrototype.Utils;
 
+using NUnit.Framework;
+
 namespace CodyNET.Tests.Program;
 using CodyNET.Cody;
 
@@ -9,7 +11,7 @@ using CodyNET.Cody;
 /// </summary>
 public class ProgramTests
 {
-    [Fact]
+    [Test]
     public void MinimalProgram()
     {
         Cody cody = new Cody();

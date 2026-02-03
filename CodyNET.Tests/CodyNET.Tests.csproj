@@ -11,12 +11,8 @@
         <PackageReference Include="coverlet.collector" Version="6.0.4"/>
         <PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1"/>
-        <PackageReference Include="xunit" Version="2.9.3"/>
-        <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Using Include="Xunit"/>
+        <PackageReference Include="NUnit" Version="3.13.3"/>
+        <PackageReference Include="NUnit3TestAdapter" Version="4.5.0"/>
     </ItemGroup>
 
     <ItemGroup>

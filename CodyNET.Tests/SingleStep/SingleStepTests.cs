@@ -1,22 +1,25 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Text.Json;
 using CodyNET.Assembler;
 using CodyNET.Cody;
 using JetBrains.Annotations;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace CodyNET.Tests.SingleStep
 {
-    public class SingleStepTests(ITestOutputHelper output)
+    [Parallelizable(ParallelScope.All)]
+    public class SingleStepTests
     {
+        private static TextWriter Output => TestContext.Progress;
         /// <summary>
         /// Tests all opcodes. (Level 4, final goal)
         /// </summary>
-        [Fact]
+        [Test]
         public void TestAllOpcodesFull()
         {
             var options = TestOptions.Full();
-            TestRunner.RunAllOpcodes(options, output);
+            TestRunner.RunAllOpcodes(options, Output);
         }
 
         /// <summary>
@@ -26,26 +29,25 @@ namespace CodyNET.Tests.SingleStep
         /// Full: all test cases
         /// </summary>
         /// <param name="opcodeHex"></param>
-        [Theory]
-        [InlineData("61")]
+        [TestCase("61")]
+        [TestCase("69")]
         public void TestOpcode(string opcodeHex)
         {
-            var options = TestOptions.Smoke();
-            var result = TestRunner.RunSingleOpcode(opcodeHex, options, output);
-            output.WriteLine($"Opcode 0x{opcodeHex}: {result.successful}/{result.total} tests passed.");
+            var options = TestOptions.Full() with { Verbose = true};
+            var result = TestRunner.RunSingleOpcode(opcodeHex, options, Output);
+            Output.WriteLine($"Opcode 0x{opcodeHex}: {result.successful}/{result.total} tests passed.");
         }
         
         /// <summary>
         /// Tests a single test case by its name. (Level 1)
         /// </summary>
         /// <param name="testName"></param>
-        [Theory]
-        [InlineData("32 d9 38")]
+        [TestCase("32 d9 38")]
         public void TestSingleTestCase(string testName)
         {
             var options = TestOptions.Full();
             var opcode = testName.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
-            TestRunner.RunSingleTestByName(opcode, testName, options, output);
+            TestRunner.RunSingleTestByName(opcode, testName, options, Output);
         }
 
     }
@@ -55,7 +57,7 @@ namespace CodyNET.Tests.SingleStep
         /// <summary>
         /// Tests all opcodes for a given mnemonic. (Level 3)
         /// </summary>
-        public static void Run(Mnemonic mnemonic, TestOptions options, ITestOutputHelper? output)
+        public static void Run(Mnemonic mnemonic, TestOptions options, TextWriter? output)
         {
             bool outputEnabled = false;
 
@@ -104,7 +106,7 @@ namespace CodyNET.Tests.SingleStep
         // Prefer testdata copied to the output directory; fallback to repo path for local runs.
         private static readonly string TestDataDir = ResolveTestDataDir();
 
-        public static void RunAllOpcodes(TestOptions options, ITestOutputHelper? output)
+        public static void RunAllOpcodes(TestOptions options, TextWriter? output)
         {
             if (!Directory.Exists(TestDataDir))
                 throw new DirectoryNotFoundException($"Test data directory not found: {TestDataDir}");
@@ -143,7 +145,7 @@ namespace CodyNET.Tests.SingleStep
         public static (int successful, int total) RunSingleOpcode(
             string opcodeHex,
             TestOptions options,
-            ITestOutputHelper? output)
+            TextWriter? output)
         {
             opcodeHex = opcodeHex.Trim().ToLowerInvariant();
 
@@ -158,7 +160,7 @@ namespace CodyNET.Tests.SingleStep
             string opcodeHex,
             string testName,
             TestOptions options,
-            ITestOutputHelper? output)
+            TextWriter? output)
         {
             opcodeHex = opcodeHex.Trim().ToLowerInvariant();
             testName = testName.Trim();
@@ -215,7 +217,7 @@ namespace CodyNET.Tests.SingleStep
             string filePath,
             string opcodeHex,
             TestOptions options,
-            ITestOutputHelper? output)
+            TextWriter? output)
         {
             var tests = LoadTests(filePath);
             var indices = SelectIndices(tests.Count, options).ToArray();
@@ -271,7 +273,7 @@ namespace CodyNET.Tests.SingleStep
                 $"Opcode {opcodeHex.ToUpperInvariant()}: DONE");
             output?.WriteLine(
                 $"  Successful: {successful}/{total} ({(successful * 100.0 / total):F2}%)");
-            Assert.Equal(total, successful);
+            Assert.AreEqual(total, successful);
             return (successful, total);
         }
         
@@ -293,7 +295,7 @@ namespace CodyNET.Tests.SingleStep
         // Test execution
         // ===============================
 
-        private static void ExecuteOne(TestCase t, TestOptions options, ITestOutputHelper? output)
+        private static void ExecuteOne(TestCase t, TestOptions options, TextWriter? output)
         {
             // CPU hookup with initial state
             var cpu = new Cpu(t.Initial.GetCpuState());
@@ -332,7 +334,7 @@ namespace CodyNET.Tests.SingleStep
             // Optional: cycle count compare (state-only friendly)
             // If your CPU exposes cycles used for last instruction, you can check:
             // if (options.CheckCycleCount && t.Cycles is not null)
-            //     Assert.Equal(t.Cycles.Count, cpu.CyclesConsumedLastInstruction);
+            //     Assert.AreEqual(t.Cycles.Count, cpu.CyclesConsumedLastInstruction);
         }
 
         // ===============================
