@@ -268,31 +268,79 @@ public class Cpu()
     {
         switch (addressingMode)
         {
-            case Absolute:
+            case Absolute: // Full 16 bit address to identify memory location (2 bytes)
             {
                 return (ReadShortIncPc(), false);
             }
-            case AbsoluteIndexedX:
+            case AbsoluteIndexedX: // Full 16 bit address + X register offset
             {
                 ushort baseAddress = ReadShortIncPc();
                 ushort address = (ushort)(baseAddress + X);
                 bool pageCross = (baseAddress & 0xFF00) != (address & 0xFF00);
                 return (address, pageCross);
             }
-            case AbsoluteIndexedY:
+            case AbsoluteIndexedY: // Full 16 bit address + Y register offset
             {
                 ushort baseAddress = ReadShortIncPc();
                 ushort address = (ushort)(baseAddress + Y);
                 bool pageCross = (baseAddress & 0xFF00) != (address & 0xFF00);
                 return (address, pageCross);
             }
-            case AbsoluteIndirect:
+            case AbsoluteIndirect: // Full 16 bit address pointing to another address
             {
                 return (ReadShortIncPc(), false);
             }
+            case AbsoluteIndexedIndirectX: // Full 16 bit address + X register offset pointing to another address
+            {
+                var baseAddress = ReadShortIncPc();
+                ushort address = (ushort)(baseAddress + X);
+                return (address, false);
+            }
+            case ProgramCounterRelative: // Relative address from PC (for branches)
+            {
+                var offset = ReadByteIncPc();
+                ushort address = (ushort)(PC + (sbyte)offset);
+                return (address, false); // TODO: Check if page crossing is needed
+            }
+            case ZeroPage: // 8 bit address in first 256 bytes of memory
+            {
+                return (ReadByteIncPc(), false);
+            }
+            case ZeroPageIndexedX: // 8 bit address + X register offset in first 256 bytes of memory
+            {
+                byte baseAddress = ReadByteIncPc();
+                byte address = (byte)(baseAddress + X);
+                return (address, false);
+            }
+            case ZeroPageIndexedY: // 8 bit address + Y register offset in first 256 bytes of memory
+            {
+                byte baseAddress = ReadByteIncPc();
+                byte address = (byte)(baseAddress + Y);
+                return (address, false);
+            }
+            case ZeroPageIndirect: // 8 bit address in first 256 bytes of memory pointing to another address
+            {
+                byte zpAddress = ReadByteIncPc();
+                ushort address = ReadShort(zpAddress);
+                return (address, false);
+            }
+            case ZeroPageIndexedIndirectX: // 8 bit address + X register offset in first 256 bytes of memory pointing to another address
+            {
+                byte zpBaseAddress = ReadByteIncPc();
+                byte zpAddress = (byte)(zpBaseAddress + X);
+                ushort address = ReadShort(zpAddress);
+                return (address, false);
+            }
+            case ZeroPageIndirectIndexedY: // 8 bit address in first 256 bytes of memory pointing to another address + Y register offset
+            {
+                byte zpAddress = ReadByteIncPc();
+                ushort baseAddress = ReadShort(zpAddress);
+                ushort address = (ushort)(baseAddress + Y);
+                bool pageCross = (baseAddress & 0xFF00) != (address & 0xFF00);
+                return (address, pageCross);
+            }
             default:
                 throw new NotSupportedException($"Unsupported addressing mode: {addressingMode}");
-            // TODO: Add more addressing modes
         }
     }
 

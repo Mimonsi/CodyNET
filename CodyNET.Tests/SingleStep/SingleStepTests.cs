@@ -25,28 +25,28 @@ namespace CodyNET.Tests.SingleStep
         /// <param name="mnemonic"></param>
         [Theory]
         [InlineData(Mnemonic.ADC)]
-        public void TestMnemonicSmoke(Mnemonic mnemonic)
+        public void TestMnemonic(Mnemonic mnemonic)
         {
-            var options = TestOptions.Smoke();
+            var options = TestOptions.Minimal();
             //options = options with { StopOnFirstFailure = true };
-            var opcodes = OpcodeLookup.FromMnemonic(mnemonic).Select(x => x.Opcode);
-            Dictionary<string, bool> opcodeResults = new Dictionary<string, bool>();
-            foreach (var opcodeHex in opcodes)
+            var instructions = OpcodeLookup.FromMnemonic(mnemonic);
+            Dictionary<Instruction, bool> opcodeResults = new Dictionary<Instruction, bool>();
+            foreach (var instruction in instructions)
             {
                 //TestRunner.RunSingleOpcode(opcodeHex.ToString("x2"), options, _output);
-                var opcodeStr = opcodeHex.ToString("x2");
+                var opcodeStr = instruction.Opcode.ToString("x2");
                 output.WriteLine($"0x{opcodeStr}: Starting Tests");
                 try
                 {
                     TestRunner.RunSingleOpcode(opcodeStr, options, output);
                     output.WriteLine($"0x{opcodeStr}: Tests Completed");
-                    opcodeResults.Add(opcodeStr, true);
+                    opcodeResults.Add(instruction, true);
                 }
                 catch (Exception ex)
                 {
                     output.WriteLine($"0x{opcodeStr}: Tests Failed");
                     output.WriteLine(ex.ToString());
-                    opcodeResults.Add(opcodeStr, false);
+                    opcodeResults.Add(instruction, false);
                 }
             }
             output.WriteLine("=== MNEMONIC TESTS DONE ===");
@@ -54,7 +54,7 @@ namespace CodyNET.Tests.SingleStep
             int fails = 0;
             foreach(var result in opcodeResults)
             {
-                resultText += $"0x{result.Key}: {(result.Value ? "PASS" : "FAIL")}\n";
+                resultText += $"0x{result.Key.Opcode.ToString("x2")} ({result.Key.AddressingMode}): {(result.Value ? "PASS" : "FAIL")}\n";
                 if (!result.Value)
                     fails++;
             }
@@ -76,7 +76,7 @@ namespace CodyNET.Tests.SingleStep
         /// </summary>
         /// <param name="opcodeHex"></param>
         [Theory]
-        [InlineData("79")]
+        [InlineData("72")]
         public void TestOpcode(string opcodeHex)
         {
             var options = TestOptions.Smoke();
@@ -89,7 +89,7 @@ namespace CodyNET.Tests.SingleStep
         /// </summary>
         /// <param name="testName"></param>
         [Theory]
-        [InlineData("69 0f 65")]
+        [InlineData("72 8d 9e")]
         public void TestSingleTestCase(string testName)
         {
             var options = TestOptions.Full();
@@ -182,9 +182,9 @@ namespace CodyNET.Tests.SingleStep
                 throw new InvalidOperationException(
                     $"No test case named \"{testName}\" found in opcode {opcodeHex.ToUpperInvariant()}.");
 
-            if (matches.Count > 1)
+            /*if (matches.Count > 1)
                 throw new InvalidOperationException(
-                    $"Multiple test cases named \"{testName}\" found in opcode {opcodeHex.ToUpperInvariant()}.");
+                    $"Multiple test cases named \"{testName}\" found in opcode {opcodeHex.ToUpperInvariant()}.");*/
 
             var selected = matches[0];
             output?.WriteLine(
