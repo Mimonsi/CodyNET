@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="CodyCalcHelper/CodyCalcHelper.csproj" />
   <Project Path="CodyNET.Tests/CodyNET.Tests.csproj" />
   <Project Path="CodyNET/CodyNET.csproj" />
 </Solution>

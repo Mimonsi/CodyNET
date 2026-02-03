@@ -18,13 +18,21 @@ namespace CodyNET.Tests.SingleStep
             var options = TestOptions.Full();
             TestRunner.RunAllOpcodes(options, output);
         }
+
+        [Theory]
+        [InlineData(Mnemonic.ADC)]
+        [InlineData(Mnemonic.AND)]
+        public void TestWorkingMnemonics(Mnemonic mnemonic)
+        {
+            TestMnemonic(mnemonic);
+        }
         
         /// <summary>
         /// Tests all opcodes for a given mnemonic. (Level 3)
         /// </summary>
         /// <param name="mnemonic"></param>
         [Theory]
-        [InlineData(Mnemonic.ADC)]
+        [InlineData(Mnemonic.AND)]
         public void TestMnemonic(Mnemonic mnemonic)
         {
             var options = TestOptions.Full();
@@ -89,7 +97,7 @@ namespace CodyNET.Tests.SingleStep
         /// </summary>
         /// <param name="testName"></param>
         [Theory]
-        [InlineData("61 d1 9e")]
+        [InlineData("32 d9 38")]
         public void TestSingleTestCase(string testName)
         {
             var options = TestOptions.Full();
@@ -311,7 +319,7 @@ namespace CodyNET.Tests.SingleStep
             if (!string.IsNullOrEmpty(mismatch))
             {
                 output?.WriteLine(mismatch);
-                throw new SingleStepTestFailureException("CPU state mismatch.", new Exception(mismatch));
+                throw new SingleStepTestFailureException($"CPU state mismatch in test case {t.Name}", new Exception(mismatch));
             }
 
             // Assert final RAM pairs
