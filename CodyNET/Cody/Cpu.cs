@@ -168,6 +168,7 @@ public class Cpu()
             case BNE: DoBranch(!Status.Zero); break;
             case BPL: DoBranch(!Status.Negative); break;
             case BRA: DoBranch(true); break;
+            case BRK: DoBRK(); break;
             case BVC: DoBranch(!Status.Overflow); break;
             case BVS: DoBranch(Status.Overflow); break;
             
@@ -311,6 +312,7 @@ public class Cpu()
         }
         return true;
     }
+
     private bool DoBIT()
     {
         var (value, pageCross) = ReadValueOperand(instruction.AddressingMode);
@@ -322,6 +324,16 @@ public class Cpu()
             Status.Overflow = (value & 0x40) != 0;
         }
         return true;
+    }
+    
+    private void DoBRK()
+    {
+        PC++; // Skip unused byte
+        PushPC();
+        PushFlags(true);
+        Status.InterruptDisable = true;
+        Status.DecimalMode = false;
+        PC = ReadShort(0xFFFE); 
     }
     
     private bool DoLDA()
