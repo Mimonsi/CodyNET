@@ -16,5 +16,12 @@ public class ProgramTests
     {
         Cody cody = new Cody();
         cody.RunAssemblyFile(FileUtils.GetTestDataPath("minimal.s"));
+        Assert.True(true);
+    }
+
+    [Test]
+    public void MiscTest()
+    {
+
     }
 }

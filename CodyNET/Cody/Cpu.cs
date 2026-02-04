@@ -24,7 +24,7 @@ public class Cpu()
         private set
         {
             _a = value;
-            UpdateRegisterFlags(value);
+            UpdateNzFlags(value);
         }
     }
     
@@ -35,7 +35,7 @@ public class Cpu()
         private set
         {
             _x = value;
-            UpdateRegisterFlags(value);
+            UpdateNzFlags(value);
         }
     }
     
@@ -46,9 +46,14 @@ public class Cpu()
         private set
         {
             _y = value;
-            UpdateRegisterFlags(value);
+            UpdateNzFlags(value);
         }
     }
+    
+    public const byte INITIAL_STACK_POINTER = 0xFD;
+    public const ushort NMI_VECTOR = 0xFFFA;
+    public const ushort RESET_VECTOR = 0xFFFC;
+    public const ushort IRQ_VECTOR = 0xFFFE;
 
     public byte S; // Stack Pointer
     public Status Status;
@@ -95,7 +100,7 @@ public class Cpu()
     /// Update Zero and Negative flags based on the given value
     /// </summary>
     /// <param name="value"></param>
-    private void UpdateRegisterFlags(byte value)
+    private void UpdateNzFlags(byte value)
     {
         Status.Zero = (value == 0);
         Status.Negative = (value & 0x80) != 0;
@@ -105,11 +110,25 @@ public class Cpu()
     /// Resets the CPU state, setting the program counter to the specified start address and clearing registers.
     /// </summary>
     /// <param name="startAddress"></param>
-    public void Reset(ushort startAddress)
+    public void ResetToAddress(ushort startAddress)
     {
+        Reset();
         PC = startAddress;
+    }
+    
+    public void Reset()
+    {
         A = X = Y = 0;
-        S = 0xFF;
+        S = INITIAL_STACK_POINTER;
+        Status = new Status()
+        {
+            InterruptDisable = true
+        };
+        PC = ReadShort(RESET_VECTOR);
+        
+        // Additional reset logic for variables
+        TotalCyclesExecuted = 0;
+        
     }
     
     /// <summary>
@@ -123,7 +142,7 @@ public class Cpu()
         if (startAddress + program.Length > Memory.Size)
             throw new ArgumentException($"Program does not fit in memory at the given start address. ({startAddress} + {program.Length} > {Memory.Size})");
         Memory.CopyFrom(program, startAddress);
-        Reset(startAddress);
+        ResetToAddress(startAddress);
     }
 
     private Instruction instruction;
@@ -131,8 +150,6 @@ public class Cpu()
     public StepResult Step()
     {
         instruction = OpcodeLookup.FromOpcode(Memory.Read(PC++));
-        if (instruction.Opcode == 0)
-            return StepResult.EmptyBytecode;
             
         cycles = instruction.Cycles;
         
@@ -168,6 +185,7 @@ public class Cpu()
             case BNE: DoBranch(!Status.Zero); break;
             case BPL: DoBranch(!Status.Negative); break;
             case BRA: DoBranch(true); break;
+            case BRK: DoBRK(); break;
             case BVC: DoBranch(!Status.Overflow); break;
             case BVS: DoBranch(Status.Overflow); break;
             
@@ -175,6 +193,12 @@ public class Cpu()
             case CLD: Status.DecimalMode = false; break;
             case CLI: Status.InterruptDisable = false; break;
             case CLV: Status.Overflow = false; break;
+            case CMP: DoCompare(A); break;
+            case CPX: DoCompare(X); break;
+            case CPY: DoCompare(Y); break;
+            case DEC: DoDEC(); break;
+            case DEX: DoDEX(); break;
+            case DEY: DoDEY(); break;
             
             case LDA: DoLDA(); break;
             case LDX: DoLDX(); break;
@@ -195,7 +219,7 @@ public class Cpu()
         
         return StepResult.Success;
     }
-    
+
     public void RunUntilFinish()
     {
         StepResult lastResult = StepResult.Success;
@@ -247,7 +271,7 @@ public class Cpu()
             var value = ReadByte(address);
             var newValue = (byte)(value << 1);
             Memory.Write(address, newValue);
-            UpdateRegisterFlags(newValue);
+            UpdateNzFlags(newValue);
             Status.Carry = (value & 0x80) != 0;
         }
         return true;
@@ -311,6 +335,7 @@ public class Cpu()
         }
         return true;
     }
+
     private bool DoBIT()
     {
         var (value, pageCross) = ReadValueOperand(instruction.AddressingMode);
@@ -321,6 +346,54 @@ public class Cpu()
             Status.Negative = (value & 0x80) != 0;
             Status.Overflow = (value & 0x40) != 0;
         }
+        return true;
+    }
+    
+    private bool DoBRK()
+    {
+        PC++; // Skip unused byte
+        PushPC();
+        PushFlags(true);
+        Status.InterruptDisable = true;
+        Status.DecimalMode = false;
+        PC = ReadShort(0xFFFE);
+        return true;
+    }
+
+    private bool DoCompare(byte value1)
+    {
+        var (value2, pageCross) = ReadValueOperand(instruction.AddressingMode);
+        UpdateNzFlags((byte) (value1 - value2));
+        Status.Carry = value1 >= value2;
+        if (pageCross) cycles += 1;
+        return true;
+    }
+    
+    private bool DoDEC()
+    {
+        if (instruction.AddressingMode == Accumulator)
+        {
+            A--;
+            return true;
+        }
+        var (address, pageCross) = ReadAddressOperand(instruction.AddressingMode);
+        if (pageCross && instruction.AddressingMode == AbsoluteIndexedX) cycles += 1;
+        var value = ReadByte(address);
+        var newValue = (byte) (value - 1);
+        Memory.Write(address, newValue);
+        UpdateNzFlags(newValue);
+        return true;
+    }
+    
+    private bool DoDEX()
+    {
+        X--;
+        return true;
+    }
+    
+    private bool DoDEY()
+    {
+        Y--;
         return true;
     }
     
@@ -534,6 +607,45 @@ public class Cpu()
         byte low = ReadByte(address);
         byte high = ReadByte((byte)(address + 1));
         return (ushort)((high << 8) | low);
+    }
+
+    private void PushByte(byte value)
+    {
+        Memory.Write((ushort) (0x0100 + S), value);
+        S--;
+    }
+
+    private byte PopByte()
+    {
+        S++;
+        return Memory.Read((ushort)(0x0100 + S));
+    }
+
+    private void PushPC()
+    {
+        PushByte((byte)((PC >> 8) & 0xFF)); // High byte
+        PushByte((byte)(PC & 0xFF));        // Low byte
+    }
+    
+    private void PopPC()
+    {
+        byte low = PopByte();
+        byte high = PopByte();
+        PC = (ushort)((high << 8) | low);
+    }
+    
+    /// <summary>
+    /// Pushes the status flags onto the stack.
+    /// </summary>
+    /// <param name="breakFlag">true for BRK and PHP, false for IRQ and NMI</param>
+    private void PushFlags(bool breakFlag)
+    {
+        PushByte(Status.ToByteForPush(breakFlag));
+    }
+
+    private void PopFlags()
+    {
+        Status = new Status(PopByte());
     }
     
     #endregion

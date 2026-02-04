@@ -31,7 +31,7 @@ namespace CodyNET.Tests.SingleStep
         /// </summary>
         /// <param name="opcodeHex"></param>
         [Explicit("Dev Test")]
-        [TestCase("90")]
+        [TestCase("00")]
         public void TestOpcode(string opcodeHex)
         {
             var options = TestOptions.Full() with { Verbose = true, StopOnFirstFailure = true};
