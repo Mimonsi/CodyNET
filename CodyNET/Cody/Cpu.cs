@@ -163,6 +163,18 @@ public class Cpu()
             case BCC: DoBranch(!Status.Carry); break;
             case BCS: DoBranch(Status.Carry); break;
             case BEQ: DoBranch(Status.Zero); break;
+            case BIT: DoBIT(); break;
+            case BMI: DoBranch(Status.Negative); break;
+            case BNE: DoBranch(!Status.Zero); break;
+            case BPL: DoBranch(!Status.Negative); break;
+            case BRA: DoBranch(true); break;
+            case BVC: DoBranch(!Status.Overflow); break;
+            case BVS: DoBranch(Status.Overflow); break;
+            
+            case CLC: Status.Carry = false; break;
+            case CLD: Status.DecimalMode = false; break;
+            case CLI: Status.InterruptDisable = false; break;
+            case CLV: Status.Overflow = false; break;
             
             case LDA: DoLDA(); break;
             case LDX: DoLDX(); break;
@@ -171,6 +183,9 @@ public class Cpu()
             case NOP:
                 break;
             
+            case SEC: Status.Carry = true; break;
+            case SED: Status.DecimalMode = true; break;
+            case SEI: Status.InterruptDisable = true; break;
             case STA: DoSTA(); break;
             
             default:
@@ -293,6 +308,18 @@ public class Cpu()
                 cycles += 2; // Page crossed
             else
                 cycles += 1; // No page crossed
+        }
+        return true;
+    }
+    private bool DoBIT()
+    {
+        var (value, pageCross) = ReadValueOperand(instruction.AddressingMode);
+        if (pageCross) cycles += 1;
+        Status.Zero = (A & value) == 0;
+        if (instruction.AddressingMode != Immediate)
+        {
+            Status.Negative = (value & 0x80) != 0;
+            Status.Overflow = (value & 0x40) != 0;
         }
         return true;
     }
