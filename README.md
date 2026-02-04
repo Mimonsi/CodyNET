@@ -12,11 +12,6 @@ It aims to enhance the original emulator with extended features.
 - Debugging tools for assembly programming
 - Emulator can be set to run in real time
 
-## Artificial mnemonics
-- DRS #index → Dump Registers in Logger
-- DBP → Create breakpoint, gives control to debugger when reached
-- DMP → Dump Memory in Logger
-
 ## single_step_tests
 
 Uses the [65x02 SingleStepTests](https://github.com/SingleStepTests/65x02) created by Thomas Harte et al., licensed under MIT.
@@ -40,6 +35,82 @@ This folder `testdata` should contain the path `wdc65c02/v1/*.json`
 ### Ideas
 - Just-In-Time Assembly to display instruction context in debugger
 - Buttons and register values at top of debugger
+
+## Debugger Implementation
+
+There are multiple ways to implement the Debugger. Ideally, the debug instructions should be easy to use and remember, while not having side effects on the program.
+
+### Option A: Artificial mnemonics
+The 65C02 has several unused opcodes that could be used for artificial mnemonics. This might cause side effects on the actual Cody Computer Hardware. Existing assemblers might not support these mnemonics, so a preprocessor would be required, adding an additional step to assembling a program.
+
+- DRS #index → Dump Registers in Logger
+- DBP → Create breakpoint, gives control to debugger when reached
+- DMP → Dump Memory in Logger
+
+#### Pro Option A
+- Mnemonics easy to remember and intuitive to use
+- Very easy to implement in the emulator
+
+#### Contra Option A
+- Possible side effects on real hardware
+- Requires a preprocessor for existing assemblers, or a custom assembler
+
+### Option B: Writing to unmapped memory addresses (FF00 -> ROM)
+The Cody Computer does not map the full 16-bit address space. The range $FF00 to $FFFF is reserved for ROM. Writing to these addresses could be used to trigger debugger actions. This approach has no side effects on the actual hardware, as writes to ROM are ignored.
+
+#### Pro Option B
+- No side effects on real hardware
+- No preprocessor or custom assembler required
+- Easy implementation of Debugger as Memory Mapped Device in the Emulator
+
+#### Contra Option B
+- Multiple instructions required for command
+- Commands less intuitive to use
+
+### Possible Solution
+Macros could be used to simplify the usage of Option B in assembly code. For example:
+
+```assembly
+DBG_DBP  = $FF00
+DBG_DRS  = $FF01
+DBG_DMP  = $FF02
+
+DBP .macro param
+        LDA #\param
+        STA DBG_DBP
+.endmacro
+
+DRS .macro
+        LDA #$01
+        STA DBG_DRS
+.endmacro
+
+DMP .macro param
+        LDA #\param
+        STA DBG_DMP
+.endmacro
+
+start:
+        DBP $01
+        DRS
+        DMP $02
+        BRK
+```
+
+or even shorter:
+
+```assembly
+    DBP .macro param
+        LDA #\param
+        STA $FF00
+.endmacro
+
+start:
+        DBP $01
+        BRK
+```
+
+## Debugger Context Visuals
 
 ```
 [Step] [Continue] [Exit]

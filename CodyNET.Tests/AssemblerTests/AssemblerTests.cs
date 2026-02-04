@@ -31,6 +31,14 @@ public class AssemblerTests
     }
 
     [Test]
+    public void TestUnmappedArea()
+    {
+        var assembler = new TassAssembler();
+        var bytes = assembler.AssembleFile(FileUtils.GetTestDataPath("debugTesting/unmappedArea.s"));
+        Assert.True(true);
+    }
+
+    [Test]
     public void TestDisassemblerSingle()
     {
         var result = CodyDisassembler.Disassemble([0x69, 0x53, 0x00]);
