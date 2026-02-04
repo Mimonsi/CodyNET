@@ -291,6 +291,357 @@ public sealed class SingleStepMnemonicTests_BEQ
 }
 
 [Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_BIT
+{
+    [Test]
+    public void Smoke_BIT()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.BIT, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_BMI
+{
+    [Test]
+    public void Smoke_BMI()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.BMI, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_BNE
+{
+    [Test]
+    public void Smoke_BNE()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.BNE, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_BPL
+{
+    [Test]
+    public void Smoke_BPL()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.BPL, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_BRA
+{
+    [Test]
+    public void Smoke_BRA()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.BRA, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_BRK
+{
+    [Test]
+    public void Smoke_BRK()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.BRK, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_BVC
+{
+    [Test]
+    public void Smoke_BVC()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.BVC, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_BVS
+{
+    [Test]
+    public void Smoke_BVS()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.BVS, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_CLC
+{
+    [Test]
+    public void Smoke_CLC()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.CLC, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_CLD
+{
+    [Test]
+    public void Smoke_CLD()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.CLD, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_CLI
+{
+    [Test]
+    public void Smoke_CLI()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.CLI, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_CLV
+{
+    [Test]
+    public void Smoke_CLV()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.CLV, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_CMP
+{
+    [Test]
+    public void Smoke_CMP()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.CMP, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_CPX
+{
+    [Test]
+    public void Smoke_CPX()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.CPX, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_CPY
+{
+    [Test]
+    public void Smoke_CPY()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.CPY, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_DBP
+{
+    [Test]
+    public void Smoke_DBP()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.DBP, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_DEC
+{
+    [Test]
+    public void Smoke_DEC()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.DEC, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_DEX
+{
+    [Test]
+    public void Smoke_DEX()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.DEX, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_DEY
+{
+    [Test]
+    public void Smoke_DEY()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.DEY, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_DMP
+{
+    [Test]
+    public void Smoke_DMP()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.DMP, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_DRS
+{
+    [Test]
+    public void Smoke_DRS()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.DRS, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_EOR
+{
+    [Test]
+    public void Smoke_EOR()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.EOR, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_INC
+{
+    [Test]
+    public void Smoke_INC()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.INC, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_INX
+{
+    [Test]
+    public void Smoke_INX()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.INX, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_INY
+{
+    [Test]
+    public void Smoke_INY()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.INY, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_JMP
+{
+    [Test]
+    public void Smoke_JMP()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.JMP, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_JSR
+{
+    [Test]
+    public void Smoke_JSR()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.JSR, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
 public sealed class SingleStepMnemonicTests_LDA
 {
     [Test]
@@ -325,6 +676,643 @@ public sealed class SingleStepMnemonicTests_LDY
         var options = TestOptions.Smoke();
         // Pass null output to avoid interleaved logs in parallel runs.
         SingleStepMnemonicRunner.Run(Mnemonic.LDY, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_LSR
+{
+    [Test]
+    public void Smoke_LSR()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.LSR, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_NOP
+{
+    [Test]
+    public void Smoke_NOP()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.NOP, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_ORA
+{
+    [Test]
+    public void Smoke_ORA()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.ORA, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_PHA
+{
+    [Test]
+    public void Smoke_PHA()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.PHA, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_PHP
+{
+    [Test]
+    public void Smoke_PHP()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.PHP, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_PHX
+{
+    [Test]
+    public void Smoke_PHX()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.PHX, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_PHY
+{
+    [Test]
+    public void Smoke_PHY()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.PHY, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_PLA
+{
+    [Test]
+    public void Smoke_PLA()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.PLA, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_PLP
+{
+    [Test]
+    public void Smoke_PLP()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.PLP, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_PLX
+{
+    [Test]
+    public void Smoke_PLX()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.PLX, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_PLY
+{
+    [Test]
+    public void Smoke_PLY()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.PLY, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_RMB0
+{
+    [Test]
+    public void Smoke_RMB0()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.RMB0, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_RMB1
+{
+    [Test]
+    public void Smoke_RMB1()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.RMB1, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_RMB2
+{
+    [Test]
+    public void Smoke_RMB2()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.RMB2, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_RMB3
+{
+    [Test]
+    public void Smoke_RMB3()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.RMB3, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_RMB4
+{
+    [Test]
+    public void Smoke_RMB4()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.RMB4, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_RMB5
+{
+    [Test]
+    public void Smoke_RMB5()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.RMB5, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_RMB6
+{
+    [Test]
+    public void Smoke_RMB6()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.RMB6, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_RMB7
+{
+    [Test]
+    public void Smoke_RMB7()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.RMB7, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_ROL
+{
+    [Test]
+    public void Smoke_ROL()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.ROL, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_ROR
+{
+    [Test]
+    public void Smoke_ROR()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.ROR, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_RTI
+{
+    [Test]
+    public void Smoke_RTI()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.RTI, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_RTS
+{
+    [Test]
+    public void Smoke_RTS()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.RTS, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_SBC
+{
+    [Test]
+    public void Smoke_SBC()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.SBC, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_SEC
+{
+    [Test]
+    public void Smoke_SEC()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.SEC, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_SED
+{
+    [Test]
+    public void Smoke_SED()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.SED, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_SEI
+{
+    [Test]
+    public void Smoke_SEI()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.SEI, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_SMB0
+{
+    [Test]
+    public void Smoke_SMB0()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.SMB0, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_SMB1
+{
+    [Test]
+    public void Smoke_SMB1()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.SMB1, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_SMB2
+{
+    [Test]
+    public void Smoke_SMB2()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.SMB2, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_SMB3
+{
+    [Test]
+    public void Smoke_SMB3()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.SMB3, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_SMB4
+{
+    [Test]
+    public void Smoke_SMB4()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.SMB4, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_SMB5
+{
+    [Test]
+    public void Smoke_SMB5()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.SMB5, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_SMB6
+{
+    [Test]
+    public void Smoke_SMB6()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.SMB6, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_SMB7
+{
+    [Test]
+    public void Smoke_SMB7()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.SMB7, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_STA
+{
+    [Test]
+    public void Smoke_STA()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.STA, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_STP
+{
+    [Test]
+    public void Smoke_STP()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.STP, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_STX
+{
+    [Test]
+    public void Smoke_STX()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.STX, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_STY
+{
+    [Test]
+    public void Smoke_STY()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.STY, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_STZ
+{
+    [Test]
+    public void Smoke_STZ()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.STZ, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_TAX
+{
+    [Test]
+    public void Smoke_TAX()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.TAX, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_TAY
+{
+    [Test]
+    public void Smoke_TAY()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.TAY, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_TRB
+{
+    [Test]
+    public void Smoke_TRB()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.TRB, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_TSB
+{
+    [Test]
+    public void Smoke_TSB()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.TSB, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_TSX
+{
+    [Test]
+    public void Smoke_TSX()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.TSX, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_TXA
+{
+    [Test]
+    public void Smoke_TXA()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.TXA, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_TXS
+{
+    [Test]
+    public void Smoke_TXS()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.TXS, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_TYA
+{
+    [Test]
+    public void Smoke_TYA()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.TYA, options, output: null);
+    }
+
+}
+
+[Parallelizable(ParallelScope.All)]
+public sealed class SingleStepMnemonicTests_WAI
+{
+    [Test]
+    public void Smoke_WAI()
+    {
+        var options = TestOptions.Smoke();
+        // Pass null output to avoid interleaved logs in parallel runs.
+        SingleStepMnemonicRunner.Run(Mnemonic.WAI, options, output: null);
     }
 
 }

@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using CodyNET.Cody;
 using NUnit.Framework;
 
 namespace CodyNET.Tests.SingleStep;
@@ -21,7 +22,7 @@ public class TestGenerator
         bool includeSmoke = true;
         bool includeFull = false;
         // Keep this list in sync with your "working mnemonics".
-        string[] mnemonics =
+        /*string[] mnemonics =
         [
             "ADC",
             "AND",
@@ -34,7 +35,8 @@ public class TestGenerator
             "LDA",
             "LDX",
             "LDY",
-        ];
+        ];*/
+        var mnemonics = OpcodeLookup.Instructions.DistinctBy(x => x.Mnemonic).Select(x => x.Mnemonic.ToString()).OrderBy(x => x).ToArray();
 
         var sb = new StringBuilder();
 
