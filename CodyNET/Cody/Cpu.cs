@@ -197,9 +197,14 @@ public class Cpu()
             case CPX: DoCompare(X); break;
             case CPY: DoCompare(Y); break;
             case DEC: DoDEC(); break;
-            case DEX: DoDEX(); break;
-            case DEY: DoDEY(); break;
-            
+            case DEX: X--; break;
+            case DEY: Y--; break;
+            case EOR: DoEOR(); break;
+            case INC: DoINC(); break;
+            case INX: X++; break;
+            case INY: Y++; break;
+            case JMP: DoJMP(); break;
+            case JSR: DoJSR(); break;
             case LDA: DoLDA(); break;
             case LDX: DoLDX(); break;
             case LDY: DoLDY(); break;
@@ -384,16 +389,45 @@ public class Cpu()
         UpdateNzFlags(newValue);
         return true;
     }
-    
-    private bool DoDEX()
+
+    private bool DoEOR()
     {
-        X--;
+        var (value, pageCross) = ReadValueOperand(instruction.AddressingMode);
+        if (pageCross) cycles += 1;
+        A = (byte)(A ^ value);
         return true;
     }
-    
-    private bool DoDEY()
+
+    private bool DoINC()
     {
-        Y--;
+        if (instruction.AddressingMode == Accumulator)
+        {
+            A++;
+            return true;
+        }
+        var (address, pageCross) = ReadAddressOperand(instruction.AddressingMode);
+        if (pageCross && instruction.AddressingMode == AbsoluteIndexedX) cycles += 1;
+        var value = ReadByte(address);
+        var newValue = (byte)(value + 1);
+        Memory.Write(address, newValue);
+        UpdateNzFlags(newValue);
+        return true;
+    }
+
+    private bool DoJMP()
+    {
+        var (targetAddress, pageCross) = ReadAddressOperand(instruction.AddressingMode);
+        if (pageCross) cycles += 1;
+        PC = targetAddress;
+        return true;
+    }
+
+    private bool DoJSR()
+    {
+        var (targetAddress, pageCross) = ReadAddressOperand(instruction.AddressingMode);
+        if (pageCross) cycles += 1;
+        PushPC();
+        PC = targetAddress;
         return true;
     }
     
@@ -521,13 +555,14 @@ public class Cpu()
             }
             case AbsoluteIndirect: // Full 16 bit address pointing to another address
             {
-                return (ReadShortIncPc(), false);
+                var address = ReadShortIncPc();
+                return (ReadShort(address), false);
             }
             case AbsoluteIndexedIndirectX: // Full 16 bit address + X register offset pointing to another address
             {
                 var baseAddress = ReadShortIncPc();
                 ushort address = (ushort)(baseAddress + X);
-                return (address, false);
+                return (ReadShort(address), false);
             }
             case ProgramCounterRelative: // Relative address from PC (for branches)
             {

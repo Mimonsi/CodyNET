@@ -49,6 +49,8 @@ public class TestGenerator
 
         foreach (var mnemonic in mnemonics)
         {
+            if (mnemonic == "DBP" || mnemonic == "DRS" || mnemonic == "DMP") // Ignore custom mnemonics for now
+                continue;
             var className = $"SingleStepMnemonicTests_{mnemonic}";
             sb.AppendLine("[Parallelizable(ParallelScope.All)]");
             sb.AppendLine($"public sealed class {className}");

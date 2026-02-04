@@ -31,7 +31,7 @@ namespace CodyNET.Tests.SingleStep
         /// </summary>
         /// <param name="opcodeHex"></param>
         [Explicit("Dev Test")]
-        [TestCase("42")]
+        [TestCase("6C")]
         public void TestOpcode(string opcodeHex)
         {
             var options = TestOptions.Full() with { Verbose = true, StopOnFirstFailure = true};
@@ -308,7 +308,7 @@ namespace CodyNET.Tests.SingleStep
 
             // Assert final CPU state
             var actual = cpu.GetState();
-            var mismatch = GetMismatchMessage(t.Initial.GetCpuState(), t.Final.GetCpuState(), actual);
+            var mismatch = GetMismatchMessage(t, actual);
 
             if (!string.IsNullOrEmpty(mismatch))
             {
@@ -331,7 +331,7 @@ namespace CodyNET.Tests.SingleStep
             }
 
             if (options.Verbose)
-                output?.WriteLine(PrettyPrintStates(t.Initial.GetCpuState(), t.Final.GetCpuState(), actual));
+                output?.WriteLine(PrettyPrintStates(t, actual));
 
             // Optional: cycle count compare (state-only friendly)
             // If your CPU exposes cycles used for last instruction, you can check:
@@ -343,8 +343,9 @@ namespace CodyNET.Tests.SingleStep
         // Helpers
         // ===============================
 
-        private static string GetMismatchMessage(CpuState initial, CpuState final, CpuState actual)
+        private static string GetMismatchMessage(TestCase testCase, CpuState actual)
         {
+            var final = testCase.Final.GetCpuState();
             if (final.A == actual.A &&
                 final.X == actual.X &&
                 final.Y == actual.Y &&
@@ -355,17 +356,19 @@ namespace CodyNET.Tests.SingleStep
                 return string.Empty;
             }
 
-            return PrettyPrintStates(initial, final, actual);
+            return PrettyPrintStates(testCase, actual);
         }
 
-        private static string PrettyPrintStates(CpuState initial, CpuState final, CpuState actual)
+        private static string PrettyPrintStates(TestCase testCase, CpuState actual)
         {
             // Format table with intial, actual and final state next to each other like this
             // Register | Initial | Actual | Expected
             // ---------------------------------------
             // A        | 0x12    | 0x34   | 0x56
-            
-            var text = "\nRegister | Initial | Actual  | Expected\n";
+            var initial = testCase.Initial.GetCpuState();
+            var final = testCase.Final.GetCpuState();
+            var text = $"\nProgram: {GetDisassembledProgram(testCase)}";
+            text += "\nRegister | Initial | Actual  | Expected\n";
             text += "---------------------------------------\n";
             if (final.A != actual.A)
                 text += $"A (FAIL) | 0x{initial.A:X2}    | 0x{actual.A:X2}   | 0x{final.A:X2}\n";
