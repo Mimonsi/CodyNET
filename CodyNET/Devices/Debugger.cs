@@ -8,12 +8,14 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice
 {
     public ushort StartAddress => 0xFF00;
     public ushort EndAddress => 0xFFFF;
+    public bool SupportsRead { get; } = false;
+    public bool SupportsWrite { get; } = true;
     private Cpu cpu = cpu;
+    bool ReadAllowed => false;
 
 
     public byte Read(ushort address)
     {
-        Log.Warn($"Invalid read from Debugger at address {address:X4}");
         return 0;
     }
 

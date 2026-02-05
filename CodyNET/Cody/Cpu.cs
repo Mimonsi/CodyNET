@@ -231,6 +231,11 @@ public class Cpu()
         while (lastResult != StepResult.PcOverflow && lastResult != StepResult.EmptyBytecode)
         {
             lastResult = Step();
+            if (PC == 0)
+            {
+                Log.Debug("PC overflow detected, stopping execution.");
+                break;
+            }
         }
         Log.Info("Program finished execution.");
     }

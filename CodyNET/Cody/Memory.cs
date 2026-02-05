@@ -6,7 +6,7 @@ public class Memory
 {
     private const int DEFAULT_RAM_SIZE = 0x10000; // 64 KB = 65536 bytes
     public readonly byte[] ram;
-    private List<IMemoryMappedDevice> devices = new();
+    private List<IMemoryMappedDevice> devices = [];
     public int Size => ram.Length;
 
     public Memory()
@@ -80,9 +80,11 @@ public class Memory
     /// <returns></returns>
     public byte Read(ushort address)
     {
-        var device = devices.FirstOrDefault(d => 
-            address >= d.StartAddress && address <= d.EndAddress);
-        
+        var device = devices.FirstOrDefault(d =>
+            d.SupportsRead &&
+            address >= d.StartAddress &&
+            address <= d.EndAddress);
+
         return device?.Read(address) ?? ram[address];
     }
     
@@ -94,7 +96,7 @@ public class Memory
     /// <param name="value"></param>
     public void Write(ushort address, byte value)
     {
-        var mappedDevices = devices.Where(x => x.StartAddress < address && x.EndAddress > address).ToList();
+        var mappedDevices = devices.Where(x => x.StartAddress < address && x.EndAddress > address && x.SupportsWrite).ToList();
 
         if (mappedDevices.Count == 0)
         {
@@ -105,10 +107,5 @@ public class Memory
         {
             mappedDevice.Write(address, value);
         }
-    }
-    
-    public void Push(ushort address, byte value)
-    {
-        ram[address--] = value;
     }
 }

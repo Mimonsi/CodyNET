@@ -10,6 +10,15 @@ public interface IMemoryMappedDevice
     /// </summary>
     ushort StartAddress { get; }
     ushort EndAddress { get; }
+    /// <summary>
+    /// Indicates whether the device handles reads within its address range.
+    /// </summary>
+    bool SupportsRead { get; }
+
+    /// <summary>
+    /// Indicates whether the device handles writes within its address range.
+    /// </summary>
+    bool SupportsWrite { get; }
     
     byte Read(ushort address);
     void Write(ushort address, byte value);
