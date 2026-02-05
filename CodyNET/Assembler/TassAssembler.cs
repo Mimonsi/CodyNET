@@ -1,11 +1,12 @@
 ﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace CodyNET.Assembler;
 
 public class TassAssembler : ICodyAssembler
 {
-        private static readonly string _tassPath = @"C:\Program Files\64tass\64tass.exe";
+        private static readonly string _tassPath = ResolveTassPath();
         /// Full path to 64tass executable (e.g. "C:\Tools\64tass\64tass.exe" or "/usr/bin/64tass").
         private static readonly string _args = "--mw65c02 --nostart";
         /// CPU selection argument. For 65C02 you likely want something like "--m65c02" or similar
@@ -142,5 +143,54 @@ public class TassAssembler : ICodyAssembler
             {
                 // Intentionally ignore cleanup failures.
             }
+        }
+
+        private static string ResolveTassPath()
+        {
+            string? overridePath = Environment.GetEnvironmentVariable("CODYNET_64TASS");
+            if (!string.IsNullOrWhiteSpace(overridePath))
+                return overridePath;
+
+            string baseDir = AppContext.BaseDirectory;
+            string osPart = GetOsPart();
+            string archPart = GetArchPart();
+            string exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "64tass.exe" : "64tass";
+            string bundledPath = Path.Combine(baseDir, "Assembler", "64tass",$"{osPart}-{archPart}", exeName);
+
+            if (File.Exists(bundledPath))
+                return bundledPath;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                string programFilesPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                    "64tass",
+                    "64tass.exe");
+                if (File.Exists(programFilesPath))
+                    return programFilesPath;
+            }
+
+            return exeName;
+        }
+
+        private static string GetOsPart()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return "win";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return "mac";
+            return "linux";
+        }
+
+        private static string GetArchPart()
+        {
+            return RuntimeInformation.ProcessArchitecture switch
+            {
+                Architecture.Arm64 => "arm64",
+                Architecture.Arm => "arm",
+                Architecture.X64 => "x64",
+                Architecture.X86 => "x86",
+                _ => RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant()
+            };
         }
 }
