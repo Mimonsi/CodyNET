@@ -1,10 +1,12 @@
 ﻿using CodyNET.Assembler;
-using CodyNET.Utils;
 using CodyPrototype.Utils;
 using NUnit.Framework;
 
 namespace CodyNET.Tests.AssemblerTests;
 
+/// <summary>
+/// These tests require 64tass assembler to be installed and accessible via the path specified in TassAssembler.cs
+/// </summary>
 public class AssemblerTests
 {
     [Test]
