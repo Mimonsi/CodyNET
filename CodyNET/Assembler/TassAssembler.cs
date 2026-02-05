@@ -4,7 +4,7 @@ using System.Text;
 
 namespace CodyNET.Assembler;
 
-public class TassAssembler : ICodyAssembler
+public static class TassAssembler
 {
         private static readonly string _tassPath = ResolveTassPath();
         /// Full path to 64tass executable (e.g. "C:\Tools\64tass\64tass.exe" or "/usr/bin/64tass").
