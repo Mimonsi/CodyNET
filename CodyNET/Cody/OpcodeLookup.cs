@@ -332,7 +332,6 @@ public static class OpcodeLookup
 
             // JSR (Jump to Subroutine)
             new(0x20, JSR, AddressingMode.Absolute, 3, 6),
-            new(0xFC, JSR, AddressingMode.AbsoluteIndexedIndirectX, 3, 8),
 
             // LDA (Load Accumulator) ☑
             new(0xA9, LDA, AddressingMode.Immediate, 2, 2),

@@ -31,9 +31,11 @@ namespace CodyNET.Tests.SingleStep
         /// </summary>
         /// <param name="opcodeHex"></param>
         [Explicit("Dev Test")]
-        [TestCase("6C")]
+        [TestCase("0xfc")]
         public void TestOpcode(string opcodeHex)
         {
+            if (opcodeHex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                opcodeHex = opcodeHex[2..];
             var options = TestOptions.Full() with { Verbose = true, StopOnFirstFailure = true};
             var result = TestRunner.RunSingleOpcode(opcodeHex, options, Output);
             Output.WriteLine($"Opcode 0x{opcodeHex}: {result.successful}/{result.total} tests passed.");
@@ -316,6 +318,9 @@ namespace CodyNET.Tests.SingleStep
                 throw new SingleStepTestFailureException($"CPU state mismatch in test case {t.Name}:", new Exception(mismatch));
             }
 
+            int ramMismatches = 0;
+            string ramMismatchDetails = "Address | Initial | Actual | Expected\n";
+            ramMismatchDetails += "---------------------------------------\n";
             // Assert final RAM pairs
             foreach (var pair in t.Final.Ram)
             {
@@ -324,10 +329,16 @@ namespace CodyNET.Tests.SingleStep
                 var actualVal = cpu.Memory.Read(addr);
                 if (expected != actualVal)
                 {
-                    var message = $"RAM mismatch at 0x{addr:X4}: expected 0x{expected:X2} actual 0x{actualVal:X2}";
-                    output?.WriteLine(message);
-                    throw new SingleStepTestFailureException(message, new Exception(message));
+                    string initialValue = t.Initial.Ram.FirstOrDefault(p => (ushort)p[0] == addr)?[1].ToString() ?? "N/A";
+                    ramMismatchDetails += $"0x{addr:X4}  | 0x{initialValue}   | 0x{actualVal:X2}   | 0x{expected:X2}\n";
+                    ramMismatches++;
                 }
+            }
+            if (ramMismatches > 0)
+            {
+                var message = $"{ramMismatches} RAM values mismatched in test case {t.Name}:\n{ramMismatchDetails}";
+                output?.WriteLine(message);
+                throw new SingleStepTestFailureException($"{ramMismatches} RAM values mismatched in test case \"{t.Name}\":\n{ramMismatchDetails}", new Exception($"{ramMismatches} RAM mismatches"));
             }
 
             if (options.Verbose)

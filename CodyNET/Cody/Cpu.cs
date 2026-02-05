@@ -431,6 +431,7 @@ public class Cpu()
     {
         var (targetAddress, pageCross) = ReadAddressOperand(instruction.AddressingMode);
         if (pageCross) cycles += 1;
+        PC--; // Push address of last byte of JSR instruction
         PushPC();
         PC = targetAddress;
         return true;
