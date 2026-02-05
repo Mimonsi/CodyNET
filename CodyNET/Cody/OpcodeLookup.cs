@@ -267,7 +267,7 @@ public static class OpcodeLookup
             // CLV (Clear Overflow) ☑
             new(0xB8, CLV, AddressingMode.None, 1, 2),
 
-            // CMP (Compare with Accumulator)
+            // CMP (Compare with Accumulator) ☑
             new(0xC9, CMP, AddressingMode.Immediate, 2, 2),
             new(0xC5, CMP, AddressingMode.ZeroPage, 2, 3),
             new(0xD5, CMP, AddressingMode.ZeroPageIndexedX, 2, 4),
@@ -278,30 +278,30 @@ public static class OpcodeLookup
             new(0xC1, CMP, AddressingMode.ZeroPageIndexedIndirectX, 2, 6),
             new(0xD1, CMP, AddressingMode.ZeroPageIndirectIndexedY, 2, 5), // +1 if page crossed
 
-            // CPX (Compare with X)
+            // CPX (Compare with X) ☑
             new(0xE0, CPX, AddressingMode.Immediate, 2, 2),
             new(0xE4, CPX, AddressingMode.ZeroPage, 2, 3),
             new(0xEC, CPX, AddressingMode.Absolute, 3, 4),
 
-            // CPY (Compare with Y)
+            // CPY (Compare with Y) ☑
             new(0xC0, CPY, AddressingMode.Immediate, 2, 2),
             new(0xC4, CPY, AddressingMode.ZeroPage, 2, 3),
             new(0xCC, CPY, AddressingMode.Absolute, 3, 4),
 
-            // DEC (Decrement by one)
+            // DEC (Decrement by one) ☑
             new(0x3A, DEC, AddressingMode.Accumulator, 1, 2),
             new(0xC6, DEC, AddressingMode.ZeroPage, 2, 5),
             new(0xD6, DEC, AddressingMode.ZeroPageIndexedX, 2, 6),
             new(0xCE, DEC, AddressingMode.Absolute, 3, 6),
             new(0xDE, DEC, AddressingMode.AbsoluteIndexedX, 3, 7),
 
-            // DEX (Decrement X by one)
+            // DEX (Decrement X by one) ☑
             new(0xCA, DEX, AddressingMode.None, 1, 2),
 
-            // DEY (Decrement Y by one)
+            // DEY (Decrement Y by one) ☑
             new(0x88, DEY, AddressingMode.None, 1, 2),
 
-            // EOR (Exclusive OR with Accumulator)
+            // EOR (Exclusive OR with Accumulator) ☑
             new(0x49, EOR, AddressingMode.Immediate, 2, 2),
             new(0x45, EOR, AddressingMode.ZeroPage, 2, 3),
             new(0x55, EOR, AddressingMode.ZeroPageIndexedX, 2, 4),
@@ -312,25 +312,25 @@ public static class OpcodeLookup
             new(0x41, EOR, AddressingMode.ZeroPageIndexedIndirectX, 2, 6),
             new(0x51, EOR, AddressingMode.ZeroPageIndirectIndexedY, 2, 5),
 
-            // INC (Increment by one)
+            // INC (Increment by one) ☑
             new(0x1A, INC, AddressingMode.Accumulator, 1, 2),
             new(0xE6, INC, AddressingMode.ZeroPage, 2, 5),
             new(0xF6, INC, AddressingMode.ZeroPageIndexedX, 2, 6),
             new(0xEE, INC, AddressingMode.Absolute, 3, 6),
             new(0xFE, INC, AddressingMode.AbsoluteIndexedX, 3, 7),
 
-            // INX (Increment X by one)
+            // INX (Increment X by one) ☑
             new(0xE8, INX, AddressingMode.None, 1, 2),
 
-            // INY (Increment Y by one)
+            // INY (Increment Y by one) ☑
             new(0xC8, INY, AddressingMode.None, 1, 2),
 
-            // JMP (Jump)
+            // JMP (Jump) ☑
             new(0x4C, JMP, AddressingMode.Absolute, 3, 3),
             new(0x6C, JMP, AddressingMode.AbsoluteIndirect, 3, 6),
             new(0x7C, JMP, AddressingMode.AbsoluteIndexedIndirectX, 3, 6),
 
-            // JSR (Jump to Subroutine)
+            // JSR (Jump to Subroutine) ☑
             new(0x20, JSR, AddressingMode.Absolute, 3, 6),
 
             // LDA (Load Accumulator) ☑
