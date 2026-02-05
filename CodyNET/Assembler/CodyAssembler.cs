@@ -4,7 +4,7 @@ namespace CodyNET.Assembler;
 
 public class CodyAssembler : ICodyAssembler
 {
-    public byte[] AssembleFile(string file)
+    public static byte[] AssembleFile(string file)
     {
         try
         {
@@ -19,7 +19,7 @@ public class CodyAssembler : ICodyAssembler
         }
     }
     
-    public byte[] Assemble(string assemblyCode)
+    public static byte[] Assemble(string assemblyCode)
     {
         // Placeholder implementation
         // In a real assembler, this method would parse the assembly code

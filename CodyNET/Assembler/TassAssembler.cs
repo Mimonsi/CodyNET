@@ -5,14 +5,14 @@ namespace CodyNET.Assembler;
 
 public class TassAssembler : ICodyAssembler
 {
-        private readonly string _tassPath = @"C:\Program Files\64tass\64tass.exe";
+        private static readonly string _tassPath = @"C:\Program Files\64tass\64tass.exe";
         /// Full path to 64tass executable (e.g. "C:\Tools\64tass\64tass.exe" or "/usr/bin/64tass").
-        private readonly string _args = "--mw65c02 --nostart";
+        private static readonly string _args = "--mw65c02 --nostart";
         /// CPU selection argument. For 65C02 you likely want something like "--m65c02" or similar
         /// depending on the 64tass version/syntax you use.
         /// If you do not need explicit selection, pass empty string.
 
-        public byte[] AssembleFile(string file)
+        public static byte[] AssembleFile(string file)
         {
             if (string.IsNullOrWhiteSpace(file))
                 throw new ArgumentException("Input file path must not be empty.", nameof(file));
@@ -98,7 +98,7 @@ public class TassAssembler : ICodyAssembler
             }
         }
 
-        public byte[] Assemble(string assemblyCode)
+        public static byte[] Assemble(string assemblyCode)
         {
             if (assemblyCode == null)
                 throw new ArgumentNullException(nameof(assemblyCode));

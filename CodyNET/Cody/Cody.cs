@@ -8,7 +8,6 @@ public class Cody
 {
     private Cpu cpu;
     private Memory Memory => cpu.Memory;
-    private ICodyAssembler assembler;
     //private Screen screen;
     public Cody()
     {
@@ -20,7 +19,7 @@ public class Cody
 
     public void RunAssemblyFile(string path)
     {
-        var program = assembler.AssembleFile(path);
+        var program = TassAssembler.AssembleFile(path);
         LoadProgram(program);
         cpu.RunUntilFinish();
     }

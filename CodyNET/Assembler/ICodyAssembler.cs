@@ -2,7 +2,7 @@
 
 public interface ICodyAssembler
 {
-    public byte[] AssembleFile(string file);
+    public static abstract byte[] AssembleFile(string file);
 
-    public byte[] Assemble(string assemblyCode);
+    public static abstract byte[] Assemble(string assemblyCode);
 }

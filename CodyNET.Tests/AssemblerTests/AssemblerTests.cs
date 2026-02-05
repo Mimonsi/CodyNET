@@ -10,8 +10,7 @@ public class AssemblerTests
     [Test]
     public void TestAssembler()
     {
-        ICodyAssembler assembler = new TassAssembler();
-        var bytes = assembler.AssembleFile(FileUtils.GetTestDataPath("minimal.s"));
+        var bytes = TassAssembler.AssembleFile(FileUtils.GetTestDataPath("minimal.s"));
         var expectedBytes = FileUtils.GetBytesFromFile(FileUtils.GetTestDataPath("minimal.bin"));
         Assert.AreEqual(bytes, expectedBytes);
     }
@@ -19,22 +18,19 @@ public class AssemblerTests
     [Test]
     public void TestFileNotFound()
     {
-        var assembler = new TassAssembler();
-        Assert.Throws<FileNotFoundException>(() => assembler.AssembleFile(FileUtils.GetTestDataPath("not-existing.s")));
+        Assert.Throws<FileNotFoundException>(() => TassAssembler.AssembleFile(FileUtils.GetTestDataPath("not-existing.s")));
     }
 
     [Test]
     public void TestInvalidOpcode()
     {
-        var assembler = new TassAssembler();
-        Assert.Throws<InvalidOperationException>(() => assembler.AssembleFile(FileUtils.GetTestDataPath("invalidOpcode.s")));
+        Assert.Throws<InvalidOperationException>(() => TassAssembler.AssembleFile(FileUtils.GetTestDataPath("invalidOpcode.s")));
     }
 
     [Test]
     public void TestUnmappedArea()
     {
-        var assembler = new TassAssembler();
-        var bytes = assembler.AssembleFile(FileUtils.GetTestDataPath("debugTesting/unmappedArea.s"));
+        var bytes = TassAssembler.AssembleFile(FileUtils.GetTestDataPath("debugTesting/unmappedArea.s"));
         Assert.True(true);
     }
 
