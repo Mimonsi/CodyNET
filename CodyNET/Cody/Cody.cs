@@ -1,4 +1,5 @@
 ﻿using CodyNET.Assembler;
+using CodyNET.Devices;
 using CodyNET.Utils;
 
 namespace CodyNET.Cody;
@@ -6,13 +7,14 @@ namespace CodyNET.Cody;
 public class Cody
 {
     private Cpu cpu;
-
+    private Memory Memory => cpu.Memory;
     private ICodyAssembler assembler;
     //private Screen screen;
     public Cody()
     {
         cpu = new Cpu();
-        assembler = new TassAssembler();
+        Debugger debugger = new Debugger(cpu);
+        Memory.RegisterDevice(debugger);
         //screen = new Screen();
     }
 
@@ -34,8 +36,8 @@ public class Cody
 
     public void Start()
     {
-        // Load start program into memory (cody basic)
-        // Open screen window and begin rendering
-        // Start cpu execution
+        // Open Screen Window and begin rendering
+        // Load Cody Basic
+        // Start CPU Execution
     }
 }

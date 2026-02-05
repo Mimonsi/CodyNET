@@ -486,19 +486,6 @@ public sealed class SingleStepMnemonicTests_CPY
 }
 
 [Parallelizable(ParallelScope.All)]
-public sealed class SingleStepMnemonicTests_DBP
-{
-    [Test]
-    public void Smoke_DBP()
-    {
-        var options = TestOptions.Smoke();
-        // Pass null output to avoid interleaved logs in parallel runs.
-        SingleStepMnemonicRunner.Run(Mnemonic.DBP, options, output: null);
-    }
-
-}
-
-[Parallelizable(ParallelScope.All)]
 public sealed class SingleStepMnemonicTests_DEC
 {
     [Test]
@@ -533,32 +520,6 @@ public sealed class SingleStepMnemonicTests_DEY
         var options = TestOptions.Smoke();
         // Pass null output to avoid interleaved logs in parallel runs.
         SingleStepMnemonicRunner.Run(Mnemonic.DEY, options, output: null);
-    }
-
-}
-
-[Parallelizable(ParallelScope.All)]
-public sealed class SingleStepMnemonicTests_DMP
-{
-    [Test]
-    public void Smoke_DMP()
-    {
-        var options = TestOptions.Smoke();
-        // Pass null output to avoid interleaved logs in parallel runs.
-        SingleStepMnemonicRunner.Run(Mnemonic.DMP, options, output: null);
-    }
-
-}
-
-[Parallelizable(ParallelScope.All)]
-public sealed class SingleStepMnemonicTests_DRS
-{
-    [Test]
-    public void Smoke_DRS()
-    {
-        var options = TestOptions.Smoke();
-        // Pass null output to avoid interleaved logs in parallel runs.
-        SingleStepMnemonicRunner.Run(Mnemonic.DRS, options, output: null);
     }
 
 }

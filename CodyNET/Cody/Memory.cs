@@ -94,13 +94,17 @@ public class Memory
     /// <param name="value"></param>
     public void Write(ushort address, byte value)
     {
-        var device = devices.FirstOrDefault(d => 
-            address >= d.StartAddress && address <= d.EndAddress);
-        
-        if (device != null)
-            device.Write(address, value);
-        else
+        var mappedDevices = devices.Where(x => x.StartAddress < address && x.EndAddress > address).ToList();
+
+        if (mappedDevices.Count == 0)
+        {
             ram[address] = value;
+            return;
+        }
+        foreach (var mappedDevice in mappedDevices)
+        {
+            mappedDevice.Write(address, value);
+        }
     }
     
     public void Push(ushort address, byte value)
