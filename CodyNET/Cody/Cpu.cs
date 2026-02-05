@@ -59,6 +59,8 @@ public class Cpu()
     public Status Status;
     public ushort PC; // 16 bit program counter
     public readonly Memory Memory = new(); // 64KB memory
+
+    public bool wait = false; // Set to true by WAI instruction, can be used by external code to pause execution until an event occurs (e.g. interrupt)
     //public long CyclesPerSecond = 1_000_000; // 1 MHz, typical for 65C02
     public long CyclesPerSecond = 10;
     public long TotalCyclesExecuted = 0;
@@ -208,14 +210,58 @@ public class Cpu()
             case LDA: DoLDA(); break;
             case LDX: DoLDX(); break;
             case LDY: DoLDY(); break;
+            case LSR: DoLSR(); break;
+            case NOP: break;
+            case ORA: DoORA(); break;
+            case PHA: DoPHA(); break;
+            case PHP: DoPHP(); break;
+            case PHX: DoPHX(); break;
+            case PHY: DoPHY(); break;
+            case PLA: DoPLA(); break;
+            case PLP: DoPLP(); break;
+            case PLX: DoPLX(); break;
+            case PLY: DoPLY(); break;
+            case RMB0: DoRmb(0); break;
+            case RMB1: DoRmb(1); break;
+            case RMB2: DoRmb(2); break;
+            case RMB3: DoRmb(3); break;
+            case RMB4: DoRmb(4); break;
+            case RMB5: DoRmb(5); break;
+            case RMB6: DoRmb(6); break;
+            case RMB7: DoRmb(7); break;
+            case ROL: DoROL(); break;
+            case ROR: DoROR(); break;
+            case RTI: DoRTI(); break;
+            case RTS: DoRTS(); break;
+            case SBC: DoSBC(); break;
+            case SMB0: DoSmb(0); break;
+            case SMB1: DoSmb(1); break;
+            case SMB2: DoSmb(2); break;
+            case SMB3: DoSmb(3); break;
+            case SMB4: DoSmb(4); break;
+            case SMB5: DoSmb(5); break;
+            case SMB6: DoSmb(6); break;
+            case SMB7: DoSmb(7); break;
             
-            case NOP:
-                break;
+            case STX: DoSTX(); break;
+            case STY: DoSTY(); break;
+            case STZ: DoSTZ(); break;
             
+            case TAX: DoTAX(); break;
+            case TAY: DoTAY(); break;
+            
+            case TRB: DoTRB(); break;
+            case TSB: DoTSB(); break;
+            
+            case TSX: DoTSX(); break;
+            case TXA: DoTXA(); break;
+            case TXS: DoTXS(); break;
+            case TYA: DoTYA(); break;
             case SEC: Status.Carry = true; break;
             case SED: Status.DecimalMode = true; break;
             case SEI: Status.InterruptDisable = true; break;
             case STA: DoSTA(); break;
+            case WAI: wait = true; break;
             
             default:
                 return StepResult.UnknownOpcode;
@@ -252,7 +298,7 @@ public class Cpu()
         }
         else
         {
-            DoAddition(value);
+            DoAdditionBinary(value);
         }
 
         return true;
@@ -461,6 +507,225 @@ public class Cpu()
         return true;
     }
 
+    private bool DoLSR()
+    {
+        if (instruction.AddressingMode == Accumulator)
+        {
+            var oldA = A;
+            A = (byte)(A >> 1);
+            Status.Carry = (oldA & 0x01) != 0;
+        }
+        else
+        {
+            var (address, pageCross) = ReadAddressOperand(instruction.AddressingMode);
+            if (pageCross) cycles += 1;
+            var value = ReadByte(address);
+            var newValue = (byte)(value >> 1);
+            Memory.Write(address, newValue);
+            UpdateNzFlags(newValue);
+            Status.Carry = (value & 0x01) != 0;
+        }
+        return true;
+    }
+
+    private bool DoORA()
+    {
+        var (value, pageCross) = ReadValueOperand(instruction.AddressingMode);
+        if (pageCross) cycles += 1;
+        A = (byte)(A | value);
+        return true;
+    }
+    
+    private bool DoPHA()
+    {
+        PushByte(A);
+        return true;
+    }
+
+    private bool DoPHP()
+    {
+        PushFlags(true);
+        return true;
+    }
+
+    private bool DoPHX()
+    {
+        PushByte(X);
+        return true;
+    }
+    
+    private bool DoPHY()
+    {
+        PushByte(Y);
+        return true;
+    }
+    
+    private bool DoPLA()
+    {
+        A = PopByte();
+        return true;
+    }
+    
+    private bool DoPLP()
+    {
+        PopFlags();
+        return true;
+    }
+    
+    private bool DoPLX()
+    {
+        X = PopByte();
+        return true;
+    }
+    
+    private bool DoPLY()
+    {
+        Y = PopByte();
+        return true;
+    }
+    
+    private bool DoRmb(int bit)
+    {
+        var (address, pageCross) = ReadAddressOperand(instruction.AddressingMode);
+        if (pageCross) cycles += 1;
+        var value = ReadByte(address);
+        var newValue = (byte)(value & ~(1 << bit));
+        Memory.Write(address, newValue);
+        return true;
+    }
+
+    private bool DoROL()
+    {
+        if (instruction.AddressingMode == Accumulator)
+        {
+            var oldA = A;
+            A = (byte)((A << 1) | (Status.Carry ? 1 : 0));
+            Status.Carry = (oldA & 0x80) != 0;
+        }
+        else
+        {
+            var (address, pageCross) = ReadAddressOperand(instruction.AddressingMode);
+            if (pageCross) cycles += 1;
+            var value = ReadByte(address);
+            var newValue = (byte)((value << 1) | (Status.Carry ? 1 : 0));
+            Memory.Write(address, newValue);
+            UpdateNzFlags(newValue);
+            Status.Carry = (value & 0x80) != 0;
+        }
+        return true;
+    }
+
+    private bool DoROR()
+    {
+        if (instruction.AddressingMode == Accumulator)
+        {
+            var oldA = A;
+            A = (byte)((A >> 1) | (Status.Carry ? 0x80 : 0));
+            Status.Carry = (oldA & 0x01) != 0;
+        }
+        else
+        {
+            var (address, pageCross) = ReadAddressOperand(instruction.AddressingMode);
+            if (pageCross) cycles += 1;
+            var value = ReadByte(address);
+            var newValue = (byte)((value >> 1) | (Status.Carry ? 0x80 : 0));
+            Memory.Write(address, newValue);
+            UpdateNzFlags(newValue);
+            Status.Carry = (value & 0x01) != 0;
+        }
+        return true;
+    }
+    
+    private bool DoRTI()
+    {
+        PopFlags();
+        PopPC();
+        return true;
+    }
+
+    private bool DoRTS()
+    {
+        PopPC();
+        PC++;
+        return true;
+    }
+
+    private bool DoSBC()
+    {
+        var (value, pageCross) = ReadValueOperand(instruction.AddressingMode);
+        if (pageCross) cycles += 1;
+        if (Status.DecimalMode)
+        {
+            cycles += 1;
+            DoSubtractionDecimal(value);
+        }
+        else
+        {
+            DoSubtractionBinary(value);
+        }
+
+        return true;
+    }
+    
+    // Add Accumulator and Carry
+    private void DoSubtractionBinary(byte value)
+    {
+        int a = A;
+        int m = value;
+        int c = Status.Carry ? 1 : 0;   // 1 = no borrow
+        int borrow = 1 - c;
+
+        int diff = a - m - borrow;
+        byte result = (byte)diff;
+
+        Status.Carry = diff >= 0; // carry set = no borrow
+        Status.Overflow = ((a ^ result) & (a ^ m) & 0x80) != 0;
+
+        A = result;
+    }
+
+    private void DoSubtractionDecimal(byte operand)
+    {
+        int a = A;
+        int m = operand;
+        int c = Status.Carry ? 1 : 0;
+        int borrow = 1 - c;
+
+        // Binary subtraction for carry + overflow reference
+        int diff = a - m - borrow;
+        byte binaryResult = (byte)diff;
+
+        Status.Carry = diff >= 0; // no borrow
+        Status.Overflow = ((a ^ binaryResult) & (a ^ m) & 0x80) != 0;
+
+        // BCD adjust
+        int al = (a & 0x0F) - (m & 0x0F) - borrow;
+        int ah = (a >> 4) - (m >> 4);
+
+        if (al < 0)
+        {
+            al -= 6;
+            ah -= 1;
+        }
+
+        if (ah < 0)
+        {
+            ah -= 6;
+        }
+
+        A = (byte)(((ah << 4) & 0xF0) | (al & 0x0F));
+    }
+    
+    private bool DoSmb(int bit)
+    {
+        var (address, pageCross) = ReadAddressOperand(instruction.AddressingMode);
+        if (pageCross) cycles += 1;
+        var value = ReadByte(address);
+        var newValue = (byte)(value | (1 << bit));
+        Memory.Write(address, newValue);
+        return true;
+    }
+
     private bool DoSTA()
     {
         var (addr, _) = ReadAddressOperand(instruction.AddressingMode);
@@ -468,8 +733,87 @@ public class Cpu()
         return true;
     }
     
+    private bool DoSTX()
+    {
+        var (addr, _) = ReadAddressOperand(instruction.AddressingMode);
+        Memory.Write(addr, X);
+        return true;
+    }
+    
+    private bool DoSTY()
+    {
+        var (addr, _) = ReadAddressOperand(instruction.AddressingMode);
+        Memory.Write(addr, Y);
+        return true;
+    }
+    
+    private bool DoSTZ()
+    {
+        var (addr, _) = ReadAddressOperand(instruction.AddressingMode);
+        Memory.Write(addr, 0);
+        return true;
+    }
+    
+    private bool DoTAX()
+    {
+        X = A;
+        return true;
+    }
+    
+    private bool DoTAY()
+    {
+        Y = A;
+        return true;
+    }
+    
+    private bool DoTRB()
+    {
+        var (address, pageCross) = ReadAddressOperand(instruction.AddressingMode);
+        if (pageCross) cycles += 1;
+        var value = ReadByte(address);
+        Status.Zero = (A & value) == 0;
+        var newValue = (byte)(value & ~A);
+        Memory.Write(address, newValue);
+        return true;
+    }
+    
+    private bool DoTSB()
+    {
+        var (address, pageCross) = ReadAddressOperand(instruction.AddressingMode);
+        if (pageCross) cycles += 1;
+        var value = ReadByte(address);
+        Status.Zero = (A & value) == 0;
+        var newValue = (byte)(value | A);
+        Memory.Write(address, newValue);
+        return true;
+    }
+    
+    private bool DoTSX()
+    {
+        X = S;
+        return true;
+    }
+    
+    private bool DoTXA()
+    {
+        A = X;
+        return true;
+    }
+    
+    private bool DoTXS()
+    {
+        S = X;
+        return true;
+    }
+    
+    private bool DoTYA()
+    {
+        A = Y;
+        return true;
+    }
+    
     // Add Accumulator and Carry
-    private void DoAddition(byte value)
+    private void DoAdditionBinary(byte value)
     {
         int carryIn = Status.Carry ? 1 : 0;
         int sum = A + value + carryIn;
@@ -686,7 +1030,9 @@ public class Cpu()
 
     private void PopFlags()
     {
+        var breakState = Status.BreakCommand;
         Status = new Status(PopByte());
+        Status.BreakCommand = breakState;
     }
     
     #endregion

@@ -30,7 +30,8 @@ public struct Status
         Zero = (statusByte & 0x02) != 0;
         InterruptDisable = (statusByte & 0x04) != 0;
         DecimalMode = (statusByte & 0x08) != 0;
-        BreakCommand = (statusByte & 0x10) != 0;
+        //BreakCommand = false; // The Break flag is not actually stored in the status register, it's only set when pushing to stack
+        BreakCommand = (statusByte & 0x10) != 0; // TODO: Find out how to use right
         Overflow = (statusByte & 0x40) != 0;
         Negative = (statusByte & 0x80) != 0;
     }

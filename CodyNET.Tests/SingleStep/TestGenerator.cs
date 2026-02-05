@@ -18,9 +18,9 @@ public class TestGenerator
     
     private static string GenerateSource()
     {
-        bool includeMinimal = false;
+        bool includeMinimal = true;
         bool includeSmoke = true;
-        bool includeFull = false;
+        bool includeFull = true;
         // Keep this list in sync with your "working mnemonics".
         /*string[] mnemonics =
         [

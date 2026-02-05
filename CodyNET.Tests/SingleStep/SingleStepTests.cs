@@ -31,7 +31,7 @@ namespace CodyNET.Tests.SingleStep
         /// </summary>
         /// <param name="opcodeHex"></param>
         [Explicit("Dev Test")]
-        [TestCase("0xfc")]
+        [TestCase("0xe9")]
         public void TestOpcode(string opcodeHex)
         {
             if (opcodeHex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
