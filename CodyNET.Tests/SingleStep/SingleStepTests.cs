@@ -81,6 +81,14 @@ namespace CodyNET.Tests.SingleStep
                     output?.WriteLine($"0x{opcodeStr}: Tests Completed");
                     opcodeResults.Add(instruction, true);
                 }
+                catch (IgnoreException)
+                {
+                    throw;
+                }
+                catch (InconclusiveException)
+                {
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     output?.WriteLine($"0x{opcodeStr}: Tests Failed");
@@ -112,15 +120,10 @@ namespace CodyNET.Tests.SingleStep
 
         public static void RunAllOpcodes(TestOptions options, TextWriter? output)
         {
-            if (!Directory.Exists(TestDataDir))
-                throw new DirectoryNotFoundException($"Test data directory not found: {TestDataDir}");
-
+            EnsureTestDataAvailable();
             var files = Directory.EnumerateFiles(TestDataDir, "*.json")
                                  .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
                                  .ToArray();
-
-            if (files.Length == 0)
-                throw new InvalidOperationException($"No *.json files found in {TestDataDir}");
             
             output?.WriteLine($"Starting test run: {options.Mode}, opcode files = {files.Length}");
             
@@ -151,6 +154,7 @@ namespace CodyNET.Tests.SingleStep
             TestOptions options,
             TextWriter? output)
         {
+            EnsureTestDataAvailable();
             opcodeHex = opcodeHex.Trim().ToLowerInvariant();
 
             var file = Path.Combine(TestDataDir, $"{opcodeHex}.json");
@@ -166,6 +170,7 @@ namespace CodyNET.Tests.SingleStep
             TestOptions options,
             TextWriter? output)
         {
+            EnsureTestDataAvailable();
             opcodeHex = opcodeHex.Trim().ToLowerInvariant();
             testName = testName.Trim();
 
@@ -224,6 +229,13 @@ namespace CodyNET.Tests.SingleStep
             TextWriter? output)
         {
             var tests = LoadTests(filePath);
+            if (tests.Count == 0)
+            {
+                output?.WriteLine(
+                    $"Opcode {opcodeHex.ToUpperInvariant()}: No test cases found.");
+                Assert.Inconclusive("No test cases found.");
+                return (0, 0);
+            }
             var indices = SelectIndices(tests.Count, options).ToArray();
 
             if (options.Verbose)
@@ -465,8 +477,24 @@ namespace CodyNET.Tests.SingleStep
 
             return repoDir;
         }
-    }
+        
+        private static void EnsureTestDataAvailable()
+        {
+            var hasDirectory = Directory.Exists(TestDataDir);
+            var hasFiles = hasDirectory && Directory.EnumerateFiles(TestDataDir, "*.json").Any();
+            if (hasFiles)
+                return;
 
+            var message =
+                "Single-step test data not found. Expected JSON files under " +
+                $"\"{TestDataDir}\".\n" +
+                "Download the test data by running " +
+                "\"./CodyNET.Tests/testdata/download-testdata.sh\" " +
+                "(or \"./CodyNET.Tests/testdata/download-testdata.ps1\").";
+            Assert.Ignore(message);
+        }
+    }
+    
     // ===============================
     // Options / DTOs
     // ===============================
