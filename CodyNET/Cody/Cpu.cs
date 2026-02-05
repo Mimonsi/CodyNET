@@ -688,32 +688,30 @@ public class Cpu()
     {
         int a = A;
         int m = operand;
-        int c = Status.Carry ? 1 : 0;
-        int borrow = 1 - c;
+        int c = Status.Carry ? 1 : 0;          // 1 = no borrow
+        int borrow = 1 - c;                    // 1 = borrow in
 
-        // Binary subtraction for carry + overflow reference
+        // Binary subtraction first (reference for C and V)
         int diff = a - m - borrow;
         byte binaryResult = (byte)diff;
 
-        Status.Carry = diff >= 0; // no borrow
+        // Carry and overflow follow binary arithmetic on 65C02
+        Status.Carry = diff >= 0; // carry set = no borrow
         Status.Overflow = ((a ^ binaryResult) & (a ^ m) & 0x80) != 0;
 
         // BCD adjust
-        int al = (a & 0x0F) - (m & 0x0F) - borrow;
-        int ah = (a >> 4) - (m >> 4);
+        int adjust = 0;
 
-        if (al < 0)
-        {
-            al -= 6;
-            ah -= 1;
-        }
+        // If low digit borrowed, subtract 0x06
+        if (((a & 0x0F) - (m & 0x0F) - borrow) < 0)
+            adjust -= 0x06;
 
-        if (ah < 0)
-        {
-            ah -= 6;
-        }
+        // If overall subtraction borrowed, subtract 0x60
+        if (diff < 0)
+            adjust -= 0x60;
 
-        A = (byte)(((ah << 4) & 0xF0) | (al & 0x0F));
+        int bcdResult = diff + adjust;
+        A = (byte)bcdResult;
     }
     
     private bool DoSmb(int bit)
