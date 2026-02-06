@@ -1,4 +1,5 @@
-﻿using CodyNET.Utils;
+﻿using System.Diagnostics;
+using CodyNET.Utils;
 using static CodyNET.Cody.Mnemonic;
 using static CodyNET.Cody.AddressingMode;
 
@@ -64,8 +65,10 @@ public class Cpu()
     //public long CyclesPerSecond = 1_000_000; // 1 MHz, typical for 65C02
     public long CyclesPerSecond = 1_000; // 1 KHz for testing and debugging, adjust as needed
     public long TotalCyclesExecuted = 0;
-    public long BatchCyclesExecuted = 0; // Collect cycles before issuing a wait to reduce overhead of waiting
-    public long BATCH_SIZE => CyclesPerSecond / 10; // Wait every 0.1 seconds worth of cycles
+    
+    public int CycleBudget = 0; // Increased when sleep is longer than expected, decreased when cycles are executed.
+    public long BATCH_SIZE => CyclesPerSecond / 20; // Wait every 0.05 seconds worth of cycles
+    public Stopwatch ExecutionStopwatch = new();
 
 
     public Cpu(CpuState initialState) : this()
@@ -149,13 +152,14 @@ public class Cpu()
         ResetToAddress(startAddress);
     }
 
-    private void WaitCycles()
+    private void WaitCycles(int cycles)
     {
-        if (BatchCyclesExecuted > BATCH_SIZE)
+        var instructionTime = ExecutionStopwatch.Elapsed.Microseconds; // Time taken to execute the instruction in microseconds
+        var expectedTime = (long)((cycles / (double)CyclesPerSecond) * 1_000_000); // Expected time for the instruction based on cycles and target frequency in microseconds
+        var delta = expectedTime - instructionTime;
+        while (delta > 0)
         {
-            BatchCyclesExecuted -= BATCH_SIZE;
-            long waitTimeMs = (long)((BATCH_SIZE / (double)CyclesPerSecond) * 1000);
-            Thread.Sleep((int)waitTimeMs);
+            delta = expectedTime - ExecutionStopwatch.Elapsed.Microseconds;
         }
     }
 
@@ -163,6 +167,7 @@ public class Cpu()
     private int cycles;
     public StepResult Step()
     {
+        ExecutionStopwatch.Restart();
         instruction = OpcodeLookup.FromOpcode(Memory.Read(PC++));
             
         cycles = instruction.Cycles;
@@ -279,8 +284,7 @@ public class Cpu()
                 return StepResult.UnknownOpcode;
         }
         TotalCyclesExecuted += cycles;
-        BatchCyclesExecuted += cycles;
-        WaitCycles(); // Calculates if wait is needed and block if so, then resets batch cycles
+        WaitCycles(cycles); // Calculates if wait is needed and block if so, then resets batch cycles
         
         return StepResult.Success;
     }

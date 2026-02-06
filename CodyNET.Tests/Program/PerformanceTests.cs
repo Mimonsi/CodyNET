@@ -8,6 +8,46 @@ using Math = CodyNET.Utils.Math;
 namespace CodyNET.Tests.Program;
 using Cody;
 
+public class WaitTests
+{
+    [Test]
+    public void TestWait()
+    {
+        var stopwatch = new System.Diagnostics.Stopwatch();
+        var totalSleepTime = 0.0;
+        for (int i = 0; i < 100; i++)
+        {
+            stopwatch.Restart();
+            Thread.Sleep(50);
+            var elapsed = stopwatch.Elapsed.TotalMilliseconds;
+            totalSleepTime += elapsed;
+            TestLog.Info($"Elapsed time: {elapsed} ms");
+        }
+        TestLog.Info("Average sleep time: " + (totalSleepTime / 100) + " ms");
+        
+    }
+    
+    [Test]
+    public void TestWhile()
+    {
+        var stopwatch = new System.Diagnostics.Stopwatch();
+        var totalSleepTime = 0.0;
+        for (int i = 0; i < 100; i++)
+        {
+            stopwatch.Restart();
+            while (stopwatch.Elapsed.Milliseconds < 10)
+            {
+                
+            }
+            var elapsed = stopwatch.Elapsed.TotalMilliseconds;
+            totalSleepTime += elapsed;
+            TestLog.Info($"Elapsed time: {elapsed} ms");
+        }
+        TestLog.Info("Average sleep time: " + (totalSleepTime / 100) + " ms");
+        
+    }
+}
+
 /// <summary>
 /// Full program tests. Set a specific cpu and memory state, run the program and verify the end state.
 /// </summary>
