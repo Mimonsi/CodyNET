@@ -62,8 +62,10 @@ public class Cpu()
 
     public bool wait = false; // Set to true by WAI instruction, can be used by external code to pause execution until an event occurs (e.g. interrupt)
     //public long CyclesPerSecond = 1_000_000; // 1 MHz, typical for 65C02
-    public long CyclesPerSecond = 10;
+    public long CyclesPerSecond = 1_000; // 1 KHz for testing and debugging, adjust as needed
     public long TotalCyclesExecuted = 0;
+    public long BatchCyclesExecuted = 0; // Collect cycles before issuing a wait to reduce overhead of waiting
+    public long BATCH_SIZE => CyclesPerSecond / 10; // Wait every 0.1 seconds worth of cycles
 
 
     public Cpu(CpuState initialState) : this()
@@ -145,6 +147,16 @@ public class Cpu()
             throw new ArgumentException($"Program does not fit in memory at the given start address. ({startAddress} + {program.Length} > {Memory.Size})");
         Memory.CopyFrom(program, startAddress);
         ResetToAddress(startAddress);
+    }
+
+    private void WaitCycles()
+    {
+        if (BatchCyclesExecuted > BATCH_SIZE)
+        {
+            BatchCyclesExecuted -= BATCH_SIZE;
+            long waitTimeMs = (long)((BATCH_SIZE / (double)CyclesPerSecond) * 1000);
+            Thread.Sleep((int)waitTimeMs);
+        }
     }
 
     private Instruction instruction;
@@ -267,6 +279,8 @@ public class Cpu()
                 return StepResult.UnknownOpcode;
         }
         TotalCyclesExecuted += cycles;
+        BatchCyclesExecuted += cycles;
+        WaitCycles(); // Calculates if wait is needed and block if so, then resets batch cycles
         
         return StepResult.Success;
     }
