@@ -154,12 +154,12 @@ public class Cpu()
 
     private void WaitCycles(int cycles)
     {
-        var instructionTime = ExecutionStopwatch.Elapsed.Microseconds; // Time taken to execute the instruction in microseconds
+        var instructionTime = ExecutionStopwatch.Elapsed.TotalMicroseconds; // Time taken to execute the instruction in microseconds
         var expectedTime = (long)((cycles / (double)CyclesPerSecond) * 1_000_000); // Expected time for the instruction based on cycles and target frequency in microseconds
         var delta = expectedTime - instructionTime;
         while (delta > 0)
         {
-            delta = expectedTime - ExecutionStopwatch.Elapsed.Microseconds;
+            delta = expectedTime - ExecutionStopwatch.Elapsed.TotalMicroseconds;
         }
     }
 

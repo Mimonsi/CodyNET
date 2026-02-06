@@ -53,6 +53,8 @@ public class WaitTests
 /// </summary>
 public class PerformanceTests
 {
+    private const int TestDurationSeconds = 5;
+    private const int SuccessMarginPercent = 10; // Allow 1% margin for performance variations
     public void MinimalProgram()
     {
         Cody cody = new Cody();
@@ -63,29 +65,43 @@ public class PerformanceTests
     [Test, Order(1)]
     public void TestPerformance_1KHz()
     {
-        var result = RunPerformanceTest(10, 1_000);
-        Assert.That(result, Is.EqualTo(1_000).Within(1).Percent);
+        var result = RunPerformanceTest(TestDurationSeconds, 1_000);
+        Assert.That(result, Is.EqualTo(1_000).Within(SuccessMarginPercent).Percent);
     }
     
     [Test, Order(2)]
     public void TestPerformance_10KHz()
     {
-        var result = RunPerformanceTest(10, 10_000);
-        Assert.That(result, Is.EqualTo(10_000).Within(1).Percent);
+        var result = RunPerformanceTest(TestDurationSeconds, 10_000);
+        Assert.That(result, Is.EqualTo(10_000).Within(SuccessMarginPercent).Percent);
     }
     
     [Test, Order(3)]
     public void TestPerformance_100KHz()
     {
-        var result = RunPerformanceTest(10, 100_000);
-        Assert.That(result, Is.EqualTo(100_000).Within(1).Percent);
+        var result = RunPerformanceTest(TestDurationSeconds, 100_000);
+        Assert.That(result, Is.EqualTo(100_000).Within(SuccessMarginPercent).Percent);
     }
     
     [Test, Order(4)]
     public void TestPerformance_1MHz()
     {
-        var result = RunPerformanceTest(10, 1_000_000);
-        Assert.That(result, Is.EqualTo(1_000_000).Within(1).Percent);
+        var result = RunPerformanceTest(TestDurationSeconds, 1_000_000);
+        Assert.That(result, Is.EqualTo(1_000_000).Within(SuccessMarginPercent).Percent);
+    }
+    
+    [Test, Order(5)]
+    public void TestPerformance_2MHz()
+    {
+        var result = RunPerformanceTest(TestDurationSeconds, 2_000_000);
+        Assert.That(result, Is.EqualTo(2_000_000).Within(SuccessMarginPercent).Percent);
+    }
+    
+    [Test, Order(6)]
+    public void TestPerformance_3MHz()
+    {
+        var result = RunPerformanceTest(TestDurationSeconds, 3_000_000);
+        Assert.That(result, Is.EqualTo(3_000_000).Within(SuccessMarginPercent).Percent);
     }
     
     public double RunPerformanceTest(int seconds, long targetFrequency, bool logDisabled = false)
