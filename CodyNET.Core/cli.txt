@@ -45,12 +45,6 @@ Output:
   -l, --load-address <ADDR>
                           Load address metadata / ORG for raw output (default: 0xE000)
 
-Assembler Options:
-  -I, --include <DIR>...  Add include directories (repeatable)
-  -D, --define <NAME=VAL>... Define symbols/macros (repeatable)
-  --listing <PATH>        Emit listing file (.lst)
-  --symbols <PATH>        Emit symbol map file
-
 Validation:
   --warn-as-error         Treat warnings as errors
   
@@ -68,12 +62,4 @@ Input Options:
 
 Output Options:
   -o, --output <PATH>     Output assembly path (default: <input>.asm)
-  --syntax <S>            Syntax: ca65 | 64tass | generic (default: generic)
-  --labels <MODE>         Label mode: none | auto | from-symbols (default: auto)
-  --symbols <PATH>        Optional symbol file to improve labels
-
-Disassembly Control:
-  --range <START-END>     Only disassemble address range (e.g. E000-E1FF)
-  --bytes                 Also emit .byte for undecodable regions
-
 

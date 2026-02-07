@@ -63,8 +63,7 @@ public class Cpu()
     public readonly Memory Memory = new(); // 64KB memory
 
     public bool wait = false; // Set to true by WAI instruction, can be used by external code to pause execution until an event occurs (e.g. interrupt)
-    //public long CyclesPerSecond = 1_000_000; // 1 MHz, typical for 65C02
-    public long CyclesPerSecond = 1_000; // 1 KHz for testing and debugging, adjust as needed
+    public long CyclesPerSecond = 1_000_000; // 1 MHz, typical for 65C02
     public long TotalCyclesExecuted = 0;
     public Stopwatch ExecutionStopwatch = new();
 
