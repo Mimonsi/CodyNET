@@ -1,5 +1,5 @@
 using CodyNET.Assembler;
-using CodyNET.Cody;
+using CodyNET.Core.Cody;
 
 namespace CodyCalcHelper;
 

@@ -1,4 +1,5 @@
 ﻿using CodyNET.Assembler;
+using CodyNET.Core.Cody;
 using CodyNET.Utils;
 using CodyPrototype.Utils;
 
@@ -6,7 +7,6 @@ using NUnit.Framework;
 using Math = CodyNET.Utils.Math;
 
 namespace CodyNET.Tests.Program;
-using Cody;
 
 public class WaitTests
 {

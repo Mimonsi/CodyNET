@@ -20,7 +20,7 @@ class Program
     
     public static byte[] GetBytesFromFile(string filePath)
     {
-        var file = Path.Combine(@"C:\Users\Konsi\GoogleDrive\Uni\Bachelorarbeit\CodyNET\CodyPrototype.Tests", filePath);
+        var file = Path.Combine(@"C:\Users\Konsi\GoogleDrive\Uni\Bachelorarbeit\CodyNET.Core\CodyPrototype.Tests", filePath);
         // Remove all strings and new lines
         var content = File.ReadAllText(file);
         var byteStrings = content.Split([' ', '\n', '\r', '\t'], StringSplitOptions.RemoveEmptyEntries);

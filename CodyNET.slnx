@@ -1,5 +1,8 @@
 <Solution>
   <Project Path="CodyCalcHelper/CodyCalcHelper.csproj" />
+  <Project Path="CodyNET.Assembler/CodyNET.Assembler.csproj" />
+  <Project Path="CodyNET.Common/CodyNET.Common.csproj" />
+  <Project Path="CodyNET.Core/CodyNET.Core.csproj" />
+  <Project Path="CodyNET.Disassembler/CodyNET.Disassembler.csproj" />
   <Project Path="CodyNET.Tests/CodyNET.Tests.csproj" />
-  <Project Path="CodyNET/CodyNET.csproj" />
 </Solution>

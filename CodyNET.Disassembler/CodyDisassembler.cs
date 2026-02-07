@@ -1,5 +1,5 @@
 ﻿using System.Text;
-using CodyNET.Cody;
+using CodyNET.Common;
 
 namespace CodyNET.Assembler;
 

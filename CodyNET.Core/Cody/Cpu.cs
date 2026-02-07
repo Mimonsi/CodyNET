@@ -1,9 +1,10 @@
 ﻿using System.Diagnostics;
+using CodyNET.Common;
 using CodyNET.Utils;
-using static CodyNET.Cody.Mnemonic;
-using static CodyNET.Cody.AddressingMode;
+using static CodyNET.Common.Mnemonic;
+using static CodyNET.Common.AddressingMode;
 
-namespace CodyNET.Cody;
+namespace CodyNET.Core.Cody;
 
 public enum StepResult
 {

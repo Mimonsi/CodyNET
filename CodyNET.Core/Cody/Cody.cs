@@ -1,8 +1,7 @@
 ﻿using CodyNET.Assembler;
-using CodyNET.Devices;
-using CodyNET.Utils;
+using CodyNET.Core.Devices;
 
-namespace CodyNET.Cody;
+namespace CodyNET.Core.Cody;
 
 public class Cody
 {

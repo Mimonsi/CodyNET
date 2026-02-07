@@ -1,6 +1,6 @@
-﻿using CodyNET.Interfaces;
+﻿using CodyNET.Core.Interfaces;
 
-namespace CodyNET.Cody;
+namespace CodyNET.Core.Cody;
 
 public class Memory
 {

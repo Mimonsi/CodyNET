@@ -2,7 +2,8 @@
 using System.IO;
 using System.Text.Json;
 using CodyNET.Assembler;
-using CodyNET.Cody;
+using CodyNET.Common;
+using CodyNET.Core.Cody;
 using JetBrains.Annotations;
 using NUnit.Framework;
 
@@ -489,8 +490,8 @@ namespace CodyNET.Tests.SingleStep
                 "Single-step test data not found. Expected JSON files under " +
                 $"\"{TestDataDir}\".\n" +
                 "Download the test data by running " +
-                "\"./CodyNET.Tests/testdata/download-testdata.sh\" " +
-                "(or \"./CodyNET.Tests/testdata/download-testdata.ps1\").";
+                "\"./CodyNET.Emulator.Tests/testdata/download-testdata.sh\" " +
+                "(or \"./CodyNET.Emulator.Tests/testdata/download-testdata.ps1\").";
             Assert.Ignore(message);
         }
     }

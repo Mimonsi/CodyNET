@@ -1,4 +1,4 @@
-﻿namespace CodyNET.Cody;
+﻿namespace CodyNET.Core.Cody;
 
 /// <summary>
 /// Processor Flags

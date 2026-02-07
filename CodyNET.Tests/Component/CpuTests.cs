@@ -1,5 +1,4 @@
-﻿using CodyNET.Cody;
-
+﻿using CodyNET.Core.Cody;
 using NUnit.Framework;
 
 namespace CodyNET.Tests.Component;

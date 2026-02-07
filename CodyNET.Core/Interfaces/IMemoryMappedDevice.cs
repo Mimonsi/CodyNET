@@ -1,4 +1,4 @@
-﻿namespace CodyNET.Interfaces;
+﻿namespace CodyNET.Core.Interfaces;
 
 /// <summary>
 /// Represents a memory-mapped device with read and write capabilities.

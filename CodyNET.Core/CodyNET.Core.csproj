@@ -5,6 +5,8 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <AssemblyVersion>0.0.1</AssemblyVersion>
+        <FileVersion>0.0.1</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -14,6 +16,11 @@
       <None Update="Assembler\64tass\linux-x64\64tass">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\CodyNET.Assembler\CodyNET.Assembler.csproj" />
+      <ProjectReference Include="..\CodyNET.Common\CodyNET.Common.csproj" />
     </ItemGroup>
 
 </Project>

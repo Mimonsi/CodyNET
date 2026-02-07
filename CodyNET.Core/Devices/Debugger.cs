@@ -1,8 +1,8 @@
-﻿using CodyNET.Cody;
-using CodyNET.Interfaces;
+﻿using CodyNET.Core.Cody;
+using CodyNET.Core.Interfaces;
 using CodyNET.Utils;
 
-namespace CodyNET.Devices;
+namespace CodyNET.Core.Devices;
 
 public class Debugger(Cpu cpu) : IMemoryMappedDevice
 {

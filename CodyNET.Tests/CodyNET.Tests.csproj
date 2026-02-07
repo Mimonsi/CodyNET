@@ -16,7 +16,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\CodyNET\CodyNET.csproj" />
+      <ProjectReference Include="..\CodyNET.Core\CodyNET.Core.csproj" />
+      <ProjectReference Include="..\CodyNET.Disassembler\CodyNET.Disassembler.csproj" />
     </ItemGroup>
     
     <ItemGroup>

@@ -1,7 +1,7 @@
-﻿using static CodyNET.Cody.Mnemonic;
+﻿using static CodyNET.Common.Mnemonic;
 // ReSharper disable InconsistentNaming
 
-namespace CodyNET.Cody;
+namespace CodyNET.Common;
 
 // Mnemonic enum (Alphabetical, additional debug instructions at the bottom)
 public enum Mnemonic

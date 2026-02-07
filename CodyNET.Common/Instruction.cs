@@ -1,4 +1,4 @@
-﻿namespace CodyNET.Cody;
+﻿namespace CodyNET.Common;
 
 public class Instruction(byte opcode, Mnemonic mnemonic, AddressingMode addressingMode, int bytes, int cycles)
 {

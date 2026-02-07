@@ -1,0 +1,79 @@
+﻿RUN
+Usage:
+  cody run [options] <file>
+
+Arguments:
+  <file>                  Binary file (or cartridge image with --as-cartridge)
+
+Input Options:
+  --as-cartridge          Load <file> as cartridge (expects cartridge header)
+  -l, --load-address <ADDR>
+                          Load address for raw binaries (default: 0xE000)
+                          Format: 0xE000 | E000 | 57344
+
+Vector Overrides:
+  --reset-vector <ADDR>   Override Reset Vector at 0xFFFC
+  --irq-vector <ADDR>     Override IRQ Vector at 0xFFFE
+  --nmi-vector <ADDR>     Override NMI Vector at 0xFFFA
+
+UART / I/O:
+  --uart1-source <PATH>   File used to fill UART1 RX buffer
+  --fix-newlines          Normalize newlines when reading UART text input
+  --physical-keyboard     Physical Cody keyboard mapping (ignores host layout)
+
+Execution:
+  --clock <HZ>            Target CPU clock rate (e.g. 1000000, 1MHz, 500kHz)
+                          Default: 1MHz (Cody hardware speed)
+  --fast                  Run as fast as possible (ignores --clock)
+  --headless              Run without UI (no window), if applicable
+
+Debugger:
+  -d, --debug             Enable debugger (interactive)
+  
+  
+ASSEMBLE
+Usage:
+  cody assemble [options] <file>
+
+Arguments:
+  <file>                  Assembly source file (.asm / .s / .bas? je nachdem)
+
+Output:
+  -o, --output <PATH>     Output binary path (default: <input>.bin)
+  --format <FMT>          Output format: raw | cartridge
+                          Default: raw
+  -l, --load-address <ADDR>
+                          Load address metadata / ORG for raw output (default: 0xE000)
+
+Assembler Options:
+  -I, --include <DIR>...  Add include directories (repeatable)
+  -D, --define <NAME=VAL>... Define symbols/macros (repeatable)
+  --listing <PATH>        Emit listing file (.lst)
+  --symbols <PATH>        Emit symbol map file
+
+Validation:
+  --warn-as-error         Treat warnings as errors
+  
+DISASSEMBLE
+Usage:
+  cody disassemble [options] <file>
+
+Arguments:
+  <file>                  Binary file (raw or cartridge)
+
+Input Options:
+  --as-cartridge          Treat <file> as cartridge image (header present)
+  -l, --load-address <ADDR>
+                          Base address for raw binaries (default: 0xE000)
+
+Output Options:
+  -o, --output <PATH>     Output assembly path (default: <input>.asm)
+  --syntax <S>            Syntax: ca65 | 64tass | generic (default: generic)
+  --labels <MODE>         Label mode: none | auto | from-symbols (default: auto)
+  --symbols <PATH>        Optional symbol file to improve labels
+
+Disassembly Control:
+  --range <START-END>     Only disassemble address range (e.g. E000-E1FF)
+  --bytes                 Also emit .byte for undecodable regions
+
+
