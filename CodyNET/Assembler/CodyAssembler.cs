@@ -2,7 +2,7 @@
 
 namespace CodyNET.Assembler;
 
-public class CodyAssembler : ICodyAssembler
+public static class CodyAssembler
 {
     public static byte[] AssembleFile(string file)
     {
