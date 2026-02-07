@@ -104,6 +104,13 @@ public class PerformanceTests
         Assert.That(result, Is.EqualTo(3_000_000).Within(SuccessMarginPercent).Percent);
     }
     
+    [Test, Order(7)]
+    public void TestPerformance_Max()
+    {
+        var result = RunPerformanceTest(TestDurationSeconds, 10_000_000);
+        Assert.That(result, Is.GreaterThan(1_000));
+    }
+    
     public double RunPerformanceTest(int seconds, long targetFrequency, bool logDisabled = false)
     {
         TestLog.Info($"Starting Performance for {seconds} seconds with target frequency {Math.FormatSi(targetFrequency, "Hz")}");
