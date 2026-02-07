@@ -65,9 +65,6 @@ public class Cpu()
     //public long CyclesPerSecond = 1_000_000; // 1 MHz, typical for 65C02
     public long CyclesPerSecond = 1_000; // 1 KHz for testing and debugging, adjust as needed
     public long TotalCyclesExecuted = 0;
-    
-    public int CycleBudget = 0; // Increased when sleep is longer than expected, decreased when cycles are executed.
-    public long BATCH_SIZE => CyclesPerSecond / 20; // Wait every 0.05 seconds worth of cycles
     public Stopwatch ExecutionStopwatch = new();
 
 

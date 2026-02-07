@@ -53,7 +53,7 @@ public class WaitTests
 /// </summary>
 public class PerformanceTests
 {
-    private const int TestDurationSeconds = 5;
+    private const int TestDurationSeconds = 20;
     private const int SuccessMarginPercent = 10; // Allow 1% margin for performance variations
     public void MinimalProgram()
     {
