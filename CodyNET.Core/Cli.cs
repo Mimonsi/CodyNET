@@ -22,6 +22,7 @@ public static class Cli
         root.Options.Add(verboseOption);
 
         // Subcommands
+        root.Subcommands.Add(BuildListCommand());
         root.Subcommands.Add(BuildRunCommand(verboseOption));
         root.Subcommands.Add(BuildAssembleCommand(verboseOption));
         root.Subcommands.Add(BuildDisassembleCommand(verboseOption));
@@ -35,6 +36,59 @@ public static class Cli
         });
 
         return root;
+    }
+
+    private static Command BuildListCommand()
+    {
+        var cmd = new Command("list", "Lists .s source files and .bin binaries in the current directory")
+        {
+            Aliases = { "ls", "dir" }
+        };
+        
+        var recursive = new Option<bool>("--recursive", ["-r"])
+        {
+            Description = "Shows number of files in subdirectories",
+            DefaultValueFactory = _ => false
+        };
+        cmd.Add(recursive);
+        
+        // Action (placeholder)
+        cmd.SetAction(parseResult =>
+        {
+            bool rec = parseResult.GetValue(recursive);
+            Console.WriteLine("Available .s files:");
+            Console.WriteLine(GetSubdirFilesText("*.s", rec));
+                
+            Console.WriteLine("Available .bin files:");
+            Console.WriteLine(GetSubdirFilesText("*.bin", rec));
+        });
+        return cmd;
+    }
+
+    private static string GetSubdirFilesText(string pattern, bool recursive = false)
+    {
+        var text = "";
+        var sFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), pattern);
+        foreach (var file in sFiles)            
+        {
+            text += $"  {Path.GetFileName(file)}";
+        }
+
+        if (recursive)
+        {
+            var subdirs = Directory.GetDirectories(Directory.GetCurrentDirectory());
+            Dictionary<string, int> matchesPerSubdir = new Dictionary<string, int>();
+            foreach (var subdir in subdirs)
+            {
+                matchesPerSubdir.Add(subdir, Directory.GetFiles(subdir, pattern).Length);
+            }
+            foreach (var kvp in matchesPerSubdir)
+            {
+                if (kvp.Value > 0)
+                    text += $"\n  {Path.GetFileName(kvp.Key)}/: {kvp.Value} files";
+            }
+        }
+        return text;
     }
 
     private static Command BuildRunCommand(Option<bool> verboseOption)
@@ -179,9 +233,15 @@ public static class Cli
 
         cmd.SetAction(parseResult =>
         {
-            var file = parseResult.GetValue(fileArg);
-            bool isVerbose = parseResult.GetValue(verboseOption);
-            Console.WriteLine($"[assemble] file={file} verbose={isVerbose}");
+            if (parseResult.GetValue(verboseOption))
+                Log.Level = LogLevel.Verbose;
+            ExecuteAssembleCommand(
+                parseResult.GetValue(fileArg),
+                parseResult.GetValue(output),
+                parseResult.GetValue(format),
+                parseResult.GetValue(loadAddress),
+                parseResult.GetValue(warnAsError)
+            );
             return 0;
         });
 
