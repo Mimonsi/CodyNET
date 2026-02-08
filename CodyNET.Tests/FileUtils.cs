@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Text;
 
-namespace CodyPrototype.Utils;
+namespace CodyNET.Tests;
 
 public class FileUtils
 {

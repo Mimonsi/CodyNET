@@ -1,6 +1,5 @@
 ﻿using CodyNET.Assembler;
 using CodyNET.Disassembler;
-using CodyPrototype.Utils;
 using NUnit.Framework;
 
 namespace CodyNET.Tests.AssemblerTests;

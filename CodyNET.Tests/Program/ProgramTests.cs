@@ -1,7 +1,5 @@
 ﻿using CodyNET.Assembler;
 using CodyNET.Core.Cody;
-using CodyPrototype.Utils;
-
 using NUnit.Framework;
 
 namespace CodyNET.Tests.Program;

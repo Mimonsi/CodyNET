@@ -1,0 +1,10 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="CodyNET.Frontend.App">
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+    <Application.Resources>
+        <FontFamily x:Key="C64 Pro Mono">avares://GoogleFonts/Assets/Fonts#Nunito</FontFamily>
+    </Application.Resources>
+</Application>
