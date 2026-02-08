@@ -1,4 +1,5 @@
 ﻿using System.CommandLine;
+using System.CommandLine.Completions;
 using System.CommandLine.Parsing;
 using CodyNET.Assembler;
 using CodyNET.Disassembler;
@@ -141,8 +142,13 @@ public static class Cli
 
         var fileArg = new Argument<FileInfo>("file")
         {
-            Description = "Assembly source file (.s)"
+            Description = "Assembly source file (.s)",
         }.AcceptExistingOnly();
+        fileArg.CompletionSources.Add(ctx =>
+        {
+            return Directory.GetFiles(Directory.GetCurrentDirectory(), "*.s")
+                        .Select(f => new CompletionItem(f));
+        }); // Simple completion for .s files in current directory - wasn't able to test it yet
         cmd.Arguments.Add(fileArg);
 
         var output = new Option<FileInfo?>("--output", ["-o"])
@@ -232,10 +238,5 @@ public static class Cli
     {
         // TODO: Include cartridge header parsing if asCartridge is true (override loadAddress) and load address
         CodyDisassembler.DisassembleFile(inputFile, outputFile);
-    }
-
-    private List<FileInfo> GetFiles()
-    {
-        return new List<FileInfo>();
     }
 }
