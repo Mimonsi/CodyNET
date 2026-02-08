@@ -13,7 +13,7 @@ public enum LogLevel
     Warn,
     Info,
     Debug,
-    Trace
+    Verbose
 }
 public class Log
 {
@@ -22,7 +22,7 @@ public class Log
     
     public static void Trace(string message)
     {
-        if (Level < LogLevel.Trace)
+        if (Level < LogLevel.Verbose)
             return;
         Write($"[TRACE] {message}");
     }
