@@ -4,6 +4,7 @@ using System.Text.Json;
 using CodyNET.Assembler;
 using CodyNET.Common;
 using CodyNET.Core.Cody;
+using CodyNET.Disassembler;
 using JetBrains.Annotations;
 using NUnit.Framework;
 

@@ -21,6 +21,11 @@
     <ItemGroup>
       <ProjectReference Include="..\CodyNET.Assembler\CodyNET.Assembler.csproj" />
       <ProjectReference Include="..\CodyNET.Common\CodyNET.Common.csproj" />
+      <ProjectReference Include="..\CodyNET.Disassembler\CodyNET.Disassembler.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="System.CommandLine" Version="2.0.2" />
     </ItemGroup>
 
 </Project>

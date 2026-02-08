@@ -1,10 +1,26 @@
 ﻿using System.Text;
 using CodyNET.Common;
 
-namespace CodyNET.Assembler;
+namespace CodyNET.Disassembler;
 
 public class CodyDisassembler
 {
+    public static void DisassembleFile(FileInfo input, FileInfo? output)
+    {
+        if (input == null)
+            throw new ArgumentNullException(nameof(input));
+        
+        if (!input.Exists)
+            throw new FileNotFoundException("Input file not found", input.FullName);
+
+        byte[] bytes = File.ReadAllBytes(input.FullName);
+        string disassembly = Disassemble(bytes);
+
+        if (output == null)
+            output = new FileInfo(Path.ChangeExtension(input.FullName, ".s"));
+        File.WriteAllText(output.FullName, disassembly);
+    }
+    
     public static string Disassemble(byte[] bytes)
     {
         if (bytes == null)

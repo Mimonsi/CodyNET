@@ -1,4 +1,5 @@
 ﻿using CodyNET.Assembler;
+using CodyNET.Disassembler;
 using CodyPrototype.Utils;
 using NUnit.Framework;
 

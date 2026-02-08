@@ -1,5 +1,6 @@
 using CodyNET.Assembler;
 using CodyNET.Core.Cody;
+using CodyNET.Disassembler;
 
 namespace CodyCalcHelper;
 
