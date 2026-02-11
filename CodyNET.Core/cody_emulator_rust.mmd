@@ -1,0 +1,9 @@
+flowchart TD
+    A[Frontend Main Loop] --> B[Poll Host Events]
+    B --> C[Inject Keyboard Event into Device]
+    C --> D[CPU Step<br/>Fetch / Decode / Execute]
+    D --> E[Memory Access<br/>RAM or MMIO]
+    E --> F[Passive Device Reaction]
+    F --> G[Interrupt Check]
+    G --> H[Render Video Output]
+    H --> A
