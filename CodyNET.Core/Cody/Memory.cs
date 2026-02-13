@@ -8,7 +8,12 @@ public class Memory
     private readonly byte[] prop = new byte[0x4000]; // 16 KB of Prop RAM, for the Propeller microcontroller (0xA000 - 0xDFFF)
     private readonly byte[] rom = new byte[0x2000]; // 8 KB of ROM, for BASIC and other built-in code (0xE000 - 0xFFFF)
     private List<IMemoryMappedDevice> devices = [];
-    public int Size => ram.Length;
+
+    /// <summary>
+    /// Allows writes to ROM range (used for CPU tests / state restore).
+    /// Keep false for normal emulator mode.
+    /// </summary>
+    public bool RomIsWritable { get; set; } = false;
     
     public void RegisterDevice(IMemoryMappedDevice device)
     {
@@ -51,7 +56,7 @@ public class Memory
         {
             int romOff = addr - 0xE000;
             int can = Math.Min(remaining, 0x10000 - addr); // up to 0xFFFF inclusive
-            // romOff range: 0..0x1FFF
+
             if (romOff < 0 || romOff + can > rom.Length)
                 throw new ArgumentOutOfRangeException(nameof(startAddress), "Write exceeds ROM size.");
 
@@ -75,17 +80,22 @@ public class Memory
     {
         if (zeroFill)
         {
-            for(int i = 0; i < ram.Length; i++)
-            {
-                ram[i] = 0;
-            }
+            Array.Clear(ram, 0, ram.Length);
+            Array.Clear(prop, 0, prop.Length);
+            Array.Clear(rom, 0, rom.Length);
         }
+
+        bool oldRomWritable = RomIsWritable;
+        RomIsWritable = true;
+
         foreach (var pair in addressValueList)
         {
             ushort address = (ushort)pair[0];
             byte value = (byte)pair[1];
-            Write(address, value, true);
+            Write(address, value);
         }
+
+        RomIsWritable = oldRomWritable;
     }
     
     /// <summary>
@@ -95,13 +105,25 @@ public class Memory
     public List<int[]> GetAsList()
     {
         var list = new List<int[]>();
-        for (int i = 0; i < ram.Length; i++)
+
+        for (int i = 0; i < 0xA000; i++)
         {
             if (ram[i] != 0)
-            {
                 list.Add([i, ram[i]]);
-            }
         }
+
+        for (int i = 0; i < 0x4000; i++)
+        {
+            if (prop[i] != 0)
+                list.Add([0xA000 + i, prop[i]]);
+        }
+
+        for (int i = 0; i < 0x2000; i++)
+        {
+            if (rom[i] != 0)
+                list.Add([0xE000 + i, rom[i]]);
+        }
+
         return list;
     }
     
@@ -137,7 +159,7 @@ public class Memory
     /// </summary>
     /// <param name="address"></param>
     /// <param name="value"></param>
-    public void Write(ushort address, byte value, bool allowRomWrites = false)
+    public void Write(ushort address, byte value)
     {
         var mapped = devices.Where(d =>
             d.SupportsWrite && address >= d.StartAddress && address <= d.EndAddress).ToList();
@@ -159,15 +181,9 @@ public class Memory
             default:
                 // ROM: ignore writes (oder Debug-Log)
                 // optional: allow patching vectors via a privileged method
-                if (allowRomWrites)
-                {
+                if (RomIsWritable)
                     rom[address - 0xE000] = value;
-                    break;
-                }
-
                 break;
-                //throw new AccessViolationException($"Cannot write to address ${address.ToString("X4")}. Address is in ROM range.");
         }
     }
-
 }

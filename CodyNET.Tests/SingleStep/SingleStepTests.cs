@@ -317,8 +317,10 @@ namespace CodyNET.Tests.SingleStep
         {
             // CPU hookup with initial state
             var cpu = new Cpu(t.Initial.GetCpuState());
+            // Tests assume whole memory is RAM
+            cpu.Memory.RomIsWritable = true;
             cpu.SetState(t.Initial.GetCpuState());
-
+            
             // Execute exactly one instruction
             cpu.Step();
 
