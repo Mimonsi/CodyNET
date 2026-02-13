@@ -1,4 +1,5 @@
-﻿using CodyNET.Core.Interfaces;
+﻿using CodyNET.Core.Cody;
+using CodyNET.Core.Interfaces;
 
 namespace CodyNET.Core.Devices;
 
@@ -65,10 +66,9 @@ public class VID : IMemoryMappedDevice
             LIGHT_GRAY
         };
     }
-
     
     // === Address Constants ===
-    public const ushort VID_BASE = 0xD00;
+    public const ushort VID_BASE = 0xD000;
     public const ushort VID_CONTROL_BANK = 0xD040;
     public const ushort VID_DATA_BANK = 0xD060;
     public const ushort VID_SPRITE_BANKS = 0xD080;
@@ -80,6 +80,7 @@ public class VID : IMemoryMappedDevice
     public bool SupportsWrite => true;
     
     // Screen constants
+    // Height and width of character-based screen
     public const byte CONTENT_WIDTH = 160;
     public const ushort HIRES_WIDTH = 2 * CONTENT_WIDTH; // 320 pixels in hires mode
     public const byte CONTENT_HEIGHT = 200;
@@ -87,6 +88,11 @@ public class VID : IMemoryMappedDevice
     public const int BORDER_Y = 8;
     public const int WIDTH = HIRES_WIDTH + 2 * BORDER_X;
     public const int HEIGHT = CONTENT_HEIGHT + 2 * BORDER_Y;
+    
+    // === Address Constants in shared memory ===
+    private const ushort TEXT_SCREEN_BASE = 0xA000; // 1000 bytes
+    private const ushort TEXT_COLOR_BASE = 0xA000 + 0x0400;
+    private const ushort CHARSET_BASE = 0xA800;
     
     // Sprite geometry in lores
     private const int SPRITE_W = 12;
@@ -111,5 +117,77 @@ public class VID : IMemoryMappedDevice
             throw new ArgumentOutOfRangeException(nameof(address), $"Address {address:X4} is out of range for VID device.");
         _videoMemory[address - StartAddress] = value;
         Dirty = true;
+    }
+
+    public readonly record struct VideoFrame(int Width, int Height, uint[] Pixels);
+
+    public VideoFrame RenderTextFrame(Memory memory)
+    {
+        const int COLS = 40;
+        const int ROWS = 25;
+        const int CHAR_W = 8;
+        const int CHAR_H = 8;
+        
+        var pixels = new uint[WIDTH * HEIGHT];
+        
+        // 1. Border color (simple color)
+        var border = ColorToRgba(Color.PALETTE[_videoMemory[0x02] & 0x0F]); // 0x02 as border color
+        FillRect(pixels, WIDTH, 0, 0, WIDTH, HEIGHT, border);
+
+        for (int row = 0; row < ROWS; row++)
+        {
+            for (int col = 0; col < COLS; col++)
+            {
+                int cellIndex = row * COLS + col;
+
+                byte ch = memory.Read((ushort)(TEXT_SCREEN_BASE + cellIndex));
+                byte colorByte = memory.Read((ushort)(TEXT_COLOR_BASE + cellIndex));
+                
+                int foregroundColorIndex = colorByte & 0x0F; // Low Nibble
+                int backgroundColorIndex = (colorByte >> 4) & 0x0F; // High Nibble
+
+                uint foregroundColor = ColorToRgba(Color.PALETTE[foregroundColorIndex]);
+                uint backgroundColor = ColorToRgba(Color.PALETTE[backgroundColorIndex]);
+                
+                ushort glyphBase = (ushort)(CHARSET_BASE + ch * CHAR_H); // Start address for 8 Bitmap rows
+
+                int px0 = BORDER_X + col * CHAR_W; // Left pixel position of the character cell
+                int py0 = BORDER_Y + row * CHAR_H; // Top pixel position of the character cell
+                
+                for(int gy = 0; gy < CHAR_H; gy++) // gy = pixel-row within the character
+                {
+                    byte charRowData = memory.Read((ushort)(glyphBase + gy)); // 4 bits for 4 pixels
+                    for(int gx = 0; gx < CHAR_W; gx++) // gx = pixel-column within the character
+                    {
+                        int bit = 3 - gx; // Bit 3 -> 0 from left to right
+                        bool pixelOn = ((charRowData >> bit) & 1) != 0; // Check if the bit is set
+                        
+                        int x = px0 + gx; // Absolute pixel x position in framebuffer
+                        int y = py0 + gy; // Absolute pixel y position in framebuffer
+                        
+                        pixels[y * WIDTH + x] = pixelOn ? foregroundColor : backgroundColor;
+                    }
+                }
+            }
+        }
+
+        Dirty = false;
+        return new VideoFrame(WIDTH, HEIGHT, pixels);
+    }
+    
+    private static uint ColorToRgba(Color c)
+    {
+        // RGBA8888 in a uint: 0xRRGGBBAA (matches many pipelines; adjust if your bitmap wants BGRA)
+        return ((uint)c.R << 24) | ((uint)c.G << 16) | ((uint)c.B << 8) | c.A;
+    }
+
+    private static void FillRect(uint[] pix, int stride, int x, int y, int w, int h, uint color)
+    {
+        for (int yy = 0; yy < h; yy++)
+        {
+            int row = (y + yy) * stride + x;
+            for (int xx = 0; xx < w; xx++)
+                pix[row + xx] = color;
+        }
     }
 }

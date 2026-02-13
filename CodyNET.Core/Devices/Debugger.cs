@@ -50,7 +50,8 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice
     
     private void DMP(byte index)
     {
-        string text = $"Memory Dump #{index}:\n";
+        // TODO: Implement
+        /*string text = $"Memory Dump #{index}:\n";
         foreach(var kvp in cpu.Memory.ram.Select((value, index) => new { value, index })) // TODO: Do not access ram directly
         {
             if (kvp.value != 0)
@@ -58,6 +59,6 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice
                 text += $"[{kvp.index:X4}] = {kvp.value:X2}\n";
             }
         }
-        Log.Info(text);
+        Log.Info(text);*/
     }
 }

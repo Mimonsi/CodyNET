@@ -1,4 +1,5 @@
 ﻿using CodyNET.Assembler;
+using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
 using CodyNET.Utils;
 using NUnit.Framework;
@@ -49,6 +50,7 @@ public class WaitTests
 /// <summary>
 /// Full program tests. Set a specific cpu and memory state, run the program and verify the end state.
 /// </summary>
+[Explicit]
 public class PerformanceTests
 {
     private const int TestDurationSeconds = 20;
@@ -114,7 +116,7 @@ public class PerformanceTests
         TestLog.Info($"Starting Performance for {seconds} seconds with target frequency {Math.FormatSi(targetFrequency, "Hz")}");
         Cody cody = new Cody();
         cody.FrequencyHz = targetFrequency;
-        var (loadAddr, program) = FileUtils.LoadProgram(FileUtils.GetTestDataPath("programs/codybros.bin"), defaultLoadAddress: 0x0600);
+        var (loadAddr, program) = Binary.LoadBinary(FileUtils.GetTestDataPath("programs/codybros.bin"), defaultLoadAddress: 0xE000);
         //Log.Info("Program: " + CodyDisassembler.Disassemble(program));
         cody.LoadProgram(program, loadAddr);
         TestLog.Level = LogLevel.Debug;

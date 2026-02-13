@@ -30,10 +30,10 @@ public class Cody
     }
     
     /// <summary>
-    /// Loads a binary program into memory at address 0x0600
+    /// Loads a binary program into memory at address 0xE000
     /// </summary>
     /// <param name="program"></param>
-    public void LoadProgram(byte[] program, ushort loadAddress = 0x0600)
+    public void LoadProgram(byte[] program, ushort loadAddress = 0xE000)
     {
         cpu.LoadRam(program, loadAddress);
     }

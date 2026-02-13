@@ -143,9 +143,7 @@ public class Cpu()
     /// <exception cref="ArgumentException"></exception>
     public void LoadRam(byte[] program, ushort startAddress)
     {
-        if (startAddress + program.Length > Memory.Size)
-            throw new ArgumentException($"Program does not fit in memory at the given start address. ({startAddress} + {program.Length} > {Memory.Size})");
-        Memory.CopyFrom(program, startAddress);
+        Memory.LoadBytes(program, startAddress);
         ResetToAddress(startAddress);
     }
 

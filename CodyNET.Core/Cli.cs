@@ -2,6 +2,8 @@
 using System.CommandLine.Completions;
 using System.CommandLine.Parsing;
 using CodyNET.Assembler;
+using CodyNET.Common.Utils;
+using CodyNET.Core.Cody;
 using CodyNET.Disassembler;
 using CodyNET.Utils;
 
@@ -139,7 +141,8 @@ public static class Cli
 
         var clock = new Option<string?>("--clock")
         {
-            Description = "Target CPU clock rate (e.g. 1000000, 1MHz, 500kHz)"
+            Description = "Target CPU clock rate (e.g. 1000000, 1MHz, 500kHz)",
+            DefaultValueFactory = _ => "1MHz" // Default to 1 MHz
         };
 
         var fast = new Option<bool>("--fast")
@@ -184,10 +187,55 @@ public static class Cli
 
         return cmd;
     }
-    
+
+    private static long ParseClock(string? clock)
+    {
+        if (string.IsNullOrEmpty(clock))
+            return 1_000_000; // Default to 1 MHz
+        clock = clock.Trim().ToLower();
+        long multiplier = 1;
+        if (clock.EndsWith("mhz"))
+        {
+            multiplier = 1_000_000;
+            clock = clock.Substring(0, clock.Length - 3);
+        }
+        if (clock.EndsWith("khz"))
+        {
+            multiplier = 1_000;
+            clock = clock.Substring(0, clock.Length - 3);
+        }
+        else if (clock.EndsWith("hz"))
+        {
+            multiplier = 1;
+            clock = clock.Substring(0, clock.Length - 2);
+        }
+
+        if (long.TryParse(clock, out long value))
+        {
+            return value * multiplier;
+        }
+
+        throw new ArgumentException($"Invalid clock format: {clock}");
+    }
+
     private static void ExecuteRunCommand(FileInfo inputFile, bool asCartridge, string loadAddress, string? resetVector, string? irqVector, string? nmiVector, string? uart1Source, bool fixNewlines, bool physicalKeyboard, bool debug, string? clock, bool fast)
     {
         // TODO: Implement run call
+        
+        Cody cody = new Cody();
+        cody.FrequencyHz = ParseClock(clock);
+        ushort loadAddr;
+        if (loadAddress.StartsWith("0x"))
+        {
+            loadAddress = loadAddress.Substring(2);
+            loadAddr = Convert.ToUInt16(loadAddress, 16);
+        }
+        else
+        {
+            loadAddr = Convert.ToUInt16(loadAddress);
+        }
+        var (fileLoadAddr, program) = Binary.LoadBinary(inputFile.FullName, defaultLoadAddress: loadAddr);
+        cody.LoadProgram(program, fileLoadAddr);
     }
 
     private static Command BuildAssembleCommand(Option<bool> verboseOption)

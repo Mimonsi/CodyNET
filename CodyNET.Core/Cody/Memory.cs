@@ -4,20 +4,11 @@ namespace CodyNET.Core.Cody;
 
 public class Memory
 {
-    private const int DEFAULT_RAM_SIZE = 0x10000; // 64 KB = 65536 bytes
-    public readonly byte[] ram;
+    private readonly byte[] ram = new byte[0xA000]; // 40 KB of RAM, leaving space for memory-mapped devices (0x0000 - 0x9FFF)
+    private readonly byte[] prop = new byte[0x4000]; // 16 KB of Prop RAM, for the Propeller microcontroller (0xA000 - 0xDFFF)
+    private readonly byte[] rom = new byte[0x2000]; // 8 KB of ROM, for BASIC and other built-in code (0xE000 - 0xFFFF)
     private List<IMemoryMappedDevice> devices = [];
     public int Size => ram.Length;
-
-    public Memory()
-    {
-        ram = new byte[DEFAULT_RAM_SIZE];
-    }
-    
-    public Memory(int size)
-    {
-        ram = new byte[size];
-    }
     
     public void RegisterDevice(IMemoryMappedDevice device)
     {
@@ -26,10 +17,54 @@ public class Memory
     
     #region Load Memory
     
-    public void CopyFrom(byte[] program, ushort startAddress)
+    public void LoadBytes(byte[] data, ushort startAddress)
     {
-        Array.Copy(program, 0, ram, startAddress, program.Length);
+        if (data == null) throw new ArgumentNullException(nameof(data));
+        if (data.Length == 0) return;
+
+        int remaining = data.Length;
+        int src = 0;
+        ushort addr = startAddress;
+
+        // 1) RAM: 0000..9FFF
+        if (addr < 0xA000 && remaining > 0)
+        {
+            int ramOff = addr; // addr - 0000
+            int can = Math.Min(remaining, 0xA000 - ramOff);
+            Buffer.BlockCopy(data, src, ram, ramOff, can);
+            src += can; remaining -= can;
+            addr = (ushort)(addr + can);
+        }
+
+        // 2) PROP: A000..DFFF
+        if (addr >= 0xA000 && addr < 0xE000 && remaining > 0)
+        {
+            int propOff = addr - 0xA000;
+            int can = Math.Min(remaining, 0xE000 - addr);
+            Buffer.BlockCopy(data, src, prop, propOff, can);
+            src += can; remaining -= can;
+            addr = (ushort)(addr + can);
+        }
+
+        // 3) ROM: E000..FFFF
+        if (addr >= 0xE000 && remaining > 0)
+        {
+            int romOff = addr - 0xE000;
+            int can = Math.Min(remaining, 0x10000 - addr); // up to 0xFFFF inclusive
+            // romOff range: 0..0x1FFF
+            if (romOff < 0 || romOff + can > rom.Length)
+                throw new ArgumentOutOfRangeException(nameof(startAddress), "Write exceeds ROM size.");
+
+            Buffer.BlockCopy(data, src, rom, romOff, can);
+            src += can; remaining -= can;
+            addr = (ushort)(addr + can);
+        }
+
+        // If there's still data, it would wrap past 0xFFFF (Rust would reject / your emulator should reject)
+        if (remaining > 0)
+            throw new ArgumentOutOfRangeException(nameof(startAddress), "Write exceeds 64KB address space.");
     }
+
 
     /// <summary>
     /// Sets memory values from a list of address-value pairs.
@@ -49,7 +84,7 @@ public class Memory
         {
             ushort address = (ushort)pair[0];
             byte value = (byte)pair[1];
-            Write(address, value);
+            Write(address, value, true);
         }
     }
     
@@ -85,7 +120,15 @@ public class Memory
             address >= d.StartAddress &&
             address <= d.EndAddress);
 
-        return device?.Read(address) ?? ram[address];
+        if (device != null)
+            return device.Read(address);
+        
+        return address switch
+        {
+            < 0xA000 => ram[address],
+            < 0xE000 => prop[address - 0xA000],
+            _        => rom[address - 0xE000],
+        };
     }
     
     /// <summary>
@@ -94,18 +137,37 @@ public class Memory
     /// </summary>
     /// <param name="address"></param>
     /// <param name="value"></param>
-    public void Write(ushort address, byte value)
+    public void Write(ushort address, byte value, bool allowRomWrites = false)
     {
-        var mappedDevices = devices.Where(x => x.StartAddress < address && x.EndAddress > address && x.SupportsWrite).ToList();
+        var mapped = devices.Where(d =>
+            d.SupportsWrite && address >= d.StartAddress && address <= d.EndAddress).ToList();
 
-        if (mappedDevices.Count == 0)
+        if (mapped.Count > 0)
         {
-            ram[address] = value;
+            foreach (var d in mapped) d.Write(address, value);
             return;
         }
-        foreach (var mappedDevice in mappedDevices)
+
+        switch (address)
         {
-            mappedDevice.Write(address, value);
+            case < 0xA000:
+                ram[address] = value;
+                break;
+            case < 0xE000:
+                prop[address - 0xA000] = value;
+                break;
+            default:
+                // ROM: ignore writes (oder Debug-Log)
+                // optional: allow patching vectors via a privileged method
+                if (allowRomWrites)
+                {
+                    rom[address - 0xE000] = value;
+                    break;
+                }
+
+                break;
+                //throw new AccessViolationException($"Cannot write to address ${address.ToString("X4")}. Address is in ROM range.");
         }
     }
+
 }

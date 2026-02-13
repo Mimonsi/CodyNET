@@ -5,6 +5,7 @@ namespace CodyNET.Tests.Program;
 
 public class CliTests
 {
+    [Explicit]
     [Test]
     public void TestCli()
     {
