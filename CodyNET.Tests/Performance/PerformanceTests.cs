@@ -1,11 +1,10 @@
-﻿using CodyNET.Assembler;
-using CodyNET.Common.Utils;
+﻿using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
 using CodyNET.Utils;
 using NUnit.Framework;
-using Math = CodyNET.Utils.Math;
+using Math = CodyNET.Common.Utils.Math;
 
-namespace CodyNET.Tests.Program;
+namespace CodyNET.Tests.Performance;
 
 public class WaitTests
 {
@@ -107,7 +106,7 @@ public class PerformanceTests
     [Test, Order(7)]
     public void TestPerformance_Max()
     {
-        var result = RunPerformanceTest(TestDurationSeconds, 10_000_000);
+        var result = RunPerformanceTest(TestDurationSeconds, -1);
         Assert.That(result, Is.GreaterThan(1_000));
     }
     
@@ -117,8 +116,9 @@ public class PerformanceTests
         Cody cody = new Cody();
         cody.FrequencyHz = targetFrequency;
         var (loadAddr, program) = Binary.LoadBinary(FileUtils.GetTestDataPath("programs/codybros.bin"), defaultLoadAddress: 0xE000);
+        cody.LoadImage(program, loadAddr);
+        // TODO: Check if reset vectors are set correctly here
         //Log.Info("Program: " + CodyDisassembler.Disassemble(program));
-        cody.ExecuteBinaryFile(new FileInfo(FileUtils.GetTestDataPath("programs/codybros.bin")));
         TestLog.Level = LogLevel.Debug;
         long totalCycles = 0;
         for (int i = 0; i < seconds; i++)

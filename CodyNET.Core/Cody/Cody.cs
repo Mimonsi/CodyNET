@@ -4,7 +4,7 @@ using CodyNET.Core.Devices;
 
 namespace CodyNET.Core.Cody;
 
-public sealed class CodyRunOptions
+public sealed record CodyRunOptions
 {
     public long FrequencyHz { get; init; } = 1_000_000; // 1 MHz, -1 = as fast as possible
     public bool EnableDebugger { get; init; } = true;
@@ -24,6 +24,11 @@ public class Cody
         get => cpu.CyclesPerSecond;
         set => cpu.CyclesPerSecond = value;
     }
+    public bool FastMode
+    {
+        get => cpu.CyclesPerSecond == -1;
+        set => cpu.CyclesPerSecond = value ? -1 : 1_000_000; // Default to 1 MHz when disabling fast mode
+    }
 
     //private Screen screen;
     public Cody()
@@ -35,14 +40,17 @@ public class Cody
     /// Execute binary file with default options. Sets reset vector to load address
     /// </summary>
     /// <param name="file">binary file to execute (not a cartridge!)</param>
-    public void ExecuteBinaryFile(FileInfo file)
+    public void ExecuteBinaryFile(FileInfo file, CodyRunOptions? options = null)
     {
-        (ushort loadAddress, byte[] bytes) = Binary.LoadBinary(file.FullName, asCartridge: false, overrideLoadAddress: null);
-        var options = new CodyRunOptions()
+        try
         {
-            LoadAddress = loadAddress,
-        };
-        ExecuteBinary(bytes, options);
+            var bytes = File.ReadAllBytes(file.FullName);
+            ExecuteBinary(bytes, options);
+        }
+        catch (Exception ex)
+        {
+            throw new IOException($"Failed to read binary file at path: {file.FullName}", ex);
+        }
     }
 
     public void ExecuteBinary(byte[] bytes, CodyRunOptions options)
@@ -97,7 +105,7 @@ public class Cody
         // Setup devices
         
         // Run
-        cpu.RunUntilFinish();
+        //cpu.RunUntilFinish();
 
     }
     

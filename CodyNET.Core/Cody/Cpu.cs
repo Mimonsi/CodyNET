@@ -138,6 +138,8 @@ public class Cpu()
 
     private void WaitCycles(int cycles)
     {
+        if (CyclesPerSecond == -1) // No wait, run as fast as possible
+            return;
         var instructionTime = ExecutionStopwatch.Elapsed.TotalMicroseconds; // Time taken to execute the instruction in microseconds
         var expectedTime = (long)((cycles / (double)CyclesPerSecond) * 1_000_000); // Expected time for the instruction based on cycles and target frequency in microseconds
         var delta = expectedTime - instructionTime;
