@@ -1,13 +1,9 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Completions;
-using System.CommandLine.Parsing;
-using CodyNET.Assembler;
-using CodyNET.Common.Utils;
-using CodyNET.Core.Cody;
 using CodyNET.Disassembler;
 using CodyNET.Utils;
 
-namespace CodyNET;
+namespace CodyNET.Core;
 
 public static class Cli
 {
@@ -25,6 +21,7 @@ public static class Cli
 
         // Subcommands
         root.Subcommands.Add(BuildListCommand());
+        root.Subcommands.Add(BuildBootCommand(verboseOption));
         root.Subcommands.Add(BuildRunCommand(verboseOption));
         root.Subcommands.Add(BuildAssembleCommand(verboseOption));
         root.Subcommands.Add(BuildDisassembleCommand(verboseOption));
@@ -91,6 +88,54 @@ public static class Cli
             }
         }
         return text;
+    }
+
+    private static Command BuildBootCommand(Option<bool> verboseOption)
+    {
+        var cmd = new Command("boot", "Boot the emulator with the built-in CodyBASIC");
+        
+        var physicalKeyboard = new Option<bool>("--physical-keyboard")
+        {
+            Description = "Physical Cody keyboard mapping (ignores host layout)"
+        };
+        
+        var clock = new Option<string?>("--clock")
+        {
+            Description = "Target CPU clock rate (e.g. 1000000, 1MHz, 500kHz)",
+            DefaultValueFactory = _ => "1MHz" // Default to 1 MHz
+        };
+
+        var fast = new Option<bool>("--fast")
+        {
+            Description = "Run as fast as possible (ignores --clock)"
+        };
+
+        cmd.Add(physicalKeyboard);
+        cmd.Add(clock);
+        cmd.Add(fast);
+        
+        cmd.SetAction(parseResult =>
+        {
+            if (parseResult.GetValue(verboseOption))
+                Log.Level = LogLevel.Verbose;
+            ExecuteBootCommand(
+                parseResult.GetValue(physicalKeyboard),
+                parseResult.GetValue(clock),
+                parseResult.GetValue(fast)
+            );
+            return 0;
+        });
+
+        return cmd;
+    }
+    
+    private static void ExecuteBootCommand(
+        bool physicalKeyboard,
+        string? clock,
+        bool fast)
+    {
+        Cody.Cody cody = new Cody.Cody();
+        cody.Boot();
     }
 
     private static Command BuildRunCommand(Option<bool> verboseOption)
@@ -218,25 +263,24 @@ public static class Cli
         throw new ArgumentException($"Invalid clock format: {clock}");
     }
 
-    private static void ExecuteRunCommand(FileInfo inputFile, bool asCartridge, string loadAddress, string? resetVector, string? irqVector, string? nmiVector, string? uart1Source, bool fixNewlines, bool physicalKeyboard, bool debug, string? clock, bool fast)
+    private static void ExecuteRunCommand(
+        FileInfo inputFile,
+        bool asCartridge,
+        string loadAddress,
+        string? resetVector,
+        string? irqVector,
+        string? nmiVector,
+        string? uart1Source,
+        bool fixNewlines,
+        bool physicalKeyboard,
+        bool debug,
+        string? clock,
+        bool fast)
     {
-        // TODO: Implement run call
-        
-        Cody cody = new Cody();
-        cody.FrequencyHz = ParseClock(clock);
-        ushort loadAddr;
-        if (loadAddress.StartsWith("0x"))
-        {
-            loadAddress = loadAddress.Substring(2);
-            loadAddr = Convert.ToUInt16(loadAddress, 16);
-        }
-        else
-        {
-            loadAddr = Convert.ToUInt16(loadAddress);
-        }
-        var (fileLoadAddr, program) = Binary.LoadBinary(inputFile.FullName, defaultLoadAddress: loadAddr);
-        cody.LoadProgram(program, fileLoadAddr);
+        Cody.Cody cody = new Cody.Cody();
+        // TODO: Run program
     }
+
 
     private static Command BuildAssembleCommand(Option<bool> verboseOption)
     {

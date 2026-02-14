@@ -54,6 +54,7 @@ public class Cpu()
     
     public const byte INITIAL_STACK_POINTER = 0xFD;
     public const ushort NMI_VECTOR = 0xFFFA;
+    // This is where the CPU resets to, should be the first instruction of the loaded program
     public const ushort RESET_VECTOR = 0xFFFC;
     public const ushort IRQ_VECTOR = 0xFFFE;
 
@@ -133,18 +134,6 @@ public class Cpu()
         // Additional reset logic for variables
         TotalCyclesExecuted = 0;
         
-    }
-    
-    /// <summary>
-    /// Loads a program into RAM at the specified start address and resets the CPU's program counter to that address.
-    /// </summary>
-    /// <param name="program"></param>
-    /// <param name="startAddress"></param>
-    /// <exception cref="ArgumentException"></exception>
-    public void LoadRam(byte[] program, ushort startAddress)
-    {
-        Memory.LoadBytes(program, startAddress);
-        ResetToAddress(startAddress);
     }
 
     private void WaitCycles(int cycles)

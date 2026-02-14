@@ -153,6 +153,14 @@ public class Memory
         };
     }
     
+    public void ForceWrite(ushort address, byte value)
+    {
+        bool oldRomWritable = RomIsWritable;
+        RomIsWritable = true;
+        Write(address, value);
+        RomIsWritable = oldRomWritable;
+    }
+    
     /// <summary>
     /// Writes a byte to the specified memory address. If the address falls within the range of a registered memory-mapped device,
     /// the write operation is delegated to that device. Otherwise, the byte is written to the internal RAM.

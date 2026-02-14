@@ -118,7 +118,7 @@ public class PerformanceTests
         cody.FrequencyHz = targetFrequency;
         var (loadAddr, program) = Binary.LoadBinary(FileUtils.GetTestDataPath("programs/codybros.bin"), defaultLoadAddress: 0xE000);
         //Log.Info("Program: " + CodyDisassembler.Disassemble(program));
-        cody.LoadProgram(program, loadAddr);
+        cody.ExecuteBinaryFile(new FileInfo(FileUtils.GetTestDataPath("programs/codybros.bin")));
         TestLog.Level = LogLevel.Debug;
         long totalCycles = 0;
         for (int i = 0; i < seconds; i++)

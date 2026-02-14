@@ -12,7 +12,7 @@ public class CpuTests
         ushort address = 0x3000;
         
         Cpu cpu = new Cpu();
-        cpu.LoadRam(ram, address);
+        cpu.Memory.LoadBytes(ram, address);
         
         Assert.AreEqual(0x01, cpu.Memory.Read(0x3000));
         Assert.AreEqual(0x02, cpu.Memory.Read(0x3001));
