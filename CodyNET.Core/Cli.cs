@@ -1,5 +1,7 @@
-﻿using System.CommandLine;
+using System.CommandLine;
 using System.CommandLine.Completions;
+using System.Globalization;
+using CodyNET.Core.Cody;
 using CodyNET.Disassembler;
 using CodyNET.Utils;
 
@@ -9,26 +11,21 @@ public static class Cli
 {
     public static RootCommand BuildRootCommand()
     {
-        // Root
         var root = new RootCommand("CodyNET CLI");
 
-        // Optional: global verbose (-v / --verbose) as simple bool for now (help-first)
         var verboseOption = new Option<bool>("--verbose", ["-v"])
         {
             Description = "Enable verbose logging"
         };
         root.Options.Add(verboseOption);
 
-        // Subcommands
         root.Subcommands.Add(BuildListCommand());
         root.Subcommands.Add(BuildBootCommand(verboseOption));
         root.Subcommands.Add(BuildRunCommand(verboseOption));
         root.Subcommands.Add(BuildAssembleCommand(verboseOption));
         root.Subcommands.Add(BuildDisassembleCommand(verboseOption));
 
-        // If user runs just `codynet` without a command, show help-like behavior:
-        // (Keeping it simple: exit code 0)
-        root.SetAction(parseResult =>
+        root.SetAction(_ =>
         {
             Console.WriteLine("Use --help to see available commands.");
             return 0;
@@ -66,28 +63,23 @@ public static class Cli
 
     private static string GetSubdirFilesText(string pattern, bool recursive = false)
     {
-        var text = "";
-        var sFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), pattern);
-        foreach (var file in sFiles)            
-        {
-            text += $"  {Path.GetFileName(file)}";
-        }
+        var lines = new List<string>();
+        var files = Directory.GetFiles(Directory.GetCurrentDirectory(), pattern);
+        foreach (var file in files)
+            lines.Add($"  {Path.GetFileName(file)}");
 
         if (recursive)
         {
             var subdirs = Directory.GetDirectories(Directory.GetCurrentDirectory());
-            Dictionary<string, int> matchesPerSubdir = new Dictionary<string, int>();
             foreach (var subdir in subdirs)
             {
-                matchesPerSubdir.Add(subdir, Directory.GetFiles(subdir, pattern).Length);
-            }
-            foreach (var kvp in matchesPerSubdir)
-            {
-                if (kvp.Value > 0)
-                    text += $"\n  {Path.GetFileName(kvp.Key)}/: {kvp.Value} files";
+                var count = Directory.GetFiles(subdir, pattern).Length;
+                if (count > 0)
+                    lines.Add($"  {Path.GetFileName(subdir)}/: {count} files");
             }
         }
-        return text;
+
+        return string.Join(Environment.NewLine, lines);
     }
 
     private static Command BuildBootCommand(Option<bool> verboseOption)
@@ -128,14 +120,19 @@ public static class Cli
 
         return cmd;
     }
-    
-    private static void ExecuteBootCommand(
-        bool physicalKeyboard,
-        string? clock,
-        bool fast)
+
+    private static void ExecuteBootCommand(bool physicalKeyboard, string? clock, bool fast)
     {
+        _ = physicalKeyboard; // keyboard device wiring is pending
+
+        var setupOptions = new CodySetupOptions
+        {
+            FrequencyHz = fast ? -1 : ParseClock(clock),
+            // TODO: Delegate all options
+        };
+
         Cody.Cody cody = new Cody.Cody();
-        cody.Boot();
+        cody.Boot(runtimeOptions: setupOptions);
     }
 
     private static Command BuildRunCommand(Option<bool> verboseOption)
@@ -144,7 +141,7 @@ public static class Cli
 
         var fileArg = new Argument<FileInfo>("file")
         {
-            Description = "Binary file (raw or cartridge image if --as-cartridge is set)",
+            Description = "Binary file (raw or cartridge image if --as-cartridge is set)"
         }.AcceptExistingOnly();
         cmd.Arguments.Add(fileArg);
 
@@ -157,12 +154,12 @@ public static class Cli
         var loadAddress = new Option<string>("--load-address", ["-l"])
         {
             Description = "Load address for raw binaries (default: 0xE000)",
-            DefaultValueFactory =  _ => "0xE000"
+            DefaultValueFactory = _ => "0xE000"
         };
 
         var resetVector = new Option<string?>("--reset-vector") { Description = "Override Reset Vector (0xFFFC)" };
-        var irqVector   = new Option<string?>("--irq-vector")   { Description = "Override IRQ Vector (0xFFFE)" };
-        var nmiVector   = new Option<string?>("--nmi-vector")   { Description = "Override NMI Vector (0xFFFA)" };
+        var irqVector = new Option<string?>("--irq-vector") { Description = "Override IRQ Vector (0xFFFE)" };
+        var nmiVector = new Option<string?>("--nmi-vector") { Description = "Override NMI Vector (0xFFFA)" };
 
         var uart1Source = new Option<string?>("--uart1-source")
         {
@@ -187,7 +184,7 @@ public static class Cli
         var clock = new Option<string?>("--clock")
         {
             Description = "Target CPU clock rate (e.g. 1000000, 1MHz, 500kHz)",
-            DefaultValueFactory = _ => "1MHz" // Default to 1 MHz
+            DefaultValueFactory = _ => "1MHz"
         };
 
         var fast = new Option<bool>("--fast")
@@ -195,7 +192,6 @@ public static class Cli
             Description = "Run as fast as possible (ignores --clock)"
         };
 
-        // Register options
         cmd.Options.Add(asCartridge);
         cmd.Options.Add(loadAddress);
         cmd.Options.Add(resetVector);
@@ -208,15 +204,19 @@ public static class Cli
         cmd.Options.Add(clock);
         cmd.Options.Add(fast);
 
-        // Action (placeholder)
         cmd.SetAction(parseResult =>
         {
             if (parseResult.GetValue(verboseOption))
                 Log.Level = LogLevel.Verbose;
+
+            var inputFile = parseResult.GetValue(fileArg)
+                ?? throw new ArgumentException("Missing input file argument.");
+            var parsedLoadAddress = parseResult.GetValue(loadAddress) ?? "0xE000";
+
             ExecuteRunCommand(
-                parseResult.GetValue(fileArg),
+                inputFile,
                 parseResult.GetValue(asCartridge),
-                parseResult.GetValue(loadAddress),
+                parsedLoadAddress,
                 parseResult.GetValue(resetVector),
                 parseResult.GetValue(irqVector),
                 parseResult.GetValue(nmiVector),
@@ -225,8 +225,8 @@ public static class Cli
                 parseResult.GetValue(physicalKeyboard),
                 parseResult.GetValue(debug),
                 parseResult.GetValue(clock),
-                parseResult.GetValue(fast)
-            );
+                parseResult.GetValue(fast));
+
             return 0;
         });
 
@@ -235,30 +235,34 @@ public static class Cli
 
     private static long ParseClock(string? clock)
     {
-        if (string.IsNullOrEmpty(clock))
-            return 1_000_000; // Default to 1 MHz
-        clock = clock.Trim().ToLower();
-        long multiplier = 1;
-        if (clock.EndsWith("mhz"))
+        if (string.IsNullOrWhiteSpace(clock))
+            return 1_000_000;
+
+        var text = clock.Trim().ToLowerInvariant();
+        long multiplier;
+
+        if (text.EndsWith("mhz", StringComparison.Ordinal))
         {
             multiplier = 1_000_000;
-            clock = clock.Substring(0, clock.Length - 3);
+            text = text[..^3];
         }
-        if (clock.EndsWith("khz"))
+        else if (text.EndsWith("khz", StringComparison.Ordinal))
         {
             multiplier = 1_000;
-            clock = clock.Substring(0, clock.Length - 3);
+            text = text[..^3];
         }
-        else if (clock.EndsWith("hz"))
+        else if (text.EndsWith("hz", StringComparison.Ordinal))
         {
             multiplier = 1;
-            clock = clock.Substring(0, clock.Length - 2);
+            text = text[..^2];
+        }
+        else
+        {
+            multiplier = 1;
         }
 
-        if (long.TryParse(clock, out long value))
-        {
+        if (long.TryParse(text, out long value) && value > 0)
             return value * multiplier;
-        }
 
         throw new ArgumentException($"Invalid clock format: {clock}");
     }
@@ -277,10 +281,49 @@ public static class Cli
         string? clock,
         bool fast)
     {
+        _ = uart1Source;      // UART device wiring is pending
+        _ = fixNewlines;      // UART device wiring is pending
+        _ = physicalKeyboard; // keyboard device wiring is pending
+
+        var setupOptions = new CodySetupOptions
+        {
+            EnableDebugger = debug,
+            EnableVideo = false,
+            FrequencyHz = fast ? -1 : ParseClock(clock)
+        };
+
+        var loadOptions = new CodyLoadOptions
+        {
+            AsCartridge = asCartridge,
+            LoadAddress = ParseHexUShort(loadAddress, nameof(loadAddress)),
+            ResetVectorOverride = ParseOptionalHexUShort(resetVector, nameof(resetVector)),
+            IrqVectorOverride = ParseOptionalHexUShort(irqVector, nameof(irqVector)),
+            NmiVectorOverride = ParseOptionalHexUShort(nmiVector, nameof(nmiVector))
+        };
+
         Cody.Cody cody = new Cody.Cody();
-        // TODO: Run program
+        cody.RunBinaryFile(inputFile.FullName, loadOptions, setupOptions);
     }
 
+    private static ushort? ParseOptionalHexUShort(string? value, string paramName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        return ParseHexUShort(value, paramName);
+    }
+
+    private static ushort ParseHexUShort(string value, string paramName)
+    {
+        var text = value.Trim();
+        if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            text = text[2..];
+
+        if (ushort.TryParse(text, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ushort parsed))
+            return parsed;
+
+        throw new ArgumentException($"Invalid 16-bit hex value for {paramName}: '{value}'.");
+    }
 
     private static Command BuildAssembleCommand(Option<bool> verboseOption)
     {
@@ -288,18 +331,20 @@ public static class Cli
 
         var fileArg = new Argument<FileInfo>("file")
         {
-            Description = "Assembly source file (.s)",
+            Description = "Assembly source file (.s)"
         }.AcceptExistingOnly();
-        fileArg.CompletionSources.Add(ctx =>
+
+        fileArg.CompletionSources.Add(_ =>
         {
             return Directory.GetFiles(Directory.GetCurrentDirectory(), "*.s")
-                        .Select(f => new CompletionItem(f));
-        }); // Simple completion for .s files in current directory - wasn't able to test it yet
+                .Select(f => new CompletionItem(f));
+        });
+
         cmd.Arguments.Add(fileArg);
 
         var output = new Option<FileInfo?>("--output", ["-o"])
         {
-            Description = "Output binary path (default: <input>.bin)",
+            Description = "Output binary path (default: <input>.bin)"
         }.AcceptLegalFileNamesOnly();
 
         var format = new Option<string?>("--format")
@@ -327,21 +372,35 @@ public static class Cli
         {
             if (parseResult.GetValue(verboseOption))
                 Log.Level = LogLevel.Verbose;
+
+            var inputFile = parseResult.GetValue(fileArg)
+                ?? throw new ArgumentException("Missing input file argument.");
+
             ExecuteAssembleCommand(
-                parseResult.GetValue(fileArg),
+                inputFile,
                 parseResult.GetValue(output),
                 parseResult.GetValue(format),
                 parseResult.GetValue(loadAddress),
-                parseResult.GetValue(warnAsError)
-            );
+                parseResult.GetValue(warnAsError));
+
             return 0;
         });
 
         return cmd;
     }
-    
-    private static void ExecuteAssembleCommand(FileInfo inputFile, FileInfo? outputFile, string? format, string? loadAddress, bool warnAsError)
+
+    private static void ExecuteAssembleCommand(
+        FileInfo inputFile,
+        FileInfo? outputFile,
+        string? format,
+        string? loadAddress,
+        bool warnAsError)
     {
+        _ = inputFile;
+        _ = outputFile;
+        _ = format;
+        _ = loadAddress;
+        _ = warnAsError;
         // TODO: Implement assembler call
     }
 
@@ -351,7 +410,7 @@ public static class Cli
 
         var fileArg = new Argument<FileInfo>("file")
         {
-            Description = "Binary file (raw or cartridge)",
+            Description = "Binary file (raw or cartridge)"
         }.AcceptExistingOnly();
         cmd.Arguments.Add(fileArg);
 
@@ -379,15 +438,30 @@ public static class Cli
         {
             if (parseResult.GetValue(verboseOption))
                 Log.Level = LogLevel.Verbose;
-            ExecuteDisassembleCommand(parseResult.GetValue(fileArg), parseResult.GetValue(output), parseResult.GetValue(asCartridge), parseResult.GetValue(loadAddress));
+
+            var inputFile = parseResult.GetValue(fileArg)
+                ?? throw new ArgumentException("Missing input file argument.");
+
+            ExecuteDisassembleCommand(
+                inputFile,
+                parseResult.GetValue(output),
+                parseResult.GetValue(asCartridge),
+                parseResult.GetValue(loadAddress));
+
             return 0;
         });
 
         return cmd;
     }
-    
-    private static void ExecuteDisassembleCommand(FileInfo inputFile, FileInfo? outputFile, bool? asCartridge, string? loadAddress)
+
+    private static void ExecuteDisassembleCommand(
+        FileInfo inputFile,
+        FileInfo? outputFile,
+        bool asCartridge,
+        string? loadAddress)
     {
+        _ = asCartridge;
+        _ = loadAddress;
         // TODO: Include cartridge header parsing if asCartridge is true (override loadAddress) and load address
         CodyDisassembler.DisassembleFile(inputFile, outputFile);
     }

@@ -1,183 +1,296 @@
-﻿using CodyNET.Assembler;
-using CodyNET.Common.Utils;
+using System.Diagnostics;
+using CodyNET.Assembler;
 using CodyNET.Core.Devices;
+using CodyNET.Core.Interfaces;
+using Debugger = CodyNET.Core.Devices.Debugger;
 
 namespace CodyNET.Core.Cody;
 
-public sealed record CodyRunOptions
+// Options when creating a new cody, filled with default values for boot command
+public sealed record CodySetupOptions
 {
+    public static CodySetupOptions Default => new();
+
+    public static CodySetupOptions Headless => new()
+    {
+        FrequencyHz = -1,
+        EnableDebugger = false,
+        EnableVideo = false,
+        EnableKeyboard = false,
+    };
+    
     public long FrequencyHz { get; init; } = 1_000_000; // 1 MHz, -1 = as fast as possible
     public bool EnableDebugger { get; init; } = true;
+    public bool EnableVideo { get; init; } = true;
+    public bool EnableKeyboard { get; init; } = true;
+}
+
+public sealed record CodyLoadOptions
+{
+    public static CodyLoadOptions Default => new();
+    public bool AsCartridge { get; init; }
+    public ushort LoadAddress { get; init; } = 0xE000;
+    public bool AutoSetResetVector { get; init; } = true; // If true, sets the reset vector to the load address (unless ResetVectorOverride is set)
+    public ushort? ResetVectorOverride { get; init; }
+    public ushort? IrqVectorOverride { get; init; }
+    public ushort? NmiVectorOverride { get; init; }
+}
+
+public sealed record CodyRunOptions
+{
+    public static CodyRunOptions Default => new();
+    public long FrequencyHz { get; init; } = 1_000_000;
+    public bool EnableDebugger { get; init; } = false;
+    public bool EnableVideo { get; init; } = false;
     public bool AsCartridge { get; init; } = false;
     public ushort LoadAddress { get; init; } = 0xE000;
+    public bool AutoSetResetVector { get; init; } = true;
     public ushort? ResetVectorOverride { get; init; } = null;
     public ushort? IrqVectorOverride { get; init; } = null;
     public ushort? NmiVectorOverride { get; init; } = null;
+    public string? BasicRomPath { get; init; } = null;
 }
 
-public class Cody
+public sealed class Cody
 {
-    private Cpu cpu;
-    private Memory Memory => cpu.Memory;
+    private CodySetupOptions setupOptions = new();
+    private bool isSetup;
+
+    public Cpu Cpu;
+    public Memory Memory => Cpu.Memory;
+    public Debugger? Debugger { get; private set; }
+    public IVideoDevice? Video { get; private set; }
+    public Keyboard? Keyboard { get; private set; }
+
     public long FrequencyHz
     {
-        get => cpu.CyclesPerSecond;
-        set => cpu.CyclesPerSecond = value;
+        get => Cpu.CyclesPerSecond;
+        set
+        {
+            setupOptions = setupOptions with { FrequencyHz = value };
+            Cpu.CyclesPerSecond = value;
+        }
     }
+
     public bool FastMode
     {
-        get => cpu.CyclesPerSecond == -1;
-        set => cpu.CyclesPerSecond = value ? -1 : 1_000_000; // Default to 1 MHz when disabling fast mode
+        get => Cpu.CyclesPerSecond == -1;
+        set => FrequencyHz = value ? -1 : 1_000_000;
     }
 
-    //private Screen screen;
-    public Cody()
+    public Cody(CodySetupOptions options)
     {
-        cpu = new Cpu(); // TODO: Find single way to handle cpu initialization
-    }
-
-    /// <summary>
-    /// Execute binary file with default options. Sets reset vector to load address
-    /// </summary>
-    /// <param name="file">binary file to execute (not a cartridge!)</param>
-    public void ExecuteBinaryFile(FileInfo file, CodyRunOptions? options = null)
-    {
-        try
-        {
-            var bytes = File.ReadAllBytes(file.FullName);
-            ExecuteBinary(bytes, options);
-        }
-        catch (Exception ex)
-        {
-            throw new IOException($"Failed to read binary file at path: {file.FullName}", ex);
-        }
-    }
-
-    public void ExecuteBinary(byte[] bytes, CodyRunOptions options)
-    {
-        // 1) Build machine
-        cpu = new Cpu
+        setupOptions = options;
+        
+        // 1. Set up CPU (and memory)
+        // CPU also initializes memory
+        Cpu = new Cpu
         {
             CyclesPerSecond = options.FrequencyHz
         };
 
-        // 2) Determine image and load address
-        var loadAddress = options.LoadAddress;
-        byte[] image = bytes;
-        if (options.AsCartridge)
-        {            
-            // Load header
-            if (bytes.Length < 4)
-                throw new InvalidDataException("Cartridge header must be at least 4 bytes.");
-
-            
-            ushort start = (ushort)(bytes[0] | (bytes[1] << 8));
-            ushort end   = (ushort)(bytes[2] | (bytes[3] << 8));
-
-            int len = end - start + 1;
-            if (len < 0)
-                throw new InvalidDataException("Cartridge header invalid (end < start).");
-
-            if (bytes.Length < 4 + len)
-                throw new InvalidDataException("Cartridge image truncated (data shorter than header claims).");
-            
-            // Cartridges have a 4-byte header
-            loadAddress = start; // little-endian start address
-            image = bytes.Skip(4).Take(len).ToArray();
+        // 2. Set up devices
+        if (options.EnableDebugger)
+        {
+            // TODO: Init debugger
+            /*Debugger = new Debugger(Cpu);
+            Memory.RegisterDevice(Debugger);*/
         }
+
+        if (options.EnableVideo)
+        {
+            // TODO: Init video
+            // Video = new VideoDevice();
+            // Cpu.Memory.RegisterDevice(Video);
+        }
+
+        if (options.EnableKeyboard)
+        {
+            // TODO: Init keyboard
+            // Keyboard = new Keyboard();
+            // Cpu.Memory.RegisterDevice(Keyboard);
+        }
+    }
+
+    public Cody() : this(CodySetupOptions.Default)
+    {
+        Logger.Info("Cody initialized with default setup options.");
+    }
+
+    public void Reset()
+    {
+        Cpu.Reset();
+    }
+
+    public StepResult Step()
+    {
+        return Cpu.Step();
+    }
+
+    public void RunUntilFinish()
+    {
+        Cpu.RunUntilFinish();
+    }
+
+    /// <summary>
+    /// Performance testing helper. Returns cycles spent in one step.
+    /// </summary>
+    public long SingleStep()
+    {
+        Step();
+        long cycles = Cpu.TotalCyclesExecuted;
+        Cpu.TotalCyclesExecuted = 0;
+        return cycles;
+    }
+    
+    private void CheckFilePath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            throw new ArgumentException("File path must not be empty.", nameof(path));
+        if (!File.Exists(path))
+            throw new FileNotFoundException("File not found.", path);
+    }
+
+    public void LoadBinaryFile(string filePath, CodyLoadOptions options)
+    {
+        CheckFilePath(filePath);
+
+        var bytes = File.ReadAllBytes(filePath);
+        LoadBinary(bytes, options);
+    }
+    
+    public void LoadBinary(byte[] bytes, CodyLoadOptions? options = null)
+    {
+        if (bytes is null) throw new ArgumentNullException(nameof(bytes));
         
-        // 3) Load image
+        options ??= new CodyLoadOptions();
+
+        var (image, loadAddress) = ParseImage(bytes, options);
         LoadImage(image, loadAddress);
+        ApplyVectors(loadAddress, options);
+    }
+
+    public void LoadAssemblyFile(string filePath, CodyLoadOptions? options = null)
+    {
+        CheckFilePath(filePath);
+
+        var program = TassAssembler.AssembleFile(filePath);
+        LoadBinary(program, options);
+    }
+    
+    public void RunBinaryFile(string filePath, CodyLoadOptions loadOptions, CodySetupOptions runtimeOptions)
+    {
+        CheckFilePath(filePath);
+
+        var bytes = File.ReadAllBytes(filePath);
+        RunBinary(bytes, loadOptions, runtimeOptions);
+    }
+    
+    public void RunBinary(byte[] bytes, CodyLoadOptions loadOptions, CodySetupOptions runtimeOptions)
+    {
+        LoadBinary(bytes, loadOptions);
+        Reset();
+        RunUntilFinish();
+    }
+
+    public void RunAssemblyFile(string filePath, CodyLoadOptions loadOptions, CodySetupOptions runtimeOptions)
+    {
+        CheckFilePath(filePath);
         
-        // 4) Set vectors if overrides provided
+        LoadAssemblyFile(filePath, loadOptions);
+        Reset();
+        RunUntilFinish();
+    }
+    
+    /// <summary>
+    /// Boots the machine by loading the built-in CodyBASIC ROM.
+    /// </summary>
+    public void Boot(string? basicRomPath = "codybasic.bin", CodySetupOptions? runtimeOptions = null)
+    {
+        var resolvedPath = ResolveBasicRomPath(
+            basicRomPath);
+        
+        RunBinaryFile(resolvedPath, CodyLoadOptions.Default, runtimeOptions ?? CodySetupOptions.Default);
+    }
+
+    public void LoadImage(byte[] data, ushort loadAddress)
+    {
+        if (data is null) throw new ArgumentNullException(nameof(data));
+        
+        Memory.LoadBytes(data, loadAddress);
+    }
+
+    private static (byte[] image, ushort loadAddress) ParseImage(byte[] bytes, CodyLoadOptions options)
+    {
+        if (!options.AsCartridge)
+            return (bytes, options.LoadAddress);
+
+        if (bytes.Length < 4)
+            throw new InvalidDataException("Cartridge header must be at least 4 bytes.");
+
+        ushort start = (ushort)(bytes[0] | (bytes[1] << 8));
+        ushort end = (ushort)(bytes[2] | (bytes[3] << 8));
+
+        int len = end - start + 1;
+        if (len <= 0)
+            throw new InvalidDataException("Cartridge header invalid (end < start).");
+
+        if (bytes.Length < 4 + len)
+            throw new InvalidDataException("Cartridge image truncated (data shorter than header claims).");
+
+        var image = new byte[len];
+        Buffer.BlockCopy(bytes, 4, image, 0, len);
+        return (image, start);
+    }
+
+    private void ApplyVectors(ushort loadAddress, CodyLoadOptions options)
+    {
         if (options.ResetVectorOverride.HasValue)
             SetResetVector(options.ResetVectorOverride.Value);
-        else if (options.AsCartridge)
-            SetResetVector(loadAddress); // Rust-like default for cartridge
+        else if (options.AutoSetResetVector)
+            SetResetVector(loadAddress);
+
         if (options.IrqVectorOverride.HasValue)
             SetIrqVector(options.IrqVectorOverride.Value);
         if (options.NmiVectorOverride.HasValue)
             SetNmiVector(options.NmiVectorOverride.Value);
-        
-        // 5) Reset CPU so it starts executing from reset vector
-        cpu.Reset();
-        
-        // Setup devices
-        
-        // Run
-        //cpu.RunUntilFinish();
-
     }
-    
+
     private void SetResetVector(ushort address)
     {
         Memory.ForceWrite(0xFFFC, (byte)(address & 0xFF));
         Memory.ForceWrite(0xFFFD, (byte)(address >> 8));
     }
-    
+
     private void SetIrqVector(ushort address)
     {
         Memory.ForceWrite(0xFFFE, (byte)(address & 0xFF));
         Memory.ForceWrite(0xFFFF, (byte)(address >> 8));
     }
-    
+
     private void SetNmiVector(ushort address)
     {
         Memory.ForceWrite(0xFFFA, (byte)(address & 0xFF));
         Memory.ForceWrite(0xFFFB, (byte)(address >> 8));
     }
 
-    // TODO: Rework this method
-    [Obsolete("Use ExecuteBinary with options instead")]
-    public void RunAssemblyFile(string path)
+    private static string ResolveBasicRomPath(string? configuredPath)
     {
-        cpu = new Cpu();
-        var program = TassAssembler.AssembleFile(path);
-        LoadImage(program, 0xE000);
-        // TODO: Check if reset works
-        cpu.RunUntilFinish();
-    }
+        var candidates = new List<string>();
 
-    /// <summary>
-    /// Loads a binary program into memory at given address
-    /// </summary>
-    /// <param name="data"></param>
-    /// <param name="loadAddress"></param>
-    /// 
-    public void LoadImage(byte[] data, ushort loadAddress)
-    {
-        Memory.LoadBytes(data, loadAddress);
-    }
+        if (!string.IsNullOrWhiteSpace(configuredPath))
+            candidates.Add(configuredPath);
 
-    public void Start(bool enableDebugger = true)
-    {
-        cpu = new Cpu();
-        
-        if (enableDebugger)
+        candidates.Add(Path.Combine(Directory.GetCurrentDirectory(), "roms", "codybasic.bin"));
+        candidates.Add(Path.Combine(AppContext.BaseDirectory, "roms", "codybasic.bin"));
+
+        foreach (var candidate in candidates)
         {
-            var debugger = new Debugger(cpu);
-            cpu.Memory.RegisterDevice(debugger);
+            if (File.Exists(candidate))
+                return candidate;
         }
-    }
 
-    public long SingleStep() // Performance Testing only
-    {
-        cpu.Step();
-        long cycles = cpu.TotalCyclesExecuted;
-        cpu.TotalCyclesExecuted = 0;
-        return cycles;
-    }
-
-    /// <summary>
-    /// Boots the machine by loading the built-in CodyBASIC rom
-    /// </summary>
-    public void Boot()
-    {
-        cpu = new Cpu();
-        string basicRomPath = "./roms/codybasic.bin"; // TODO: Fix path
-        var basicRom = new FileInfo(basicRomPath);
-        if (!basicRom.Exists)
-            throw new FileNotFoundException($"CodyBASIC ROM not found at path: {basicRomPath}");
-        ExecuteBinaryFile(basicRom);
+        throw new FileNotFoundException(
+            "CodyBASIC ROM not found. Tried: " + string.Join(", ", candidates));
     }
 }

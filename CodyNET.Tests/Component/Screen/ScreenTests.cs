@@ -18,7 +18,7 @@ public class ScreenTests
     public void Vid_RegisterWriteRead_SetsDirty()
     {
         var mem = new Memory();              // wie auch immer du Memory konstruierst
-        var vid = new VID();
+        var vid = new VideoDevice();
 
         Assert.True(vid.Dirty);
 
@@ -74,15 +74,15 @@ public class ScreenTests
     public void RenderTextFrame_FillsBorderColor()
     {
         var mem = new Memory();
-        var vid = new VID();
+        var vid = new VideoDevice();
 
         vid.Write(0xD002, 0x06); // palette index 6 = BLUE bei dir
 
         var frame = vid.RenderTextFrame(mem);
 
-        uint expected = ((uint)VID.Color.BLUE.R << 24)
-                        | ((uint)VID.Color.BLUE.G << 16)
-                        | ((uint)VID.Color.BLUE.B << 8)
+        uint expected = ((uint)VideoDevice.Color.BLUE.R << 24)
+                        | ((uint)VideoDevice.Color.BLUE.G << 16)
+                        | ((uint)VideoDevice.Color.BLUE.B << 8)
                         | 255;
         
         ConsoleFramePresenter.PrintFrame(frame.Width, frame.Height, frame.Pixels);

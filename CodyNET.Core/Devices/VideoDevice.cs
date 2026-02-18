@@ -3,7 +3,7 @@ using CodyNET.Core.Interfaces;
 
 namespace CodyNET.Core.Devices;
 
-public class VID : IMemoryMappedDevice
+public class VideoDevice : IVideoDevice
 {
     public readonly struct Color
     {
@@ -118,8 +118,6 @@ public class VID : IMemoryMappedDevice
         _videoMemory[address - StartAddress] = value;
         Dirty = true;
     }
-
-    public readonly record struct VideoFrame(int Width, int Height, uint[] Pixels);
 
     public VideoFrame RenderTextFrame(Memory memory)
     {
