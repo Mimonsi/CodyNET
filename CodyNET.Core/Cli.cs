@@ -24,6 +24,7 @@ public static class Cli
         root.Subcommands.Add(BuildRunCommand(verboseOption));
         root.Subcommands.Add(BuildAssembleCommand(verboseOption));
         root.Subcommands.Add(BuildDisassembleCommand(verboseOption));
+        root.Subcommands.Add(BuildLogTestCommand());
 
         root.SetAction(_ =>
         {
@@ -58,6 +59,51 @@ public static class Cli
             Console.WriteLine("Available .bin files:");
             Console.WriteLine(GetSubdirFilesText("*.bin", rec));
         });
+        return cmd;
+    }
+
+    private static Command BuildLogTestCommand()
+    {
+        var cmd = new Command("logtest", "Write example logs for all levels and structured logging");
+
+        cmd.SetAction(_ =>
+        {
+            var previousLevel = Log.Level;
+            Log.Level = LogLevel.Verbose;
+
+            try
+            {
+                var user = "cli-user";
+                var operation = "logtest";
+                var durationMs = 42;
+
+                Log.Verbose("Verbose sample: operation={Operation}", operation);
+                Log.Debug("Debug sample: operation={Operation} durationMs={DurationMs}", operation, durationMs);
+                Log.Info("Info sample: User={User} Operation={Operation}", user, operation);
+                Log.Info($"Info sample with normal message {operation}");
+                Log.Warn("Warn sample: User={User} Retries={Retries}", user, 1);
+                Log.Error("Error sample: User={User} ErrorCode={ErrorCode}", user, "E_LOGTEST");
+
+                Log.Info("Structured sample with named properties User={User} Operation={Operation} DurationMs={DurationMs}",
+                    user, operation, durationMs);
+
+                try
+                {
+                    throw new InvalidOperationException("Sample exception from logtest command");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Structured exception sample User={User} Operation={Operation}", user, operation);
+                }
+            }
+            finally
+            {
+                Log.Level = previousLevel;
+            }
+
+            return 0;
+        });
+
         return cmd;
     }
 

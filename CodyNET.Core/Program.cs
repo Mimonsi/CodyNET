@@ -40,6 +40,7 @@ internal static class Program
 
             Log.Level = LogLevel.Verbose;
             Log.Info($"Starting logger. Log File Path: {Log.LogFilePath}");
+            Log.Debug("Debug");
             return InteractiveShell.Run(root);
         }
 

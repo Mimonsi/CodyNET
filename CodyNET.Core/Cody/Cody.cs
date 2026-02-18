@@ -277,21 +277,12 @@ public sealed class Cody
 
     private static string ResolveBasicRomPath(string? configuredPath)
     {
-        var candidates = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(configuredPath))
-            candidates.Add(configuredPath);
-
-        candidates.Add(Path.Combine(Directory.GetCurrentDirectory(), "roms", "codybasic.bin"));
-        candidates.Add(Path.Combine(AppContext.BaseDirectory, "roms", "codybasic.bin"));
-
-        foreach (var candidate in candidates)
-        {
-            if (File.Exists(candidate))
-                return candidate;
-        }
+        _ = configuredPath; // ROM path is fixed by convention.
+        var path = Path.Combine(AppContext.BaseDirectory, "roms", "codybasic.bin");
+        if (File.Exists(path))
+            return path;
 
         throw new FileNotFoundException(
-            "CodyBASIC ROM not found. Tried: " + string.Join(", ", candidates));
+            $"CodyBASIC ROM not found at fixed path: {path}");
     }
 }

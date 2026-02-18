@@ -67,11 +67,35 @@ public static class Log
         EnsureInitialized();
         global::Serilog.Log.Verbose("{Message}", message);
     }
+    
+    public static void Verbose(string messageTemplate, params object[] propertyValues)
+    {
+        EnsureInitialized();
+        global::Serilog.Log.Verbose(messageTemplate, propertyValues);
+    }
+
+    public static void Verbose(Exception exception, string messageTemplate, params object[] propertyValues)
+    {
+        EnsureInitialized();
+        global::Serilog.Log.Verbose(exception, messageTemplate, propertyValues);
+    }
 
     public static void Debug(string message)
     {
         EnsureInitialized();
         global::Serilog.Log.Debug("{Message}", message);
+    }
+    
+    public static void Debug(string messageTemplate, params object[] propertyValues)
+    {
+        EnsureInitialized();
+        global::Serilog.Log.Debug(messageTemplate, propertyValues);
+    }
+
+    public static void Debug(Exception exception, string messageTemplate, params object[] propertyValues)
+    {
+        EnsureInitialized();
+        global::Serilog.Log.Debug(exception, messageTemplate, propertyValues);
     }
 
     public static void Info(string message)
@@ -79,17 +103,53 @@ public static class Log
         EnsureInitialized();
         global::Serilog.Log.Information("{Message}", message);
     }
+    
+    public static void Info(string messageTemplate, params object[] propertyValues)
+    {
+        EnsureInitialized();
+        global::Serilog.Log.Information(messageTemplate, propertyValues);
+    }
+
+    public static void Info(Exception exception, string messageTemplate, params object[] propertyValues)
+    {
+        EnsureInitialized();
+        global::Serilog.Log.Information(exception, messageTemplate, propertyValues);
+    }
 
     public static void Warn(string message)
     {
         EnsureInitialized();
         global::Serilog.Log.Warning("{Message}", message);
     }
+    
+    public static void Warn(string messageTemplate, params object[] propertyValues)
+    {
+        EnsureInitialized();
+        global::Serilog.Log.Warning(messageTemplate, propertyValues);
+    }
+
+    public static void Warn(Exception exception, string messageTemplate, params object[] propertyValues)
+    {
+        EnsureInitialized();
+        global::Serilog.Log.Warning(exception, messageTemplate, propertyValues);
+    }
 
     public static void Error(string message)
     {
         EnsureInitialized();
         global::Serilog.Log.Error("{Message}", message);
+    }
+    
+    public static void Error(string messageTemplate, params object[] propertyValues)
+    {
+        EnsureInitialized();
+        global::Serilog.Log.Error(messageTemplate, propertyValues);
+    }
+
+    public static void Error(Exception exception, string messageTemplate, params object[] propertyValues)
+    {
+        EnsureInitialized();
+        global::Serilog.Log.Error(exception, messageTemplate, propertyValues);
     }
 
     private static void EnsureInitialized()
