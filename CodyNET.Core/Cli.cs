@@ -1,9 +1,9 @@
 using System.CommandLine;
 using System.CommandLine.Completions;
 using System.Globalization;
+using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
 using CodyNET.Disassembler;
-using CodyNET.Utils;
 
 namespace CodyNET.Core;
 
@@ -123,6 +123,7 @@ public static class Cli
 
     private static void ExecuteBootCommand(bool physicalKeyboard, string? clock, bool fast)
     {
+        Log.Info("Executing boot command");
         _ = physicalKeyboard; // keyboard device wiring is pending
 
         var setupOptions = new CodySetupOptions
@@ -284,6 +285,7 @@ public static class Cli
         _ = uart1Source;      // UART device wiring is pending
         _ = fixNewlines;      // UART device wiring is pending
         _ = physicalKeyboard; // keyboard device wiring is pending
+        Log.Info("Executing run command");
 
         var setupOptions = new CodySetupOptions
         {
@@ -402,6 +404,7 @@ public static class Cli
         _ = loadAddress;
         _ = warnAsError;
         // TODO: Implement assembler call
+        Log.Info("Executing assemble command");
     }
 
     private static Command BuildDisassembleCommand(Option<bool> verboseOption)
@@ -462,6 +465,7 @@ public static class Cli
     {
         _ = asCartridge;
         _ = loadAddress;
+        Log.Info("Executing disassemble command");
         // TODO: Include cartridge header parsing if asCartridge is true (override loadAddress) and load address
         CodyDisassembler.DisassembleFile(inputFile, outputFile);
     }

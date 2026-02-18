@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using CodyNET.Assembler;
+using CodyNET.Common.Utils;
 using CodyNET.Core.Devices;
 using CodyNET.Core.Interfaces;
 using Debugger = CodyNET.Core.Devices.Debugger;
@@ -114,7 +115,7 @@ public sealed class Cody
 
     public Cody() : this(CodySetupOptions.Default)
     {
-        Logger.Info("Cody initialized with default setup options.");
+        Log.Info("Cody initialized with default setup options.");
     }
 
     public void Reset()
@@ -193,11 +194,11 @@ public sealed class Cody
         RunUntilFinish();
     }
 
-    public void RunAssemblyFile(string filePath, CodyLoadOptions loadOptions, CodySetupOptions runtimeOptions)
+    public void RunAssemblyFile(string filePath, CodyLoadOptions? loadOptions=null, CodySetupOptions? runtimeOptions=null)
     {
         CheckFilePath(filePath);
         
-        LoadAssemblyFile(filePath, loadOptions);
+        LoadAssemblyFile(filePath, loadOptions ?? CodyLoadOptions.Default);
         Reset();
         RunUntilFinish();
     }

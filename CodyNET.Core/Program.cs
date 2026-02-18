@@ -1,11 +1,15 @@
 ﻿using System.CommandLine;
+using CodyNET.Common.Utils;
 
 namespace CodyNET.Core;
 
-class Program
+internal static class Program
 {
     public static int Main(string[] args)
     {
+        Log.TimeSetting = TimeSetting.Relative;
+        Log.StartNewFileOnStartup = true;
+        Log.Initialize();
         bool interactive = false;
 
         // Filter args: detect -i / --interactive
@@ -13,7 +17,7 @@ class Program
 
         foreach (var arg in args)
         {
-            if (arg == "-i" || arg == "--interactive")
+            if (arg is "-i" or "--interactive")
             {
                 interactive = true;
             }
@@ -34,6 +38,8 @@ class Program
                 root.Parse(filteredArgs.ToArray()).Invoke();
             }
 
+            Log.Level = LogLevel.Verbose;
+            Log.Info($"Starting logger. Log File Path: {Log.LogFilePath}");
             return InteractiveShell.Run(root);
         }
 

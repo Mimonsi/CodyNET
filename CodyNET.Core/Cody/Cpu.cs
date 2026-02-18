@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 using CodyNET.Common;
-using CodyNET.Utils;
+using CodyNET.Common.Utils;
 using static CodyNET.Common.Mnemonic;
 using static CodyNET.Common.AddressingMode;
 

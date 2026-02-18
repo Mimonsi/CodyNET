@@ -1,4 +1,4 @@
-﻿using CodyNET.Utils;
+﻿using CodyNET.Common.Utils;
 
 namespace CodyNET.Assembler;
 

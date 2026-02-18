@@ -1,6 +1,5 @@
 ﻿using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
-using CodyNET.Utils;
 using NUnit.Framework;
 using Math = CodyNET.Common.Utils.Math;
 
@@ -19,9 +18,9 @@ public class WaitTests
             Thread.Sleep(50);
             var elapsed = stopwatch.Elapsed.TotalMilliseconds;
             totalSleepTime += elapsed;
-            TestLog.Info($"Elapsed time: {elapsed} ms");
+            Log.Info($"Elapsed time: {elapsed} ms");
         }
-        TestLog.Info("Average sleep time: " + (totalSleepTime / 100) + " ms");
+        Log.Info("Average sleep time: " + (totalSleepTime / 100) + " ms");
         
     }
     
@@ -39,9 +38,9 @@ public class WaitTests
             }
             var elapsed = stopwatch.Elapsed.TotalMilliseconds;
             totalSleepTime += elapsed;
-            TestLog.Info($"Elapsed time: {elapsed} ms");
+            Log.Info($"Elapsed time: {elapsed} ms");
         }
-        TestLog.Info("Average sleep time: " + (totalSleepTime / 100) + " ms");
+        Log.Info("Average sleep time: " + (totalSleepTime / 100) + " ms");
         
     }
 }
@@ -112,14 +111,14 @@ public class PerformanceTests
     
     public double RunPerformanceTest(int seconds, long targetFrequency, bool logDisabled = false)
     {
-        TestLog.Info($"Starting Performance for {seconds} seconds with target frequency {Math.FormatSi(targetFrequency, "Hz")}");
+        Log.Info($"Starting Performance for {seconds} seconds with target frequency {Math.FormatSi(targetFrequency, "Hz")}");
         Cody cody = new Cody();
         cody.FrequencyHz = targetFrequency;
         var (loadAddr, program) = Binary.LoadBinary(FileUtils.GetTestDataPath("programs/codybros.bin"), defaultLoadAddress: 0xE000);
         cody.LoadImage(program, loadAddr);
         // TODO: Check if reset vectors are set correctly here
         //Log.Info("Program: " + CodyDisassembler.Disassemble(program));
-        TestLog.Level = LogLevel.Debug;
+        Log.Level = LogLevel.Debug;
         long totalCycles = 0;
         for (int i = 0; i < seconds; i++)
         {
@@ -129,10 +128,10 @@ public class PerformanceTests
             {
                 cycles += cody.SingleStep();
             }
-            TestLog.Info($"Cycles executed in 1 second: {cycles}. CPU Frequency: {Math.FormatSi(cycles, "Hz")}");
+            Log.Info($"Cycles executed in 1 second: {cycles}. CPU Frequency: {Math.FormatSi(cycles, "Hz")}");
             totalCycles += cycles;
         }
-        TestLog.Info("Final Average CPU Frequency: " + Math.FormatSi(totalCycles / (double) seconds, "Hz"));
+        Log.Info("Final Average CPU Frequency: " + Math.FormatSi(totalCycles / (double) seconds, "Hz"));
         return totalCycles / (double) seconds;
     }
 }

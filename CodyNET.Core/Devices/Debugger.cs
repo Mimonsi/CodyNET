@@ -1,6 +1,6 @@
-﻿using CodyNET.Core.Cody;
+﻿using CodyNET.Common.Utils;
+using CodyNET.Core.Cody;
 using CodyNET.Core.Interfaces;
-using CodyNET.Utils;
 
 namespace CodyNET.Core.Devices;
 
