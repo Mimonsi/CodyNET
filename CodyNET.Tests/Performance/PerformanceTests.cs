@@ -111,6 +111,7 @@ public class PerformanceTests
     
     public double RunPerformanceTest(int seconds, long targetFrequency, bool logDisabled = false)
     {
+        Log.Level = LogLevel.Debug;
         Log.Info($"Starting Performance for {seconds} seconds with target frequency {Math.FormatSi(targetFrequency, "Hz")}");
         Cody cody = new Cody();
         cody.FrequencyHz = targetFrequency;
@@ -118,7 +119,6 @@ public class PerformanceTests
         cody.LoadImage(program, loadAddr);
         // TODO: Check if reset vectors are set correctly here
         //Log.Info("Program: " + CodyDisassembler.Disassemble(program));
-        Log.Level = LogLevel.Debug;
         long totalCycles = 0;
         for (int i = 0; i < seconds; i++)
         {
