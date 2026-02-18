@@ -18,7 +18,7 @@ public enum LogLevel
     Warn,
     Info,
     Debug,
-    Verbose
+    Trace,
 }
 
 public static class Log
@@ -28,11 +28,14 @@ public static class Log
     private const string TimeSettingEnvVar = "CODYNET_LOG_TIME_SETTING";
 
     private static readonly object InitLock = new();
-    private static readonly LoggingLevelSwitch LevelSwitch = new(MapLevel(LogLevel.Debug));
+    private static readonly LoggingLevelSwitch ConsoleLevelSwitch = new(MapLevel(LogLevel.Debug));
+    private static readonly LoggingLevelSwitch FileLevelSwitch = new(MapLevel(LogLevel.Trace));
     private static readonly DateTimeOffset ProcessStartTime = new(Process.GetCurrentProcess().StartTime);
 
     private static bool initialized;
     private static LogLevel level = LogLevel.Debug;
+    private static LogLevel consoleLevel = LogLevel.Debug;
+    private static LogLevel fileLevel = LogLevel.Trace;
     private static TimeSetting timeSetting =
         ParseTimeSetting(Environment.GetEnvironmentVariable(TimeSettingEnvVar)) ?? TimeSetting.Relative;
 
@@ -56,25 +59,46 @@ public static class Log
         set
         {
             level = value;
-            LevelSwitch.MinimumLevel = MapLevel(value);
+            ConsoleLevel = value;
+            FileLevel = value;
+        }
+    }
+    
+    public static LogLevel ConsoleLevel
+    {
+        get => consoleLevel;
+        set
+        {
+            consoleLevel = value;
+            ConsoleLevelSwitch.MinimumLevel = MapLevel(value);
+        }
+    }
+
+    public static LogLevel FileLevel
+    {
+        get => fileLevel;
+        set
+        {
+            fileLevel = value;
+            FileLevelSwitch.MinimumLevel = MapLevel(value);
         }
     }
 
     public static void Initialize() => EnsureInitialized();
 
-    public static void Verbose(string message)
+    public static void Trace(string message)
     {
         EnsureInitialized();
         global::Serilog.Log.Verbose("{Message}", message);
     }
     
-    public static void Verbose(string messageTemplate, params object[] propertyValues)
+    public static void Trace(string messageTemplate, params object[] propertyValues)
     {
         EnsureInitialized();
         global::Serilog.Log.Verbose(messageTemplate, propertyValues);
     }
 
-    public static void Verbose(Exception exception, string messageTemplate, params object[] propertyValues)
+    public static void Trace(Exception exception, string messageTemplate, params object[] propertyValues)
     {
         EnsureInitialized();
         global::Serilog.Log.Verbose(exception, messageTemplate, propertyValues);
@@ -164,23 +188,36 @@ public static class Log
 
             var outputTemplate = GetOutputTemplate(timeSetting);
             var loggerConfig = new LoggerConfiguration()
-                .MinimumLevel.ControlledBy(LevelSwitch)
-                .Enrich.FromLogContext();
+                .MinimumLevel.Verbose()
+                .Enrich.FromLogContext()
+                .Enrich.With(new LevelTextEnricher());
 
             if (timeSetting == TimeSetting.Relative)
                 loggerConfig = loggerConfig.Enrich.With(new UptimeEnricher());
 
-            loggerConfig = loggerConfig.WriteTo.Console(outputTemplate: outputTemplate);
+            loggerConfig = loggerConfig.WriteTo.Logger(lc => lc
+                .MinimumLevel.ControlledBy(ConsoleLevelSwitch)
+                .WriteTo.Console(outputTemplate: outputTemplate));
 
             if (FileLoggingEnabled)
             {
                 LogFilePath = BuildLogFilePath(StartNewFileOnStartup);
+                var latestLogFilePath = BuildLatestLogFilePath();
+                ResetLatestLogFile(latestLogFilePath);
                 loggerConfig = loggerConfig.WriteTo.File(
                     path: LogFilePath,
                     rollingInterval: RollingInterval.Infinite,
                     shared: true,
-                    flushToDiskInterval: TimeSpan.FromSeconds(1),
-                    outputTemplate: outputTemplate);
+                    flushToDiskInterval: TimeSpan.FromSeconds(2),
+                    outputTemplate: outputTemplate,
+                    levelSwitch: FileLevelSwitch);
+                loggerConfig = loggerConfig.WriteTo.File(
+                    path: latestLogFilePath,
+                    rollingInterval: RollingInterval.Infinite,
+                    shared: true,
+                    flushToDiskInterval: TimeSpan.FromMilliseconds(250),
+                    outputTemplate: outputTemplate,
+                    levelSwitch: FileLevelSwitch);
             }
             else
             {
@@ -206,12 +243,31 @@ public static class Log
         return Path.Combine(logsDirectory, fileName);
     }
 
+    private static string BuildLatestLogFilePath()
+    {
+        var logsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+        Directory.CreateDirectory(logsDirectory);
+        return Path.Combine(logsDirectory, "latest.log");
+    }
+
+    private static void ResetLatestLogFile(string latestLogFilePath)
+    {
+        try
+        {
+            File.WriteAllText(latestLogFilePath, string.Empty);
+        }
+        catch (IOException)
+        {
+            // Keep going if another process temporarily holds the file.
+        }
+    }
+
     private static string GetOutputTemplate(TimeSetting setting) => setting switch
     {
-        TimeSetting.Absolute => "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
-        TimeSetting.AbsoluteWithDate => "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}{Exception}",
-        TimeSetting.Relative => "[{Uptime} {Level:u3}] {Message:lj}{NewLine}{Exception}",
-        _ => "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+        TimeSetting.Absolute => "[{Timestamp:HH:mm:ss}][{LevelText,-5}] {Message:lj}{NewLine}{Exception}",
+        TimeSetting.AbsoluteWithDate => "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}][{LevelText,-5}] {Message:lj}{NewLine}{Exception}",
+        TimeSetting.Relative => "[{Uptime}][{LevelText,-5}] {Message:lj}{NewLine}{Exception}",
+        _ => "[{Timestamp:HH:mm:ss}][{LevelText,-5}] {Message:lj}{NewLine}{Exception}"
     };
 
     private static TimeSetting? ParseTimeSetting(string? value)
@@ -236,7 +292,7 @@ public static class Log
         LogLevel.Warn => LogEventLevel.Warning,
         LogLevel.Info => LogEventLevel.Information,
         LogLevel.Debug => LogEventLevel.Debug,
-        LogLevel.Verbose => LogEventLevel.Verbose,
+        LogLevel.Trace => LogEventLevel.Verbose,
         _ => LogEventLevel.Information
     };
 
@@ -261,6 +317,24 @@ public static class Log
             var elapsed = DateTimeOffset.Now - ProcessStartTime;
             var formatted = $"{(int)elapsed.TotalHours:00}:{elapsed.Minutes:00}:{elapsed.Seconds:00}.{elapsed.Milliseconds:000}";
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("Uptime", formatted));
+        }
+    }
+
+    private sealed class LevelTextEnricher : ILogEventEnricher
+    {
+        public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+        {
+            var text = logEvent.Level switch
+            {
+                LogEventLevel.Verbose => "TRACE",
+                LogEventLevel.Debug => "DEBUG",
+                LogEventLevel.Information => "INFO",
+                LogEventLevel.Warning => "WARN",
+                LogEventLevel.Error => "ERROR",
+                LogEventLevel.Fatal => "FATAL",
+                _ => "INFO"
+            };
+            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("LevelText", text));
         }
     }
 }

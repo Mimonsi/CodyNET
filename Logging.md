@@ -6,7 +6,7 @@ This project uses a minimal Serilog-based logger via `CodyNET.Common.Utils.Log`.
 
 - Logs to console.
 - Logs to a file under `./logs/`.
-- Prints the active log file path on application startup.
+- Writes to the active run file and also to `./logs/latest.log`.
 
 ## Time modes
 
@@ -29,9 +29,6 @@ Set these before the first log call (or before `Log.Initialize()`):
 - Start a new file each app start:
   - Code: `Log.StartNewFileOnStartup = true;`
   - Env: `CODYNET_LOG_NEW_FILE_ON_START=1`
-- Print active file path at startup (enabled by default):
-  - Code: `Log.PrintLogPathOnStartup = true;`
-  - Env: `CODYNET_LOG_PRINT_PATH_ON_START=1`
 - Disable file logging:
   - Code: `Log.FileLoggingEnabled = false;`
   - Env: `CODYNET_LOG_DISABLE_FILE=1`
@@ -41,7 +38,7 @@ Set these before the first log call (or before `Log.Initialize()`):
 ```csharp
 Log.Initialize(); // optional, called at app startup in Program.cs
 
-Log.Verbose("verbose message");
+Log.Trace("trace message");
 Log.Debug("debug message");
 Log.Info("info message");
 Log.Warn("warning message");

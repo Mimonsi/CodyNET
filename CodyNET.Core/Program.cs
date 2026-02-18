@@ -1,4 +1,4 @@
-﻿using System.CommandLine;
+using System.CommandLine;
 using CodyNET.Common.Utils;
 
 namespace CodyNET.Core;
@@ -38,9 +38,9 @@ internal static class Program
                 root.Parse(filteredArgs.ToArray()).Invoke();
             }
 
-            Log.Level = LogLevel.Verbose;
+            Log.Level = LogLevel.Trace;
+            Log.ConsoleLevel = LogLevel.Debug;
             Log.Info($"Starting logger. Log File Path: {Log.LogFilePath}");
-            Log.Debug("Debug");
             return InteractiveShell.Run(root);
         }
 

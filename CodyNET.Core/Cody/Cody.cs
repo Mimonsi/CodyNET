@@ -181,6 +181,7 @@ public sealed class Cody
     
     public void RunBinaryFile(string filePath, CodyLoadOptions loadOptions, CodySetupOptions runtimeOptions)
     {
+        Log.Debug("Running binary file: '{filePath}'", filePath);
         CheckFilePath(filePath);
 
         var bytes = File.ReadAllBytes(filePath);
@@ -208,10 +209,17 @@ public sealed class Cody
     /// </summary>
     public void Boot(string? basicRomPath = "codybasic.bin", CodySetupOptions? runtimeOptions = null)
     {
+        Log.Debug("Booting Cody with CodyBASIC ROM.");
         var resolvedPath = ResolveBasicRomPath(
             basicRomPath);
-        
-        RunBinaryFile(resolvedPath, CodyLoadOptions.Default, runtimeOptions ?? CodySetupOptions.Default);
+        Log.Trace("Resolved CodyBASIC ROM path: {path}", resolvedPath);
+
+        var loadOptions = CodyLoadOptions.Default with
+        {
+            AutoSetResetVector = false
+        };
+
+        RunBinaryFile(resolvedPath, loadOptions, runtimeOptions ?? CodySetupOptions.Default);
     }
 
     public void LoadImage(byte[] data, ushort loadAddress)

@@ -69,7 +69,7 @@ public static class Cli
         cmd.SetAction(_ =>
         {
             var previousLevel = Log.Level;
-            Log.Level = LogLevel.Verbose;
+            Log.Level = LogLevel.Trace;
 
             try
             {
@@ -77,7 +77,7 @@ public static class Cli
                 var operation = "logtest";
                 var durationMs = 42;
 
-                Log.Verbose("Verbose sample: operation={Operation}", operation);
+                Log.Trace("Trace sample: operation={Operation}", operation);
                 Log.Debug("Debug sample: operation={Operation} durationMs={DurationMs}", operation, durationMs);
                 Log.Info("Info sample: User={User} Operation={Operation}", user, operation);
                 Log.Info($"Info sample with normal message {operation}");
@@ -155,7 +155,7 @@ public static class Cli
         cmd.SetAction(parseResult =>
         {
             if (parseResult.GetValue(verboseOption))
-                Log.Level = LogLevel.Verbose;
+                Log.Level = LogLevel.Trace;
             ExecuteBootCommand(
                 parseResult.GetValue(physicalKeyboard),
                 parseResult.GetValue(clock),
@@ -254,7 +254,7 @@ public static class Cli
         cmd.SetAction(parseResult =>
         {
             if (parseResult.GetValue(verboseOption))
-                Log.Level = LogLevel.Verbose;
+                Log.Level = LogLevel.Trace;
 
             var inputFile = parseResult.GetValue(fileArg)
                 ?? throw new ArgumentException("Missing input file argument.");
@@ -419,7 +419,7 @@ public static class Cli
         cmd.SetAction(parseResult =>
         {
             if (parseResult.GetValue(verboseOption))
-                Log.Level = LogLevel.Verbose;
+                Log.Level = LogLevel.Trace;
 
             var inputFile = parseResult.GetValue(fileArg)
                 ?? throw new ArgumentException("Missing input file argument.");
@@ -486,7 +486,7 @@ public static class Cli
         cmd.SetAction(parseResult =>
         {
             if (parseResult.GetValue(verboseOption))
-                Log.Level = LogLevel.Verbose;
+                Log.Level = LogLevel.Trace;
 
             var inputFile = parseResult.GetValue(fileArg)
                 ?? throw new ArgumentException("Missing input file argument.");
