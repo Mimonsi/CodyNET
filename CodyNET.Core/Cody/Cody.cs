@@ -61,6 +61,7 @@ public sealed class Cody
     public Memory Memory => Cpu.Memory;
     public Debugger? Debugger { get; private set; }
     public IVideoDevice? Video { get; private set; }
+    public PpmVideoOutput Screen { get; private set; }
     public Keyboard? Keyboard { get; private set; }
 
     public long FrequencyHz
@@ -103,6 +104,8 @@ public sealed class Cody
             // TODO: Init video
             // Video = new VideoDevice();
             // Cpu.Memory.RegisterDevice(Video);
+            Video = new VideoDevice();
+            Screen = new PpmVideoOutput();
         }
 
         if (options.EnableKeyboard)
@@ -130,7 +133,16 @@ public sealed class Cody
 
     public void RunUntilFinish()
     {
-        Cpu.RunUntilFinish();
+        //Cpu.RunUntilFinish();
+        while (true)
+        {
+            Cpu.Step();
+            if (Video != null)
+            {
+                var frame = Video.RenderTextFrame(Cpu.Memory);
+                Screen.RenderFrame(frame);
+            }
+        }
     }
 
     /// <summary>

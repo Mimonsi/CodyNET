@@ -44,6 +44,8 @@ public static class Log
 
     public static bool StartNewFileOnStartup { get; set; } =
         IsTrue(Environment.GetEnvironmentVariable(StartNewFileOnStartupEnvVar));
+    
+    public static bool BreakOnLoggedErrors { get; set; } = true;
 
     public static string? LogFilePath { get; private set; }
 
@@ -162,22 +164,33 @@ public static class Log
     {
         EnsureInitialized();
         global::Serilog.Log.Error("{Message}", message);
+        BreakIfConfigured();
     }
     
     public static void Error(string messageTemplate, params object[] propertyValues)
     {
         EnsureInitialized();
         global::Serilog.Log.Error(messageTemplate, propertyValues);
+        BreakIfConfigured();
     }
 
     public static void Error(Exception exception, string messageTemplate, params object[] propertyValues)
     {
         EnsureInitialized();
         global::Serilog.Log.Error(exception, messageTemplate, propertyValues);
+        BreakIfConfigured();
+    }
+
+    [Conditional("DEBUG")]
+    private static void BreakIfConfigured()
+    {
+        if (BreakOnLoggedErrors && Debugger.IsAttached)
+            Debugger.Break();
     }
 
     private static void EnsureInitialized()
     {
+        return;
         if (initialized)
             return;
 

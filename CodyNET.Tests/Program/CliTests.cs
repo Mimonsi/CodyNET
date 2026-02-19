@@ -9,6 +9,7 @@ public class CliTests
     [Test]
     public void TestCli()
     {
+        throw new NotImplementedException("x");
         string input = "assemble test.asm";
         var result = Cli.BuildRootCommand().Parse(input);
         Assert.That(result.Errors, Is.Empty);

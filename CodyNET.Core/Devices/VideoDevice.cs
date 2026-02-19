@@ -119,8 +119,21 @@ public class VideoDevice : IVideoDevice
         Dirty = true;
     }
 
+    private int offset = 0;
     public VideoFrame RenderTextFrame(Memory memory)
     {
+        /*var p = new uint[CONTENT_WIDTH * CONTENT_HEIGHT];
+        foreach (var i in Enumerable.Range(0, p.Length))
+        {
+            // Each pixel random color
+            //p[i] = ColorToRgba(Color.PALETTE[i % (Color.PALETTE.Length + offset++)]); 
+            p[i] = ColorToRgba(Color.PALETTE[(i + offset) % (Color.PALETTE.Length)]);
+        }
+
+        offset++;
+        var frame = new VideoFrame(CONTENT_WIDTH, CONTENT_HEIGHT, p);
+        return frame;*/
+        throw new IndexOutOfRangeException("HALLO");
         const int COLS = 40;
         const int ROWS = 25;
         const int CHAR_W = 8;
@@ -130,6 +143,7 @@ public class VideoDevice : IVideoDevice
         
         // 1. Border color (simple color)
         var border = ColorToRgba(Color.PALETTE[_videoMemory[0x02] & 0x0F]); // 0x02 as border color
+
         FillRect(pixels, WIDTH, 0, 0, WIDTH, HEIGHT, border);
 
         for (int row = 0; row < ROWS; row++)
