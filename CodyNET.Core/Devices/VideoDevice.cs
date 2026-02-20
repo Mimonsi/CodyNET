@@ -156,8 +156,8 @@ public class VideoDevice : IVideoDevice
         //var border = Color.RED.ToRgba32(); // fixed border color
 
         FillRect(pixels, WIDTH, 0, 0, WIDTH, HEIGHT, border);
-
-        for (int row = 0; row < ROWS; row++)
+        
+        /*for (int row = 0; row < ROWS; row++)
         {
             for (int col = 0; col < COLS; col++)
             {
@@ -173,26 +173,43 @@ public class VideoDevice : IVideoDevice
                 uint backgroundColor = Color.PALETTE[backgroundColorIndex].ToRgba32();
                 
                 ushort glyphBase = (ushort)(CHARSET_BASE + ch * CHAR_H); // Start address for 8 Bitmap rows
+                
+                //Log.Info($"CH={ch:X2} glyphAddr={glyphBase:X4} base={CHARSET_BASE:X4}");
+
+                var b0 = memory.Read((ushort) (glyphBase + 0));
+                var b1 = memory.Read((ushort) (glyphBase + 1));
+                var b2 = memory.Read((ushort) (glyphBase + 2));
+                var b3 = memory.Read((ushort) (glyphBase + 3));
+                //Log.Info($"glyph bytes: {b0:X2} {b1:X2} {b2:X2} {b3:X2} ...");
 
                 int px0 = BORDER_X + col * CHAR_W; // Left pixel position of the character cell
                 int py0 = BORDER_Y + row * CHAR_H; // Top pixel position of the character cell
                 
-                for(int gy = 0; gy < CHAR_H; gy++) // gy = pixel-row within the character
+                if (row == 0 && col == 0)
                 {
-                    byte charRowData = memory.Read((ushort)(glyphBase + gy)); // 4 bits for 4 pixels
-                    for(int gx = 0; gx < CHAR_W; gx++) // gx = pixel-column within the character
+                    //Log.Info($"Cell00 ch={ch:X2} color={colorByte:X2}");
+                    for (int gy = 0; gy < 8; gy++)
                     {
-                        int bit = 3 - gx; // Bit 3 -> 0 from left to right
-                        bool pixelOn = ((charRowData >> bit) & 1) != 0; // Check if the bit is set
-                        
-                        int x = px0 + gx; // Absolute pixel x position in framebuffer
-                        int y = py0 + gy; // Absolute pixel y position in framebuffer
-                        
+                        byte b = memory.Read((ushort)(glyphBase + gy));
+                        //Log.Info($"glyph[{gy}]={b:X2}");
+                    }
+                }
+                
+                for (int gy = 0; gy < CHAR_H; gy++)
+                {
+                    byte charRowData = memory.Read((ushort)(glyphBase + gy)); // lower 4 bits used
+                    for (int gx = 0; gx < CHAR_W; gx++) // 0..7
+                    {
+                        int bit = 3 - (gx >> 1); // gx 0..1->bit3, 2..3->bit2, 4..5->bit1, 6..7->bit0
+                        bool pixelOn = ((charRowData >> bit) & 1) != 0;
+
+                        int x = px0 + gx;
+                        int y = py0 + gy;
                         pixels[y * WIDTH + x] = pixelOn ? foregroundColor : backgroundColor;
                     }
                 }
             }
-        }
+        }*/
 
         Dirty = false;
         return new VideoFrame(WIDTH, HEIGHT, pixels);

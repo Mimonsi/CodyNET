@@ -93,9 +93,13 @@ public sealed class Cody
         // 2. Set up devices
         if (options.EnableDebugger)
         {
+            // watch addresses 0xA000 - 0xA3E7 (text screen)
+            var addresses = new List<ushort>();
+            for (ushort addr = 0xA000; addr <= 0xA3E7; addr++)
+                addresses.Add(addr);
             Debugger = new Debugger(Cpu)
             {
-                WatchAddresses = [0xD002],
+                WatchAddresses = addresses,
                 Breakpoints = [0xFD93]
             };
             Memory.RegisterDevice(Debugger);
@@ -141,15 +145,11 @@ public sealed class Cody
         VideoDevice vid = (VideoDevice) Video!;
         
         Log.Level = LogLevel.Debug;
-        int loopCounter = 0;
-        bool videoEnabled = false;
         while (true)
         {
-            // Don't log memory copy
             Cpu.Step();
             // TEMP
-            
-            if (Debugger is not null && Debugger.OnCpuStep())
+            if (Debugger is not null && Debugger.IsAtBreakpoint())
             {
                 Log.Info("Execution paused by debugger on PC={Cpu.PC:X4}");
                 //break;

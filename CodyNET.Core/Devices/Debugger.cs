@@ -86,8 +86,7 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
     /// <summary>
     /// CPU Step event
     /// </summary>
-    /// <exception cref="NotImplementedException"></exception>
-    public bool OnCpuStep()
+    public bool IsAtBreakpoint()
     {
         if (Breakpoints.Count > 0 && Breakpoints.Contains(cpu.PC))
         {
@@ -101,10 +100,11 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
     #region Memory Tapping
     public void OnRead(ushort address)
     {
-        if (WatchAddresses.Contains(address))
+        // TODO: Differentiate between write and read watch
+        /*if (WatchAddresses.Contains(address))
         {
             Log.Info($"[Debugger] Memory Watch: Read from address {address:X4}");
-        }
+        }*/
     }
 
     public void OnWrite(ushort address, byte value)

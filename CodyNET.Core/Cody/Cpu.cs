@@ -736,6 +736,11 @@ public class Cpu()
     {
         var (addr, _) = ReadAddressOperand(instruction.AddressingMode);
         Memory.Write(addr, A);
+
+        /*if (instruction.Opcode == 0x91) // TODO: Remove
+        {
+            Log.Info($"OP {instruction.Opcode}, Param {instruction.AddressingMode}, STA (zp),Y -> eff={addr:X4} A={A:X2} Y={Y:X2} PC={PC:X4}");
+        }*/
         return true;
     }
     
