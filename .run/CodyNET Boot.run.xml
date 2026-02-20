@@ -1,7 +1,7 @@
 ﻿<component name="ProjectRunConfigurationManager">
   <configuration default="false" name="CodyNET Boot" type="DotNetProject" factoryName=".NET Project">
     <option name="EXE_PATH" value="$PROJECT_DIR$/CodyNET.Core/bin/Debug/net10.0/CodyNET.Core.exe" />
-    <option name="PROGRAM_PARAMETERS" value="boot" />
+    <option name="PROGRAM_PARAMETERS" value="-v boot --clock 50Hz --fast" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/CodyNET.Core/bin/Debug/net10.0" />
     <option name="PASS_PARENT_ENVS" value="1" />
     <option name="ENV_FILE_PATHS" value="" />

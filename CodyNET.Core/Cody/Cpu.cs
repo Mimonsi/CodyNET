@@ -68,6 +68,8 @@ public class Cpu()
     public long TotalCyclesExecuted = 0;
     public Stopwatch ExecutionStopwatch = new();
 
+    
+    public List<int> InstructionTimes = new(); // For testing: record time taken for each instruction execution (in microseconds)
 
     public Cpu(CpuState initialState) : this()
     {

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using CodyNET.Assembler;
 using CodyNET.Common.Utils;
 using CodyNET.Core.Devices;
@@ -61,7 +60,7 @@ public sealed class Cody
     public Memory Memory => Cpu.Memory;
     public Debugger? Debugger { get; private set; }
     public IVideoDevice? Video { get; private set; }
-    public PpmVideoOutput Screen { get; private set; }
+    public PpmVideoOutput? Screen { get; private set; }
     public Keyboard? Keyboard { get; private set; }
 
     public long FrequencyHz
@@ -94,9 +93,13 @@ public sealed class Cody
         // 2. Set up devices
         if (options.EnableDebugger)
         {
-            // TODO: Init debugger
-            /*Debugger = new Debugger(Cpu);
-            Memory.RegisterDevice(Debugger);*/
+            Debugger = new Debugger(Cpu)
+            {
+                WatchAddresses = [0xD002],
+                Breakpoints = [0xFD93]
+            };
+            Memory.RegisterDevice(Debugger);
+            Memory.RegisterTap(Debugger);
         }
 
         if (options.EnableVideo)
@@ -105,6 +108,7 @@ public sealed class Cody
             // Video = new VideoDevice();
             // Cpu.Memory.RegisterDevice(Video);
             Video = new VideoDevice();
+            Memory.RegisterDevice(Video);
             Screen = new PpmVideoOutput();
         }
 
@@ -134,10 +138,21 @@ public sealed class Cody
     public void RunUntilFinish()
     {
         //Cpu.RunUntilFinish();
+        Log.Level = LogLevel.Trace;
+        int loopCounter = 0;
+        bool videoEnabled = false;
         while (true)
         {
+            // Don't log memory copy
             Cpu.Step();
-            if (Video != null)
+            // TEMP
+            
+            if (Debugger is not null && Debugger.OnCpuStep())
+            {
+                Log.Info("Execution paused by debugger on PC={Cpu.PC:X4}");
+                break;
+            }
+            if (Video != null && Video.) // TODO: Only write when video is dirty
             {
                 var frame = Video.RenderTextFrame(Cpu.Memory);
                 Screen.RenderFrame(frame);
@@ -191,23 +206,23 @@ public sealed class Cody
         LoadBinary(program, options);
     }
     
-    public void RunBinaryFile(string filePath, CodyLoadOptions loadOptions, CodySetupOptions runtimeOptions)
+    public void RunBinaryFile(string filePath, CodyLoadOptions loadOptions)
     {
         Log.Debug("Running binary file: '{filePath}'", filePath);
         CheckFilePath(filePath);
 
         var bytes = File.ReadAllBytes(filePath);
-        RunBinary(bytes, loadOptions, runtimeOptions);
+        RunBinary(bytes, loadOptions);
     }
     
-    public void RunBinary(byte[] bytes, CodyLoadOptions loadOptions, CodySetupOptions runtimeOptions)
+    public void RunBinary(byte[] bytes, CodyLoadOptions loadOptions)
     {
         LoadBinary(bytes, loadOptions);
         Reset();
         RunUntilFinish();
     }
 
-    public void RunAssemblyFile(string filePath, CodyLoadOptions? loadOptions=null, CodySetupOptions? runtimeOptions=null)
+    public void RunAssemblyFile(string filePath, CodyLoadOptions? loadOptions=null)
     {
         CheckFilePath(filePath);
         
@@ -219,7 +234,7 @@ public sealed class Cody
     /// <summary>
     /// Boots the machine by loading the built-in CodyBASIC ROM.
     /// </summary>
-    public void Boot(string? basicRomPath = "codybasic.bin", CodySetupOptions? runtimeOptions = null)
+    public void Boot(string? basicRomPath = "codybasic.bin")
     {
         Log.Debug("Booting Cody with CodyBASIC ROM.");
         var resolvedPath = ResolveBasicRomPath(
@@ -231,7 +246,7 @@ public sealed class Cody
             AutoSetResetVector = false
         };
 
-        RunBinaryFile(resolvedPath, loadOptions, runtimeOptions ?? CodySetupOptions.Default);
+        RunBinaryFile(resolvedPath, loadOptions);
     }
 
     public void LoadImage(byte[] data, ushort loadAddress)

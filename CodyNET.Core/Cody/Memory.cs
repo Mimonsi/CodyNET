@@ -1,4 +1,6 @@
-﻿using CodyNET.Core.Interfaces;
+﻿using CodyNET.Common.Utils;
+using CodyNET.Core.Interfaces;
+using Math = System.Math;
 
 namespace CodyNET.Core.Cody;
 
@@ -8,6 +10,8 @@ public class Memory
     private readonly byte[] prop = new byte[0x4000]; // 16 KB of Prop RAM, for the Propeller microcontroller (0xA000 - 0xDFFF)
     private readonly byte[] rom = new byte[0x2000]; // 8 KB of ROM, for BASIC and other built-in code (0xE000 - 0xFFFF)
     private List<IMemoryMappedDevice> devices = [];
+    // All devices that want to tap into memory access (e.g. for debugging, logging, etc.) can register here and will be notified on every read/write
+    private List<IMemoryAccessTapDevice> taps = [];
 
     /// <summary>
     /// Allows writes to ROM range (used for CPU tests / state restore).
@@ -17,7 +21,14 @@ public class Memory
     
     public void RegisterDevice(IMemoryMappedDevice device)
     {
+        Log.Debug($"Registering device {device.GetType().Name} at {device.StartAddress:X4}..{device.EndAddress:X4} (R:{device.SupportsRead} W:{device.SupportsWrite})");
         devices.Add(device);
+    }
+
+    public void RegisterTap(IMemoryAccessTapDevice device)
+    {
+        Log.Debug($"Registering tap device {device.GetType().Name} for memory access notifications");
+        taps.Add(device);
     }
     
     #region Load Memory
@@ -137,6 +148,8 @@ public class Memory
     /// <returns></returns>
     public byte Read(ushort address)
     {
+        foreach(var tap in taps)
+            tap.OnRead(address);
         var device = devices.FirstOrDefault(d =>
             d.SupportsRead &&
             address >= d.StartAddress &&
@@ -169,6 +182,8 @@ public class Memory
     /// <param name="value"></param>
     public void Write(ushort address, byte value)
     {
+        foreach(var tap in taps)
+            tap.OnWrite(address, value);
         var mapped = devices.Where(d =>
             d.SupportsWrite && address >= d.StartAddress && address <= d.EndAddress).ToList();
 
@@ -177,7 +192,7 @@ public class Memory
             foreach (var d in mapped) d.Write(address, value);
             return;
         }
-
+        
         switch (address)
         {
             case < 0xA000:

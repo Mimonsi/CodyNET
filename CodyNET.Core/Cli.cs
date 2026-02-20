@@ -178,8 +178,8 @@ public static class Cli
             // TODO: Delegate all options
         };
 
-        Cody.Cody cody = new Cody.Cody();
-        cody.Boot(runtimeOptions: setupOptions);
+        Cody.Cody cody = new Cody.Cody(setupOptions);
+        cody.Boot();
     }
 
     private static Command BuildRunCommand(Option<bool> verboseOption)
@@ -349,8 +349,8 @@ public static class Cli
             NmiVectorOverride = ParseOptionalHexUShort(nmiVector, nameof(nmiVector))
         };
 
-        Cody.Cody cody = new Cody.Cody();
-        cody.RunBinaryFile(inputFile.FullName, loadOptions, setupOptions);
+        Cody.Cody cody = new Cody.Cody(setupOptions);
+        cody.RunBinaryFile(inputFile.FullName, loadOptions);
     }
 
     private static ushort? ParseOptionalHexUShort(string? value, string paramName)

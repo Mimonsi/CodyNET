@@ -190,7 +190,6 @@ public static class Log
 
     private static void EnsureInitialized()
     {
-        return;
         if (initialized)
             return;
 

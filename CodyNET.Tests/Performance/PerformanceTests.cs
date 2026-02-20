@@ -51,7 +51,7 @@ public class WaitTests
 [Explicit]
 public class PerformanceTests
 {
-    private const int TestDurationSeconds = 20;
+    private const int TestDurationSeconds = 5;
     private const int SuccessMarginPercent = 10; // Allow 1% margin for performance variations
     public void MinimalProgram()
     {
@@ -113,8 +113,14 @@ public class PerformanceTests
     {
         Log.Level = LogLevel.Debug;
         Log.Info($"Starting Performance for {seconds} seconds with target frequency {Math.FormatSi(targetFrequency, "Hz")}");
-        Cody cody = new Cody();
-        cody.FrequencyHz = targetFrequency;
+        CodySetupOptions options = new CodySetupOptions
+        {
+            EnableDebugger = false,
+            EnableKeyboard = false,
+            EnableVideo = false,
+            FrequencyHz =  targetFrequency
+        };
+        var cody = new Cody(options);
         var (loadAddr, program) = Binary.LoadBinary(FileUtils.GetTestDataPath("programs/codybros.bin"), defaultLoadAddress: 0xE000);
         cody.LoadImage(program, loadAddr);
         // TODO: Check if reset vectors are set correctly here

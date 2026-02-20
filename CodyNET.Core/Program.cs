@@ -29,7 +29,7 @@ internal static class Program
         }
         
         RootCommand root = Cli.BuildRootCommand();
-        var invocationConfig = new InvocationConfiguration // if debugger is attach, don't catch exceptions
+        var invocationConfig = new InvocationConfiguration // if debugger is attached, don't catch exceptions
         {
             EnableDefaultExceptionHandler = !Debugger.IsAttached
         };

@@ -1,4 +1,5 @@
-﻿using CodyNET.Core.Cody;
+﻿using CodyNET.Common.Utils;
+using CodyNET.Core.Cody;
 using CodyNET.Core.Interfaces;
 
 namespace CodyNET.Core.Devices;
@@ -115,6 +116,7 @@ public class VideoDevice : IVideoDevice
     {
         if (address < StartAddress || address > EndAddress)
             throw new ArgumentOutOfRangeException(nameof(address), $"Address {address:X4} is out of range for VID device.");
+        Log.Debug($"VID Write: Address={address:X4} Value={value:X2}");
         _videoMemory[address - StartAddress] = value;
         Dirty = true;
     }
@@ -133,7 +135,6 @@ public class VideoDevice : IVideoDevice
         offset++;
         var frame = new VideoFrame(CONTENT_WIDTH, CONTENT_HEIGHT, p);
         return frame;*/
-        throw new IndexOutOfRangeException("HALLO");
         const int COLS = 40;
         const int ROWS = 25;
         const int CHAR_W = 8;
