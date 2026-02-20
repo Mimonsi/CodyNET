@@ -28,6 +28,9 @@ public class VideoDevice : IVideoDevice
             B = (byte)(rgb & 0xFF);
             A = 255;
         }
+        
+        // 0xRRGGBBAA (RGBA8)
+        public uint ToRgba32() => (uint)((R << 24) | (G << 16) | (B << 8) | 0xFF);
 
         public static Color BLACK => new(0x000000);
         public static Color WHITE => new(0xFFFFFF);
@@ -120,6 +123,12 @@ public class VideoDevice : IVideoDevice
         _videoMemory[address - StartAddress] = value;
         Dirty = true;
     }
+    
+    public void SetBorderColor(byte colorIndex)
+    {
+        _videoMemory[0x02] = (byte)(colorIndex & 0x0F); // Store border color in video memory for easy access
+        Dirty = true;
+    }
 
     private int offset = 0;
     public VideoFrame RenderTextFrame(Memory memory)
@@ -143,7 +152,8 @@ public class VideoDevice : IVideoDevice
         var pixels = new uint[WIDTH * HEIGHT];
         
         // 1. Border color (simple color)
-        var border = ColorToRgba(Color.PALETTE[_videoMemory[0x02] & 0x0F]); // 0x02 as border color
+        var border = Color.PALETTE[_videoMemory[0x02] & 0x0F].ToRgba32(); // 0x02 as border color
+        //var border = Color.RED.ToRgba32(); // fixed border color
 
         FillRect(pixels, WIDTH, 0, 0, WIDTH, HEIGHT, border);
 
@@ -159,8 +169,8 @@ public class VideoDevice : IVideoDevice
                 int foregroundColorIndex = colorByte & 0x0F; // Low Nibble
                 int backgroundColorIndex = (colorByte >> 4) & 0x0F; // High Nibble
 
-                uint foregroundColor = ColorToRgba(Color.PALETTE[foregroundColorIndex]);
-                uint backgroundColor = ColorToRgba(Color.PALETTE[backgroundColorIndex]);
+                uint foregroundColor = Color.PALETTE[foregroundColorIndex].ToRgba32();
+                uint backgroundColor = Color.PALETTE[backgroundColorIndex].ToRgba32();
                 
                 ushort glyphBase = (ushort)(CHARSET_BASE + ch * CHAR_H); // Start address for 8 Bitmap rows
 
@@ -186,12 +196,6 @@ public class VideoDevice : IVideoDevice
 
         Dirty = false;
         return new VideoFrame(WIDTH, HEIGHT, pixels);
-    }
-    
-    private static uint ColorToRgba(Color c)
-    {
-        // RGBA8888 in a uint: 0xRRGGBBAA (matches many pipelines; adjust if your bitmap wants BGRA)
-        return ((uint)c.R << 24) | ((uint)c.G << 16) | ((uint)c.B << 8) | c.A;
     }
 
     private static void FillRect(uint[] pix, int stride, int x, int y, int w, int h, uint color)

@@ -27,10 +27,11 @@ public class PpmVideoOutput(string filePath = "C:/Users/Konsi/Desktop/screen.ppm
         {
             uint p = frame.Pixels[i];
 
-            // Assuming 0xAARRGGBB
-            byte r = (byte)((p >> 16) & 0xFF);
-            byte g = (byte)((p >> 8) & 0xFF);
-            byte b = (byte)(p & 0xFF);
+            // Assuming 0xRRGGBBAA
+            byte r = (byte)(p >> 24);
+            byte g = (byte)(p >> 16);
+            byte b = (byte)(p >> 8);
+            byte a = (byte)(p);
 
             bw.Write(r);
             bw.Write(g);

@@ -138,7 +138,9 @@ public sealed class Cody
     public void RunUntilFinish()
     {
         //Cpu.RunUntilFinish();
-        Log.Level = LogLevel.Trace;
+        VideoDevice vid = (VideoDevice) Video!;
+        
+        Log.Level = LogLevel.Debug;
         int loopCounter = 0;
         bool videoEnabled = false;
         while (true)
@@ -150,9 +152,9 @@ public sealed class Cody
             if (Debugger is not null && Debugger.OnCpuStep())
             {
                 Log.Info("Execution paused by debugger on PC={Cpu.PC:X4}");
-                break;
+                //break;
             }
-            if (Video != null && Video.) // TODO: Only write when video is dirty
+            if (Video != null && vid.Dirty) // TODO: Only write when video is dirty
             {
                 var frame = Video.RenderTextFrame(Cpu.Memory);
                 Screen.RenderFrame(frame);
