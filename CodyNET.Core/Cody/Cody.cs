@@ -1,4 +1,5 @@
 using CodyNET.Assembler;
+using CodyNET.Common.Video;
 using CodyNET.Common.Utils;
 using CodyNET.Core.Devices;
 using CodyNET.Core.Interfaces;

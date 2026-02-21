@@ -6,7 +6,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
-using CodyNET.Core.Interfaces;
+using CodyNET.Common.Video;
 
 namespace CodyNET.Frontend.Controls;
 

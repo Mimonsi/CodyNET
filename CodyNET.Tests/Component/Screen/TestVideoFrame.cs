@@ -1,4 +1,5 @@
-﻿using CodyNET.Core.Interfaces;
+using CodyNET.Common.Video;
+using CodyNET.Core.Interfaces;
 using NUnit.Framework;
 
 namespace CodyNET.Tests.Component.Screen;
