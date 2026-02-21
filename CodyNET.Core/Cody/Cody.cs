@@ -60,7 +60,7 @@ public sealed class Cody
     public Memory Memory => Cpu.Memory;
     public Debugger? Debugger { get; private set; }
     public IVideoDevice? Video { get; private set; }
-    public PpmVideoOutput? Screen { get; private set; }
+    public IDisplayDevice? Screen { get; private set; }
     public Keyboard? Keyboard { get; private set; }
 
     public long FrequencyHz

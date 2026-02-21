@@ -1,37 +1,26 @@
-// ============================================
-// File: CodyProtoScreen/Controls/ScreenControl.axaml.cs
-// ============================================
-
 using System;
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Media.Imaging;
 using Avalonia.Media;
+using Avalonia.Platform;
 using Avalonia.Threading;
 using CodyNET.Core.Interfaces;
 
 namespace CodyNET.Frontend.Controls;
 
-public partial class ScreenControl : Control, IMemoryMappedDevice
+public partial class ScreenControl : Control, IDisplayDevice
 {
-    private const int COLS = 40;
-    // Reference apparently has 41?
-    private const int ROWS = 25;
-    private const int CHAR_WIDTH = 4;
-    private const int CHAR_HEIGHT = 4;
+    private const int DefaultWidth = 320;
+    private const int DefaultHeight = 200;
     private const double DefaultScaleFactor = 2.0;
-    private const string ScreenFontFamily =
-        "avares://CodyProtoScreen/Assets/Fonts#C64 Pro Mono, Courier New, Consolas";
-
-    
-    public ushort StartAddress => 0x0200;
-    //public ushort EndAddress => 0x0E00; // 0x0200 + (80 * 60) = 0x12E0, rounded
-    public ushort EndAddress => (ushort)(StartAddress + (COLS * ROWS)); // 0x0200 + (80 * 60) = 0x12E0, rounded
-    public bool SupportsRead { get; } = true;
-    public bool SupportsWrite { get; } = true;
-    private char[,] screenBuffer = new char[ROWS, COLS];
-    private bool needsRedraw = true;
 
     private double scaleFactor = DefaultScaleFactor;
+    private VideoFrame currentFrame;
+    private WriteableBitmap? bitmap;
+    private readonly object frameSync = new();
+    private readonly uint[] emptyPixels = new uint[DefaultWidth * DefaultHeight];
 
     public double ScaleFactor
     {
@@ -51,109 +40,111 @@ public partial class ScreenControl : Control, IMemoryMappedDevice
     public ScreenControl()
     {
         InitializeComponent();
-        
-        // Initialize buffer with spaces
-        for (int y = 0; y < ROWS; y++)
-            for (int x = 0; x < COLS; x++)
-                screenBuffer[y, x] = ' ';
-        
-        Dispatcher.UIThread.Post(() =>
-        {
-            InvalidateVisual();
-            needsRedraw = false;
-        });
+
+        currentFrame = new VideoFrame(DefaultWidth, DefaultHeight, emptyPixels);
         ClipToBounds = true;
     }
 
     protected override Size MeasureOverride(Size availableSize)
     {
-        return new Size(COLS * CHAR_WIDTH * scaleFactor, ROWS * CHAR_HEIGHT * scaleFactor);
+        return new Size(currentFrame.Width * scaleFactor, currentFrame.Height * scaleFactor);
     }
 
     protected override Size ArrangeOverride(Size finalSize)
     {
-        return new Size(COLS * CHAR_WIDTH * scaleFactor, ROWS * CHAR_HEIGHT * scaleFactor);
+        return new Size(currentFrame.Width * scaleFactor, currentFrame.Height * scaleFactor);
     }
 
-
-    
-    public byte Read(ushort address)
+    public void RenderFrame(VideoFrame frame)
     {
-        int offset = address - StartAddress;
-        int row = offset / COLS;
-        int col = offset % COLS;
-        
-        if (row >= 0 && row < ROWS && col >= 0 && col < COLS)
-            return (byte)screenBuffer[row, col];
-        
-        return 0;
-    }
-    
-    public void Write(ushort address, byte value)
-    {
-        int offset = address - StartAddress;
-        int row = offset / COLS;
-        int col = offset % COLS;
-        
-        if (row >= 0 && row < ROWS && col >= 0 && col < COLS)
+        if (frame.Width <= 0 || frame.Height <= 0 || frame.Pixels.Length < frame.Width * frame.Height)
         {
-            screenBuffer[row, col] = (char)value;
-            needsRedraw = true;
-            
-            Dispatcher.UIThread.Post(() =>
-            {
-                if (needsRedraw)
-                {
-                    InvalidateVisual();
-                    needsRedraw = false;
-                }
-            });
-
+            return;
         }
+
+        lock (frameSync)
+        {
+            currentFrame = frame;
+        }
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            InvalidateMeasure();
+            InvalidateVisual();
+        }, DispatcherPriority.Render);
     }
     
     public override void Render(DrawingContext context)
     {
         base.Render(context);
-        
-        var backgroundBrush = new BrushConverter().ConvertFromString("#0d0066") as IBrush;
-        
-        // Black background
-        context.FillRectangle(
-            // #0d0066
-            backgroundBrush ?? Brushes.Blue,
-            new Rect(0, 0, Bounds.Width, Bounds.Height)
-        );
-        
-        // Green phosphor text
-        var typeface = new Typeface(new FontFamily(ScreenFontFamily));
-        var brush = new SolidColorBrush(Color.FromRgb(255, 255, 255));
 
-        using (context.PushTransform(Matrix.CreateScale(scaleFactor, scaleFactor)))
+        var frame = GetCurrentFrame();
+        EnsureBitmap(frame.Width, frame.Height);
+        CopyFramePixelsToBitmap(frame);
+
+        if (bitmap is null)
+            return;
+
+        var destination = new Rect(0, 0, frame.Width * scaleFactor, frame.Height * scaleFactor);
+        var source = new Rect(0, 0, frame.Width, frame.Height);
+        context.DrawImage(bitmap, source, destination);
+    }
+
+    private VideoFrame GetCurrentFrame()
+    {
+        lock (frameSync)
         {
-            for (int y = 0; y < ROWS; y++)
-            {
-                for (int x = 0; x < COLS; x++)
-                {
-                    char c = screenBuffer[y, x];
-                    if (c != ' ' && c != '\0')
-                    {
-                        var formattedText = new FormattedText(
-                            c.ToString(),
-                            System.Globalization.CultureInfo.InvariantCulture,
-                            FlowDirection.LeftToRight,
-                            typeface,
-                            CHAR_HEIGHT,
-                            brush
-                        );
+            return currentFrame;
+        }
+    }
 
-                        context.DrawText(
-                            formattedText,
-                            new Point(x * CHAR_WIDTH, y * CHAR_HEIGHT)
-                        );
-                    }
-                }
+    private void EnsureBitmap(int width, int height)
+    {
+        if (bitmap is not null && bitmap.PixelSize.Width == width && bitmap.PixelSize.Height == height)
+            return;
+
+        bitmap?.Dispose();
+        bitmap = new WriteableBitmap(
+            new PixelSize(width, height),
+            new Vector(96, 96),
+            PixelFormat.Bgra8888,
+            AlphaFormat.Opaque);
+    }
+
+    private void CopyFramePixelsToBitmap(VideoFrame frame)
+    {
+        if (bitmap is null)
+            return;
+
+        using var locked = bitmap.Lock();
+        int width = frame.Width;
+        int height = frame.Height;
+        int sourceStride = width * 4;
+        byte[] rowBuffer = new byte[sourceStride];
+
+        for (int y = 0; y < height; y++)
+        {
+            int rowStart = y * width;
+            for (int x = 0; x < width; x++)
+            {
+                uint rgba = frame.Pixels[rowStart + x];
+                byte r = (byte)(rgba >> 24);
+                byte g = (byte)(rgba >> 16);
+                byte b = (byte)(rgba >> 8);
+                byte a = (byte)rgba;
+
+                int offset = x * 4;
+                rowBuffer[offset] = b;
+                rowBuffer[offset + 1] = g;
+                rowBuffer[offset + 2] = r;
+                rowBuffer[offset + 3] = a;
             }
+
+            Marshal.Copy(
+                rowBuffer,
+                0,
+                locked.Address + y * locked.RowBytes,
+                sourceStride);
         }
     }
 }

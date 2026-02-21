@@ -34,8 +34,7 @@
         <Border Padding="20" DockPanel.Dock="Top">
             <Border BorderBrush="Black" 
                     BorderThickness="20" 
-                    Padding="10"
-                    Background="#ffe699">
+                    Padding="10">
                 <controls1:ScreenControl x:Name="Screen" />
             </Border>
         </Border>

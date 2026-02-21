@@ -1,4 +1,4 @@
-﻿using CodyNET.Core.Interfaces;
+using CodyNET.Core.Interfaces;
 
 namespace CodyNET.Core.Devices;
 
@@ -6,7 +6,7 @@ namespace CodyNET.Core.Devices;
 /// A simple implementation of a device that "renders" a VideoFrame into a ppm file for external display.
 /// </summary>
 ///  TODO: This should not be in core but in frontend
-public class PpmVideoOutput(string filePath = "C:/Users/Konsi/Desktop/screen.ppm")
+public class PpmVideoOutput(string filePath = "C:/Users/Konsi/Desktop/screen.ppm") : IDisplayDevice
 {
     public void RenderFrame(VideoFrame frame)
     {
