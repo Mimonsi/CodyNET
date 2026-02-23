@@ -28,6 +28,7 @@ public partial class MainWindow : Window
         if (screen != null)
         {
             screen.ScaleFactor = 4.0;
+            ScreenHostBridge.SetScreen(screen);
         }
     }
 
