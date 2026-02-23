@@ -135,6 +135,7 @@ public class Cpu()
         
         // Additional reset logic for variables
         TotalCyclesExecuted = 0;
+        Log.Debug("CPU Reset: PC Set to {0:X4}", PC);
         
     }
 

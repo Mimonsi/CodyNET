@@ -107,9 +107,11 @@ public class Cody
 
     public void RunUntilFinish()
     {
+        //Log.Level = LogLevel.Trace;
         while (true)
         {
             Cpu.Step();
+            // TODO: Interrupts
             // TEMP
             if (Debugger is not null && Debugger.IsAtBreakpoint())
             {
@@ -209,7 +211,7 @@ public class Cody
             File = new FileInfo(resolvedPath),
             LoadAddress = 0xE000,
             AsCartridge = false,
-            AutoSetResetVector = true,
+            AutoSetResetVector = false,
         };
         RunBinaryFile(options);
     }

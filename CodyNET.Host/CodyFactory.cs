@@ -24,8 +24,8 @@ public static class CodyFactory
 
     private static IScreenDevice? CreateScreen()
     {
-        var screen = new PpmVideoOutput();
-        return screen;
+        // Initialize Avalonia Screen here, run it in separate thread and return the screen device to call RenderFrame on.
+        //return screen;
     }
     
     private static IInputDevice? CreateKeyboard()
