@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using CodyNET.Common.Utils;
 using CodyNET.Common.Video;
 using CodyNET.Frontend.Controls;
 
@@ -20,6 +21,13 @@ public partial class MainWindow : Window
         InitializeComponent();
         InitializeScreen();
         StartPpmPolling(1);
+        Closed += OnWindowClosed; // Close whole application on window close
+    }
+    
+    private void OnWindowClosed(object? sender, EventArgs e)
+    {
+        Log.Info("Main window closed. Exiting application.");
+        Environment.Exit(0);
     }
     
     private void InitializeScreen()
