@@ -24,6 +24,12 @@ public class Memory
         Log.Debug($"Registering device {device.GetType().Name} at {device.StartAddress:X4}..{device.EndAddress:X4} (R:{device.SupportsRead} W:{device.SupportsWrite})");
         devices.Add(device);
     }
+    
+    public void UnregisterDevice(IMemoryMappedDevice device)
+    {
+        Log.Debug($"Unregistering device {device.GetType().Name} at {device.StartAddress:X4}..{device.EndAddress:X4} (R:{device.SupportsRead} W:{device.SupportsWrite})");
+        devices.Remove(device);
+    }
 
     public void RegisterTap(IMemoryAccessTapDevice device)
     {

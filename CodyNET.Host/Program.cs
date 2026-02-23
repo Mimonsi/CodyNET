@@ -1,10 +1,10 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.Diagnostics;
 using CodyNET.Common.Utils;
 
-namespace CodyNET.Core;
+namespace CodyNET.Host;
 
-internal static class Program
+public class Program
 {
     public static int Main(string[] args)
     {

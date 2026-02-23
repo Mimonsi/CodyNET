@@ -10,7 +10,7 @@ using CodyNET.Common.Video;
 
 namespace CodyNET.Frontend.Controls;
 
-public partial class ScreenControl : Control, IDisplayDevice
+public partial class ScreenControl : Control, IScreenDevice
 {
     private const int DefaultWidth = 320;
     private const int DefaultHeight = 200;

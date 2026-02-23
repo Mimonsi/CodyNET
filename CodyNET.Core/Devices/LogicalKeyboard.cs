@@ -3,7 +3,7 @@ using CodyNET.Core.Interfaces;
 
 namespace CodyNET.Core.Devices;
 
-public class Keyboard : IInputDevice
+public class LogicalKeyboard : IInputDevice
 {
     public ushort StartAddress { get; }
     public ushort EndAddress { get; }

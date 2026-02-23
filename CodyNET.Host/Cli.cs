@@ -5,13 +5,13 @@ using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
 using CodyNET.Disassembler;
 
-namespace CodyNET.Core;
+namespace CodyNET.Host;
 
 public static class Cli
 {
     public static RootCommand BuildRootCommand()
     {
-        var root = new RootCommand("CodyNET CLI");
+        var root = new RootCommand("CodyNET");
 
         var verboseOption = new Option<bool>("--verbose", ["-v"])
         {
@@ -125,12 +125,19 @@ public static class Cli
             }
         }
 
+        // TODO: Build cody using factory/builder
+        
         return string.Join(Environment.NewLine, lines);
     }
 
     private static Command BuildBootCommand(Option<bool> verboseOption)
     {
         var cmd = new Command("boot", "Boot the emulator with the built-in CodyBASIC");
+        
+        var debug = new Option<bool>("--debug", ["-d"])
+        {
+            Description = "Enable debugger (interactive)"
+        };
         
         var physicalKeyboard = new Option<bool>("--physical-keyboard")
         {
@@ -147,38 +154,44 @@ public static class Cli
         {
             Description = "Run as fast as possible (ignores --clock)"
         };
+        
+        var headless = new Option<bool>("--headless")
+        {
+            Description = "Run without video output"
+        };
 
+        cmd.Add(debug);
         cmd.Add(physicalKeyboard);
         cmd.Add(clock);
         cmd.Add(fast);
+        cmd.Add(headless);
+
         
         cmd.SetAction(parseResult =>
         {
             if (parseResult.GetValue(verboseOption))
-                Log.Level = LogLevel.Trace;
-            ExecuteBootCommand(
-                parseResult.GetValue(physicalKeyboard),
-                parseResult.GetValue(clock),
-                parseResult.GetValue(fast)
-            );
+                Log.Level = LogLevel.Debug;
+            
+            var setupOptions = new CodySetupOptions
+            {
+                EnableDebugger = parseResult.GetValue(debug),
+                PhysicalKeyboard = parseResult.GetValue(physicalKeyboard),
+                FrequencyHz = parseResult.GetValue(fast) ? -1 : ParseClock(parseResult.GetValue(clock)),
+                EnableScreen = !parseResult.GetValue(headless)
+            };
+            
+            ExecuteBootCommand(setupOptions);
             return 0;
         });
 
         return cmd;
     }
 
-    private static void ExecuteBootCommand(bool physicalKeyboard, string? clock, bool fast)
+    private static void ExecuteBootCommand(CodySetupOptions options)
     {
         Log.Info("Executing boot command");
-        _ = physicalKeyboard; // keyboard device wiring is pending
-
-        var setupOptions = new CodySetupOptions
-        {
-            FrequencyHz = fast ? -1 : ParseClock(clock),
-            // TODO: Delegate all options
-        };
-
-        Cody.Cody cody = new Cody.Cody(setupOptions);
+        // Create cody and pass screen
+        Cody cody = CodyFactory.CreateCody(options);
         cody.Boot();
     }
 
@@ -191,6 +204,11 @@ public static class Cli
             Description = "Binary file (raw or cartridge image if --as-cartridge is set)"
         }.AcceptExistingOnly();
         cmd.Arguments.Add(fileArg);
+        
+        var debug = new Option<bool>("--debug", ["-d"])
+        {
+            Description = "Enable debugger (interactive)"
+        };
 
         var asCartridge = new Option<bool>("--as-cartridge")
         {
@@ -223,11 +241,6 @@ public static class Cli
             Description = "Physical Cody keyboard mapping (ignores host layout)"
         };
 
-        var debug = new Option<bool>("--debug", ["-d"])
-        {
-            Description = "Enable debugger (interactive)"
-        };
-
         var clock = new Option<string?>("--clock")
         {
             Description = "Target CPU clock rate (e.g. 1000000, 1MHz, 500kHz)",
@@ -238,7 +251,13 @@ public static class Cli
         {
             Description = "Run as fast as possible (ignores --clock)"
         };
+        
+        var headless = new Option<bool>("--headless")
+        {
+            Description = "Run without video output"
+        };
 
+        cmd.Options.Add(debug);
         cmd.Options.Add(asCartridge);
         cmd.Options.Add(loadAddress);
         cmd.Options.Add(resetVector);
@@ -247,33 +266,38 @@ public static class Cli
         cmd.Options.Add(uart1Source);
         cmd.Options.Add(fixNewlines);
         cmd.Options.Add(physicalKeyboard);
-        cmd.Options.Add(debug);
         cmd.Options.Add(clock);
         cmd.Options.Add(fast);
+        cmd.Options.Add(headless);
 
         cmd.SetAction(parseResult =>
         {
             if (parseResult.GetValue(verboseOption))
-                Log.Level = LogLevel.Trace;
+                Log.Level = LogLevel.Debug;
 
             var inputFile = parseResult.GetValue(fileArg)
                 ?? throw new ArgumentException("Missing input file argument.");
             var parsedLoadAddress = parseResult.GetValue(loadAddress) ?? "0xE000";
 
-            ExecuteRunCommand(
-                inputFile,
-                parseResult.GetValue(asCartridge),
-                parsedLoadAddress,
-                parseResult.GetValue(resetVector),
-                parseResult.GetValue(irqVector),
-                parseResult.GetValue(nmiVector),
-                parseResult.GetValue(uart1Source),
-                parseResult.GetValue(fixNewlines),
-                parseResult.GetValue(physicalKeyboard),
-                parseResult.GetValue(debug),
-                parseResult.GetValue(clock),
-                parseResult.GetValue(fast));
+            var setupOptions = new CodySetupOptions()
+            {
+                EnableDebugger = parseResult.GetValue(debug),
+                PhysicalKeyboard = parseResult.GetValue(physicalKeyboard),
+                FrequencyHz = parseResult.GetValue(fast) ? -1 : ParseClock(parseResult.GetValue(clock)),
+                EnableScreen = !parseResult.GetValue(headless)
+            };
+            var loadOptions = new CodyLoadOptions()
+            {
+                File = inputFile,
+                AsCartridge = parseResult.GetValue(asCartridge),
+                LoadAddress = ParseHexUShort(parsedLoadAddress, nameof(loadAddress)),
+                ResetVectorOverride = ParseOptionalHexUShort(parseResult.GetValue(resetVector), nameof(resetVector)),
+                IrqVectorOverride = ParseOptionalHexUShort(parseResult.GetValue(irqVector), nameof(irqVector)),
+                NmiVectorOverride = ParseOptionalHexUShort(parseResult.GetValue(nmiVector), nameof(nmiVector)),
+                //uart1Source = parseResult.GetValue(uart1Source) TODO
+            };
 
+            ExecuteRunCommand(setupOptions, loadOptions);
             return 0;
         });
 
@@ -314,43 +338,13 @@ public static class Cli
         throw new ArgumentException($"Invalid clock format: {clock}");
     }
 
-    private static void ExecuteRunCommand(
-        FileInfo inputFile,
-        bool asCartridge,
-        string loadAddress,
-        string? resetVector,
-        string? irqVector,
-        string? nmiVector,
-        string? uart1Source,
-        bool fixNewlines,
-        bool physicalKeyboard,
-        bool debug,
-        string? clock,
-        bool fast)
+    private static void ExecuteRunCommand(CodySetupOptions setupOptions, CodyLoadOptions loadOptions)
     {
-        _ = uart1Source;      // UART device wiring is pending
-        _ = fixNewlines;      // UART device wiring is pending
-        _ = physicalKeyboard; // keyboard device wiring is pending
         Log.Info("Executing run command");
 
-        var setupOptions = new CodySetupOptions
-        {
-            EnableDebugger = debug,
-            EnableVideo = false,
-            FrequencyHz = fast ? -1 : ParseClock(clock)
-        };
-
-        var loadOptions = new CodyLoadOptions
-        {
-            AsCartridge = asCartridge,
-            LoadAddress = ParseHexUShort(loadAddress, nameof(loadAddress)),
-            ResetVectorOverride = ParseOptionalHexUShort(resetVector, nameof(resetVector)),
-            IrqVectorOverride = ParseOptionalHexUShort(irqVector, nameof(irqVector)),
-            NmiVectorOverride = ParseOptionalHexUShort(nmiVector, nameof(nmiVector))
-        };
-
-        Cody.Cody cody = new Cody.Cody(setupOptions);
-        cody.RunBinaryFile(inputFile.FullName, loadOptions);
+        Cody cody = CodyFactory.CreateCody(setupOptions);
+        // TODO: Uart1Source
+        cody.RunBinaryFile(loadOptions);
     }
 
     private static ushort? ParseOptionalHexUShort(string? value, string paramName)
@@ -419,7 +413,7 @@ public static class Cli
         cmd.SetAction(parseResult =>
         {
             if (parseResult.GetValue(verboseOption))
-                Log.Level = LogLevel.Trace;
+                Log.Level = LogLevel.Debug;
 
             var inputFile = parseResult.GetValue(fileArg)
                 ?? throw new ArgumentException("Missing input file argument.");
@@ -486,7 +480,7 @@ public static class Cli
         cmd.SetAction(parseResult =>
         {
             if (parseResult.GetValue(verboseOption))
-                Log.Level = LogLevel.Trace;
+                Log.Level = LogLevel.Debug;
 
             var inputFile = parseResult.GetValue(fileArg)
                 ?? throw new ArgumentException("Missing input file argument.");

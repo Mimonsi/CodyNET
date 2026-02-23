@@ -1,7 +1,7 @@
 using System.CommandLine;
 using System.Diagnostics;
 
-namespace CodyNET.Core;
+namespace CodyNET.Host;
 
 public static class InteractiveShell
 {

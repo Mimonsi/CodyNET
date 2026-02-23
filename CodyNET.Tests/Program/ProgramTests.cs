@@ -12,8 +12,12 @@ public class ProgramTests
     [Test]
     public void MinimalProgram()
     {
-        Cody cody = new Cody();
-        cody.RunAssemblyFile(FileUtils.GetTestDataPath("minimal.s"));
+        Cody cody = new Cody(CodySetupOptions.Default);
+        var loadOptions = new CodyLoadOptions()
+        {
+            File = new FileInfo(FileUtils.GetTestDataPath("minimal.s")),
+        };
+        cody.RunAssemblyFile(loadOptions);
         Assert.True(true);
     }
 

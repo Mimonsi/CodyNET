@@ -11,65 +11,39 @@ namespace CodyNET.Core.Cody;
 public sealed record CodySetupOptions
 {
     public static CodySetupOptions Default => new();
-
-    public static CodySetupOptions Headless => new()
-    {
-        FrequencyHz = -1,
-        EnableDebugger = false,
-        EnableVideo = false,
-        EnableKeyboard = false,
-    };
     
     public long FrequencyHz { get; init; } = 1_000_000; // 1 MHz, -1 = as fast as possible
     public bool EnableDebugger { get; init; } = true;
-    public bool EnableVideo { get; init; } = true;
-    public bool EnableKeyboard { get; init; } = true;
+    public bool PhysicalKeyboard { get; init; } = true; // Use physical keyboard input (instead of logical)
+    public bool EnableScreen { get; init; } = true;
 }
 
 public sealed record CodyLoadOptions
 {
-    public static CodyLoadOptions Default => new();
+    public FileInfo? File { get; init; }
     public bool AsCartridge { get; init; }
     public ushort LoadAddress { get; init; } = 0xE000;
-    public bool AutoSetResetVector { get; init; } = true; // If true, sets the reset vector to the load address (unless ResetVectorOverride is set)
+    public bool AutoSetResetVector { get; init; } = true; // If true, sets reset vector to load address if not explicitly overridden
     public ushort? ResetVectorOverride { get; init; }
     public ushort? IrqVectorOverride { get; init; }
     public ushort? NmiVectorOverride { get; init; }
+    public FileInfo? Uart1Source { get; init; }
 }
 
-public sealed record CodyRunOptions
+public class Cody
 {
-    public static CodyRunOptions Default => new();
-    public long FrequencyHz { get; init; } = 1_000_000;
-    public bool EnableDebugger { get; init; } = false;
-    public bool EnableVideo { get; init; } = false;
-    public bool AsCartridge { get; init; } = false;
-    public ushort LoadAddress { get; init; } = 0xE000;
-    public bool AutoSetResetVector { get; init; } = true;
-    public ushort? ResetVectorOverride { get; init; } = null;
-    public ushort? IrqVectorOverride { get; init; } = null;
-    public ushort? NmiVectorOverride { get; init; } = null;
-    public string? BasicRomPath { get; init; } = null;
-}
-
-public sealed class Cody
-{
-    private CodySetupOptions setupOptions = new();
-    private bool isSetup;
-
     public Cpu Cpu;
     public Memory Memory => Cpu.Memory;
     public Debugger? Debugger { get; private set; }
-    public IVideoDevice? Video { get; private set; }
-    public IDisplayDevice? Screen { get; private set; }
-    public Keyboard? Keyboard { get; private set; }
+    public IVideoDevice? VID { get; private set; }
+    public IScreenDevice? Screen { get; init; }
+    public IInputDevice? Keyboard { get; init; }
 
     public long FrequencyHz
     {
         get => Cpu.CyclesPerSecond;
         set
         {
-            setupOptions = setupOptions with { FrequencyHz = value };
             Cpu.CyclesPerSecond = value;
         }
     }
@@ -80,9 +54,12 @@ public sealed class Cody
         set => FrequencyHz = value ? -1 : 1_000_000;
     }
 
-    public Cody(CodySetupOptions options)
+    // TODO: Cody shouldn't need setup options, as Factory create devices based on options and passes them in. Refactor to remove this dependency.
+    public Cody(CodySetupOptions options, IVideoDevice? videoDevice = null, IScreenDevice? screen = null, IInputDevice? keyboard = null)
     {
-        setupOptions = options;
+        VID = videoDevice;
+        Screen = screen;
+        Keyboard = keyboard;
         
         // 1. Set up CPU (and memory)
         // CPU also initializes memory
@@ -107,27 +84,15 @@ public sealed class Cody
             Memory.RegisterTap(Debugger);
         }
 
-        if (options.EnableVideo)
+        if (VID != null)
         {
-            // TODO: Init video
-            // Video = new VideoDevice();
-            // Cpu.Memory.RegisterDevice(Video);
-            Video = new VideoDevice();
-            Memory.RegisterDevice(Video);
-            Screen = new PpmVideoOutput();
+            Memory.RegisterDevice(VID);
         }
 
-        if (options.EnableKeyboard)
+        if (Keyboard != null)
         {
-            // TODO: Init keyboard
-            // Keyboard = new Keyboard();
-            // Cpu.Memory.RegisterDevice(Keyboard);
+            Memory.RegisterDevice(Keyboard);
         }
-    }
-
-    public Cody() : this(CodySetupOptions.Default)
-    {
-        Log.Info("Cody initialized with default setup options.");
     }
 
     public void Reset()
@@ -142,10 +107,6 @@ public sealed class Cody
 
     public void RunUntilFinish()
     {
-        //Cpu.RunUntilFinish();
-        VideoDevice vid = (VideoDevice) Video!;
-        
-        Log.Level = LogLevel.Debug;
         while (true)
         {
             Cpu.Step();
@@ -155,10 +116,10 @@ public sealed class Cody
                 Log.Info("Execution paused by debugger on PC={Cpu.PC:X4}");
                 //break;
             }
-            if (Video != null && vid.Dirty) // TODO: Only write when video is dirty
+            if (VID is VideoDevice { Dirty: true } vid) // TODO: Only write when video is dirty
             {
-                var frame = Video.RenderTextFrame(Cpu.Memory);
-                Screen.RenderFrame(frame);
+                var frame = vid.RenderTextFrame(Cpu.Memory);
+                Screen?.RenderFrame(frame);
             }
         }
     }
@@ -174,19 +135,19 @@ public sealed class Cody
         return cycles;
     }
     
-    private void CheckFilePath(string path)
+    private void CheckFilePath(FileInfo? file)
     {
-        if (string.IsNullOrWhiteSpace(path))
-            throw new ArgumentException("File path must not be empty.", nameof(path));
-        if (!File.Exists(path))
-            throw new FileNotFoundException("File not found.", path);
+        if (file is null)
+            throw new ArgumentNullException(nameof(file), "File path must be provided.");
+        if (!file.Exists)
+            throw new FileNotFoundException($"File not found: {file.FullName}");
     }
 
-    public void LoadBinaryFile(string filePath, CodyLoadOptions options)
+    public void LoadBinaryFile(CodyLoadOptions options)
     {
-        CheckFilePath(filePath);
+        CheckFilePath(options.File);
 
-        var bytes = File.ReadAllBytes(filePath);
+        var bytes = File.ReadAllBytes(options.File!.FullName);
         LoadBinary(bytes, options);
     }
     
@@ -201,20 +162,20 @@ public sealed class Cody
         ApplyVectors(loadAddress, options);
     }
 
-    public void LoadAssemblyFile(string filePath, CodyLoadOptions? options = null)
+    public void LoadAssemblyFile(CodyLoadOptions loadOptions)
     {
-        CheckFilePath(filePath);
+        CheckFilePath(loadOptions.File);
 
-        var program = TassAssembler.AssembleFile(filePath);
-        LoadBinary(program, options);
+        var program = TassAssembler.AssembleFile(loadOptions.File!.FullName);
+        LoadBinary(program, loadOptions);
     }
     
-    public void RunBinaryFile(string filePath, CodyLoadOptions loadOptions)
+    public void RunBinaryFile(CodyLoadOptions loadOptions)
     {
-        Log.Debug("Running binary file: '{filePath}'", filePath);
-        CheckFilePath(filePath);
+        CheckFilePath(loadOptions.File);
+        Log.Debug($"Running binary file: '{loadOptions.File!.FullName}'");
 
-        var bytes = File.ReadAllBytes(filePath);
+        var bytes = File.ReadAllBytes(loadOptions.File!.FullName);
         RunBinary(bytes, loadOptions);
     }
     
@@ -225,11 +186,11 @@ public sealed class Cody
         RunUntilFinish();
     }
 
-    public void RunAssemblyFile(string filePath, CodyLoadOptions? loadOptions=null)
+    public void RunAssemblyFile(CodyLoadOptions loadOptions)
     {
-        CheckFilePath(filePath);
+        CheckFilePath(loadOptions.File);
         
-        LoadAssemblyFile(filePath, loadOptions ?? CodyLoadOptions.Default);
+        LoadAssemblyFile(loadOptions);
         Reset();
         RunUntilFinish();
     }
@@ -237,19 +198,20 @@ public sealed class Cody
     /// <summary>
     /// Boots the machine by loading the built-in CodyBASIC ROM.
     /// </summary>
-    public void Boot(string? basicRomPath = "codybasic.bin")
+    public void Boot()
     {
         Log.Debug("Booting Cody with CodyBASIC ROM.");
-        var resolvedPath = ResolveBasicRomPath(
-            basicRomPath);
+        var resolvedPath = ResolveBasicRomPath();
         Log.Trace("Resolved CodyBASIC ROM path: {path}", resolvedPath);
 
-        var loadOptions = CodyLoadOptions.Default with
+        var options = new CodyLoadOptions
         {
-            AutoSetResetVector = false
+            File = new FileInfo(resolvedPath),
+            LoadAddress = 0xE000,
+            AsCartridge = false,
+            AutoSetResetVector = true,
         };
-
-        RunBinaryFile(resolvedPath, loadOptions);
+        RunBinaryFile(options);
     }
 
     public void LoadImage(byte[] data, ushort loadAddress)
@@ -313,9 +275,8 @@ public sealed class Cody
         Memory.ForceWrite(0xFFFB, (byte)(address >> 8));
     }
 
-    private static string ResolveBasicRomPath(string? configuredPath)
+    private static string ResolveBasicRomPath()
     {
-        _ = configuredPath; // ROM path is fixed by convention.
         var path = Path.Combine(AppContext.BaseDirectory, "roms", "codybasic.bin");
         if (File.Exists(path))
             return path;
