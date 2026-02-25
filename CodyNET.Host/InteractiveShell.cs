@@ -9,6 +9,7 @@ public static class InteractiveShell
     {
         Console.WriteLine("CodyNET interactive CLI");
         Console.WriteLine("Type 'help' for help, 'exit' to quit.");
+        Console.WriteLine("Type 'boot' to run the emulator into the BASIC Shell.");
         Console.WriteLine();
 
         while (true)

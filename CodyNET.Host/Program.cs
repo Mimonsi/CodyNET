@@ -12,10 +12,20 @@ public class Program
         Log.StartNewFileOnStartup = true;
         Log.Initialize();
         bool interactive = false;
+        
+        // TODO: Decide start behavior without parameters:
+        // 1. Run Boot command when no parameters are supplied
+        // 2. Start in interactive mode when no parameters are supplied
+        // 3. Show help when no parameters are supplied
 
         // Filter args: detect -i / --interactive
         var filteredArgs = new List<string>();
 
+        if (args.Length == 0) // When no arguments are provided, start in interactive mode by default
+        {
+            interactive = true;
+        }
+        
         foreach (var arg in args)
         {
             if (arg is "-i" or "--interactive")
