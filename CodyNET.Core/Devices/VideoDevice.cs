@@ -134,17 +134,6 @@ public class VideoDevice : IVideoDevice
     private int offset = 0;
     public VideoFrame RenderTextFrame(Memory memory)
     {
-        /*var p = new uint[CONTENT_WIDTH * CONTENT_HEIGHT];
-        foreach (var i in Enumerable.Range(0, p.Length))
-        {
-            // Each pixel random color
-            //p[i] = ColorToRgba(Color.PALETTE[i % (Color.PALETTE.Length + offset++)]); 
-            p[i] = ColorToRgba(Color.PALETTE[(i + offset) % (Color.PALETTE.Length)]);
-        }
-
-        offset++;
-        var frame = new VideoFrame(CONTENT_WIDTH, CONTENT_HEIGHT, p);
-        return frame;*/
         const int COLS = 40;
         const int ROWS = 25;
         const int CHAR_W = 8;
@@ -152,12 +141,10 @@ public class VideoDevice : IVideoDevice
         
         var pixels = new uint[WIDTH * HEIGHT];
         
-        // 1. Border color (simple color)
-        var border = Color.PALETTE[_videoMemory[0x02] & 0x0F].ToRgba32(); // 0x02 as border color
-        //var border = Color.RED.ToRgba32(); // fixed border color
+        // 1. Fill with border color (0x02 register, low 4 bits as color index)
+        var borderColor = Color.PALETTE[_videoMemory[0x02] & 0x0F].ToRgba32(); // 0x02 as border color
+        FillRect(pixels, WIDTH, 0, 0, WIDTH, HEIGHT, borderColor);
 
-        FillRect(pixels, WIDTH, 0, 0, WIDTH, HEIGHT, border);
-        
         /*for (int row = 0; row < ROWS; row++)
         {
             for (int col = 0; col < COLS; col++)
@@ -173,32 +160,14 @@ public class VideoDevice : IVideoDevice
                 uint foregroundColor = Color.PALETTE[foregroundColorIndex].ToRgba32();
                 uint backgroundColor = Color.PALETTE[backgroundColorIndex].ToRgba32();
                 
-                ushort glyphBase = (ushort)(CHARSET_BASE + ch * CHAR_H); // Start address for 8 Bitmap rows
-                
-                //Log.Info($"CH={ch:X2} glyphAddr={glyphBase:X4} base={CHARSET_BASE:X4}");
-
-                var b0 = memory.Read((ushort) (glyphBase + 0));
-                var b1 = memory.Read((ushort) (glyphBase + 1));
-                var b2 = memory.Read((ushort) (glyphBase + 2));
-                var b3 = memory.Read((ushort) (glyphBase + 3));
-                //Log.Info($"glyph bytes: {b0:X2} {b1:X2} {b2:X2} {b3:X2} ...");
+                ushort glyphBase = (ushort)(CHARSET_BASE + ch * CHAR_H);
 
                 int px0 = BORDER_X + col * CHAR_W; // Left pixel position of the character cell
                 int py0 = BORDER_Y + row * CHAR_H; // Top pixel position of the character cell
-                
-                if (row == 0 && col == 0)
-                {
-                    //Log.Info($"Cell00 ch={ch:X2} color={colorByte:X2}");
-                    for (int gy = 0; gy < 8; gy++)
-                    {
-                        byte b = memory.Read((ushort)(glyphBase + gy));
-                        //Log.Info($"glyph[{gy}]={b:X2}");
-                    }
-                }
-                
+
                 for (int gy = 0; gy < CHAR_H; gy++)
                 {
-                    byte charRowData = memory.Read((ushort)(glyphBase + gy)); // lower 4 bits used
+                    byte charRowData = memory.Read((ushort)(glyphBase + gy));
                     for (int gx = 0; gx < CHAR_W; gx++) // 0..7
                     {
                         int bit = 3 - (gx >> 1); // gx 0..1->bit3, 2..3->bit2, 4..5->bit1, 6..7->bit0
@@ -216,13 +185,40 @@ public class VideoDevice : IVideoDevice
         return new VideoFrame(WIDTH, HEIGHT, pixels);
     }
 
-    private static void FillRect(uint[] pix, int stride, int x, int y, int w, int h, uint color)
+    private static void FillBlackWhite(uint[] pixels)
     {
-        for (int yy = 0; yy < h; yy++)
+        bool isWhite = true;
+
+        int xPos = BORDER_X;
+        int yPos = BORDER_Y;
+        int w = CONTENT_WIDTH * 2;   // 320
+        int h = CONTENT_HEIGHT;      // 200
+
+        uint white = Color.WHITE.ToRgba32();
+        uint black = Color.BLACK.ToRgba32();
+
+        for (int y = yPos; y < yPos + h; y++)
         {
-            int row = (y + yy) * stride + x;
-            for (int xx = 0; xx < w; xx++)
-                pix[row + xx] = color;
+            int row = y * WIDTH;
+
+            for (int x = xPos; x < xPos + w; x += 2)
+            {
+                uint c = isWhite ? white : black;
+                pixels[row + x] = c;
+                pixels[row + x + 1] = c; // fat pixel
+                isWhite = !isWhite;
+            }
+            isWhite = !isWhite; // Checkboard pattern: flip at end of each row as well
+        }
+    }
+
+    private static void FillRect(uint[] pix, int stride, int xPos, int yPos, int w, int h, uint color)
+    {
+        for (int y = 0; y < h; y++)
+        {
+            int row = (yPos + y) * stride + xPos;
+            for (int x = 0; x < w; x++)
+                pix[row + x] = color;
         }
     }
 }

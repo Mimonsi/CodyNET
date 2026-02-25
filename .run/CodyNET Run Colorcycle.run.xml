@@ -1,7 +1,7 @@
 ﻿<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="CodyNET Run Colorcircle" type="DotNetProject" factoryName=".NET Project">
+  <configuration default="false" name="CodyNET Run Colorcycle" type="DotNetProject" factoryName=".NET Project">
     <option name="EXE_PATH" value="$PROJECT_DIR$/CodyNET.Host/bin/Debug/net10.0/CodyNET.Host.exe" />
-    <option name="PROGRAM_PARAMETERS" value="-v run C:\Users\Konsi\Desktop\CodyNET\CodyNET.Tests\testdata\programs\colorcycle.bin --debug" />
+    <option name="PROGRAM_PARAMETERS" value="-v run C:\Users\Konsi\GoogleDrive\Uni\Bachelorarbeit\CodyNET\CodyNET.Tests\testdata\programs\colorcycle.bin --debug" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/CodyNET.Host/bin/Debug/net10.0" />
     <option name="PASS_PARENT_ENVS" value="1" />
     <option name="ENV_FILE_PATHS" value="" />

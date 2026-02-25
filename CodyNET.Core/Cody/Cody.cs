@@ -16,6 +16,7 @@ public sealed record CodySetupOptions
     public bool EnableDebugger { get; init; } = true;
     public bool PhysicalKeyboard { get; init; } = true; // Use physical keyboard input (instead of logical)
     public bool EnableScreen { get; init; } = true;
+    public bool EnableProfiler { get; init; } = true;
 }
 
 public sealed record CodyLoadOptions
@@ -38,6 +39,7 @@ public class Cody
     public IVideoDevice? VID { get; private set; }
     public IScreenDevice? Screen { get; init; }
     public IInputDevice? Keyboard { get; init; }
+    public Profiler? Profiler;
 
     public long FrequencyHz
     {
@@ -69,6 +71,10 @@ public class Cody
         };
 
         // 2. Set up devices
+        if (options.EnableProfiler)
+        {
+            Profiler = new Profiler(TimeSpan.FromSeconds(5)); // 5 second window for averaging
+        }
         if (options.EnableDebugger)
         {
             // watch addresses 0xA000 - 0xA3E7 (text screen)
@@ -111,6 +117,7 @@ public class Cody
         while (true)
         {
             Cpu.Step();
+            Profiler.SampleCpu(Cpu.TotalCyclesExecuted, Cpu.CyclesPerSecond);
             // TODO: Interrupts
             // TEMP
             if (Debugger is not null && Debugger.IsAtBreakpoint())
