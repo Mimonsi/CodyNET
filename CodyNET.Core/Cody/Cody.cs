@@ -226,7 +226,7 @@ public class Cody
         }
         catch (FileNotFoundException e)
         {
-            Log.Error("CodyBASIC ROM not found at path. If you are running this executable from an archive, please extract it first. If this error keeps happening, download and manually load the ROM using the run command. Path searched: {FileName}", e.FileName!);
+            Log.Error("CodyBASIC ROM not found at path. If you are running this executable from an archive, please extract it first. If this error keeps happening, download and manually load the ROM using the run command. {Message}", e.Message);
         }
     }
 
@@ -298,6 +298,6 @@ public class Cody
             return path;
 
         throw new FileNotFoundException(
-            $"CodyBASIC ROM not found at fixed path: {path}");
+            $"File not found: {path}");
     }
 }
