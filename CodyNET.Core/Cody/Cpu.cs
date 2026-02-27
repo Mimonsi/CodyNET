@@ -158,7 +158,7 @@ public class Cpu()
     {
         ExecutionStopwatch.Restart();
         instruction = OpcodeLookup.FromOpcode(Memory.Read(PC++));
-        Log.Trace("Executing instruction at {0:X4}: {1} (opcode {2:X2})", PC - 1, instruction.Mnemonic, instruction.Opcode);
+        //Log.Trace("Executing instruction at {0:X4}: {1} (opcode {2:X2})", PC - 1, instruction.Mnemonic, instruction.Opcode);
             
         cycles = instruction.Cycles;
         
