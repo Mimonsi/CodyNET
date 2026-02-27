@@ -210,17 +210,24 @@ public class Cody
     public void Boot()
     {
         Log.Debug("Booting Cody with CodyBASIC ROM.");
-        var resolvedPath = ResolveBasicRomPath();
-        Log.Trace("Resolved CodyBASIC ROM path: {path}", resolvedPath);
-
-        var options = new CodyLoadOptions
+        try
         {
-            File = new FileInfo(resolvedPath),
-            LoadAddress = 0xE000,
-            AsCartridge = false,
-            AutoSetResetVector = false,
-        };
-        RunBinaryFile(options);
+            var resolvedPath = ResolveBasicRomPath();
+            Log.Verbose("Resolved CodyBASIC ROM path: {path}", resolvedPath);
+
+            var options = new CodyLoadOptions
+            {
+                File = new FileInfo(resolvedPath),
+                LoadAddress = 0xE000,
+                AsCartridge = false,
+                AutoSetResetVector = false,
+            };
+            RunBinaryFile(options);
+        }
+        catch (FileNotFoundException e)
+        {
+            Log.Error("CodyBASIC ROM not found at path. If you are running this executable from an archive, please extract it first. If this error keeps happening, download and manually load the ROM using the run command. Path searched: {FileName}", e.FileName!);
+        }
     }
 
     public void LoadImage(byte[] data, ushort loadAddress)

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
+using Serilog.Sinks.SystemConsole.Themes;
 
 namespace CodyNET.Common.Utils;
 
@@ -18,7 +19,7 @@ public enum LogLevel
     Warn,
     Info,
     Debug,
-    Trace,
+    Verbose,
 }
 
 public static class Log
@@ -26,16 +27,17 @@ public static class Log
     private const string DisableFileSinkEnvVar = "CODYNET_LOG_DISABLE_FILE";
     private const string StartNewFileOnStartupEnvVar = "CODYNET_LOG_NEW_FILE_ON_START";
     private const string TimeSettingEnvVar = "CODYNET_LOG_TIME_SETTING";
+    private const string ConsoleErrorToStdErrEnvVar = "CODYNET_LOG_ERROR_TO_STDERR";
 
     private static readonly object InitLock = new();
     private static readonly LoggingLevelSwitch ConsoleLevelSwitch = new(MapLevel(LogLevel.Debug));
-    private static readonly LoggingLevelSwitch FileLevelSwitch = new(MapLevel(LogLevel.Trace));
+    private static readonly LoggingLevelSwitch FileLevelSwitch = new(MapLevel(LogLevel.Verbose));
     private static readonly DateTimeOffset ProcessStartTime = new(Process.GetCurrentProcess().StartTime);
 
     private static bool initialized;
     private static LogLevel level = LogLevel.Debug;
     private static LogLevel consoleLevel = LogLevel.Debug;
-    private static LogLevel fileLevel = LogLevel.Trace;
+    private static LogLevel fileLevel = LogLevel.Verbose;
     private static TimeSetting timeSetting =
         ParseTimeSetting(Environment.GetEnvironmentVariable(TimeSettingEnvVar)) ?? TimeSetting.Relative;
 
@@ -44,6 +46,9 @@ public static class Log
 
     public static bool StartNewFileOnStartup { get; set; } =
         IsTrue(Environment.GetEnvironmentVariable(StartNewFileOnStartupEnvVar));
+
+    public static bool ErrorToStandardError { get; set; } =
+        IsTrue(Environment.GetEnvironmentVariable(ConsoleErrorToStdErrEnvVar));
     
     public static bool BreakOnLoggedErrors { get; set; } = true;
 
@@ -54,6 +59,8 @@ public static class Log
         get => timeSetting;
         set => timeSetting = value;
     }
+
+    public static ConsoleTheme ConsoleTheme { get; set; } = AnsiConsoleTheme.Literate;
 
     public static LogLevel Level
     {
@@ -88,19 +95,19 @@ public static class Log
 
     public static void Initialize() => EnsureInitialized();
 
-    public static void Trace(string message)
+    public static void Verbose(string message)
     {
         EnsureInitialized();
         global::Serilog.Log.Verbose("{Message}", message);
     }
     
-    public static void Trace(string messageTemplate, params object[] propertyValues)
+    public static void Verbose(string messageTemplate, params object[] propertyValues)
     {
         EnsureInitialized();
         global::Serilog.Log.Verbose(messageTemplate, propertyValues);
     }
 
-    public static void Trace(Exception exception, string messageTemplate, params object[] propertyValues)
+    public static void Verbose(Exception exception, string messageTemplate, params object[] propertyValues)
     {
         EnsureInitialized();
         global::Serilog.Log.Verbose(exception, messageTemplate, propertyValues);
@@ -201,15 +208,17 @@ public static class Log
             var outputTemplate = GetOutputTemplate(timeSetting);
             var loggerConfig = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
-                .Enrich.FromLogContext()
-                .Enrich.With(new LevelTextEnricher());
+                .Enrich.FromLogContext();
 
             if (timeSetting == TimeSetting.Relative)
                 loggerConfig = loggerConfig.Enrich.With(new UptimeEnricher());
 
             loggerConfig = loggerConfig.WriteTo.Logger(lc => lc
                 .MinimumLevel.ControlledBy(ConsoleLevelSwitch)
-                .WriteTo.Console(outputTemplate: outputTemplate));
+                .WriteTo.Console(
+                    outputTemplate: outputTemplate,
+                    theme: ConsoleTheme,
+                    standardErrorFromLevel: ErrorToStandardError ? LogEventLevel.Error : null));
 
             if (FileLoggingEnabled)
             {
@@ -273,13 +282,17 @@ public static class Log
             // Keep going if another process temporarily holds the file.
         }
     }
-
+    
     private static string GetOutputTemplate(TimeSetting setting) => setting switch
     {
-        TimeSetting.Absolute => "[{Timestamp:HH:mm:ss}][{LevelText,-5}] {Message:lj}{NewLine}{Exception}",
-        TimeSetting.AbsoluteWithDate => "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}][{LevelText,-5}] {Message:lj}{NewLine}{Exception}",
-        TimeSetting.Relative => "[{Uptime}][{LevelText,-5}] {Message:lj}{NewLine}{Exception}",
-        _ => "[{Timestamp:HH:mm:ss}][{LevelText,-5}] {Message:lj}{NewLine}{Exception}"
+        TimeSetting.Absolute =>
+            "[{Timestamp:HH:mm:ss}][{Level,-5}] {Message:lj}{NewLine}{Exception}",
+        TimeSetting.AbsoluteWithDate =>
+            "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}][{Level,-5}] {Message:lj}{NewLine}{Exception}",
+        TimeSetting.Relative =>
+            "[{Uptime}][{Level,-5}] {Message:lj}{NewLine}{Exception}",
+        _ =>
+            "[{Timestamp:HH:mm:ss}][{Level,-5}] {Message:lj}{NewLine}{Exception}"
     };
 
     private static TimeSetting? ParseTimeSetting(string? value)
@@ -304,7 +317,7 @@ public static class Log
         LogLevel.Warn => LogEventLevel.Warning,
         LogLevel.Info => LogEventLevel.Information,
         LogLevel.Debug => LogEventLevel.Debug,
-        LogLevel.Trace => LogEventLevel.Verbose,
+        LogLevel.Verbose => LogEventLevel.Verbose,
         _ => LogEventLevel.Information
     };
 
@@ -331,22 +344,5 @@ public static class Log
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("Uptime", formatted));
         }
     }
-
-    private sealed class LevelTextEnricher : ILogEventEnricher
-    {
-        public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
-        {
-            var text = logEvent.Level switch
-            {
-                LogEventLevel.Verbose => "TRACE",
-                LogEventLevel.Debug => "DEBUG",
-                LogEventLevel.Information => "INFO",
-                LogEventLevel.Warning => "WARN",
-                LogEventLevel.Error => "ERROR",
-                LogEventLevel.Fatal => "FATAL",
-                _ => "INFO"
-            };
-            logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("LevelText", text));
-        }
-    }
 }
+

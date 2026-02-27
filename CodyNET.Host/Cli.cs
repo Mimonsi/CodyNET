@@ -69,7 +69,7 @@ public static class Cli
         cmd.SetAction(_ =>
         {
             var previousLevel = Log.Level;
-            Log.Level = LogLevel.Trace;
+            Log.Level = LogLevel.Verbose;
 
             try
             {
@@ -77,11 +77,14 @@ public static class Cli
                 var operation = "logtest";
                 var durationMs = 42;
 
-                Log.Trace("Trace sample: operation={Operation}", operation);
+                Log.Verbose("Trace sample: simple message without properties");
+                Log.Verbose("Trace sample: operation={Operation}", operation);
+                Log.Debug("Debug sample: simple message with interpolation, not structured: {operation}");
                 Log.Debug("Debug sample: operation={Operation} durationMs={DurationMs}", operation, durationMs);
                 Log.Info("Info sample: User={User} Operation={Operation}", user, operation);
                 Log.Info($"Info sample with normal message {operation}");
                 Log.Warn("Warn sample: User={User} Retries={Retries}", user, 1);
+                Log.Error("Error sample: simple message with interpolation, not structured: {operation}");
                 Log.Error("Error sample: User={User} ErrorCode={ErrorCode}", user, "E_LOGTEST");
 
                 Log.Info("Structured sample with named properties User={User} Operation={Operation} DurationMs={DurationMs}",
