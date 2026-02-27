@@ -14,9 +14,6 @@ on:
 permissions:
   contents: write
 
-env:
-  RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.release_tag }}
-
 jobs:
   publish:
     name: Publish ${{ matrix.rid }}
@@ -32,22 +29,30 @@ jobs:
             artifact_suffix: linux-x64
             archive_ext: tar.gz
 
-    env:
-      ARCHIVE_NAME: CodyNET-${{ env.RELEASE_TAG }}-${{ matrix.artifact_suffix }}.${{ matrix.archive_ext }}
-
     steps:
+      - name: Determine release tag
+        id: tag
+        shell: bash
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ inputs.release_tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate release tag
+        shell: bash
+        run: |
+          if [ -z "${{ steps.tag.outputs.tag }}" ]; then
+            echo "Release tag is empty. For manual runs, set workflow input: release_tag."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
-            fetch-depth: 0
-            ref : ${{ env.RELEASE_TAG }}
-
-      - name: Validate release tag
-        run: |
-          if [ -z "${RELEASE_TAG}" ]; then
-            echo "RELEASE_TAG is empty. For manual runs, set workflow input: release_tag."
-            exit 1
-          fi
+          fetch-depth: 0
+          ref: ${{ steps.tag.outputs.tag }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -69,19 +74,25 @@ jobs:
 
       - name: Pack Windows artifact
         if: matrix.archive_ext == 'zip'
+        shell: bash
         run: |
+          ARCHIVE_NAME="CodyNET-${{ steps.tag.outputs.tag }}-${{ matrix.artifact_suffix }}.${{ matrix.archive_ext }}"
           cd publish/${{ matrix.rid }}
-          zip -r ../../${ARCHIVE_NAME} .
+          zip -r "../../${ARCHIVE_NAME}" .
+          echo "ARCHIVE_NAME=${ARCHIVE_NAME}" >> "$GITHUB_ENV"
 
       - name: Pack Linux artifact
         if: matrix.archive_ext == 'tar.gz'
+        shell: bash
         run: |
-          tar -czf ${ARCHIVE_NAME} -C publish/${{ matrix.rid }} .
+          ARCHIVE_NAME="CodyNET-${{ steps.tag.outputs.tag }}-${{ matrix.artifact_suffix }}.${{ matrix.archive_ext }}"
+          tar -czf "${ARCHIVE_NAME}" -C publish/${{ matrix.rid }} .
+          echo "ARCHIVE_NAME=${ARCHIVE_NAME}" >> "$GITHUB_ENV"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CodyNET-${{ matrix.artifact_suffix }}-${{ env.RELEASE_TAG }}
+          name: CodyNET-${{ matrix.artifact_suffix }}-${{ steps.tag.outputs.tag }}
           path: ${{ env.ARCHIVE_NAME }}
 
   release:
@@ -89,10 +100,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: publish
     steps:
-      - name: Validate release tag
+      - name: Determine release tag
+        id: tag
+        shell: bash
         run: |
-          if [ -z "${RELEASE_TAG}" ]; then
-            echo "RELEASE_TAG is empty. For manual runs, set workflow input: release_tag."
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ inputs.release_tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate release tag
+        shell: bash
+        run: |
+          if [ -z "${{ steps.tag.outputs.tag }}" ]; then
+            echo "Release tag is empty. For manual runs, set workflow input: release_tag."
             exit 1
           fi
 
@@ -104,6 +126,6 @@ jobs:
       - name: Publish GitHub Release assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
+          tag_name: ${{ steps.tag.outputs.tag }}
           files: release-assets/**/*
           generate_release_notes: true
