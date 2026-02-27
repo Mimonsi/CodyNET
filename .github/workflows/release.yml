@@ -5,6 +5,11 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Tag name for the release (e.g. v1.0.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -24,9 +29,20 @@ jobs:
             artifact_suffix: linux-x64
             archive_ext: tar.gz
 
+    env:
+      RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.release_tag }}
+      ARCHIVE_NAME: CodyNET-${{ github.ref_type == 'tag' && github.ref_name || inputs.release_tag }}-${{ matrix.artifact_suffix }}.${{ matrix.archive_ext }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate release tag
+        run: |
+          if [ -z "${RELEASE_TAG}" ]; then
+            echo "RELEASE_TAG is empty. For manual runs, set workflow input: release_tag."
+            exit 1
+          fi
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -34,11 +50,11 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Restore
-        run: dotnet restore CodyNET.Frontend/CodyNET.Frontend.csproj
+        run: dotnet restore CodyNET.Host/CodyNET.Host.csproj
 
       - name: Publish
         run: >-
-          dotnet publish CodyNET.Frontend/CodyNET.Frontend.csproj
+          dotnet publish CodyNET.Host/CodyNET.Host.csproj
           -c Release
           -r ${{ matrix.rid }}
           --self-contained true
@@ -50,26 +66,22 @@ jobs:
         if: matrix.archive_ext == 'zip'
         run: |
           cd publish/${{ matrix.rid }}
-          zip -r ../../CodyNET-${{ github.ref_name }}-${{ matrix.artifact_suffix }}.zip .
+          zip -r ../../${ARCHIVE_NAME} .
 
       - name: Pack Linux artifact
         if: matrix.archive_ext == 'tar.gz'
         run: |
-          tar -czf CodyNET-${{ github.ref_name }}-${{ matrix.artifact_suffix }}.tar.gz -C publish/${{ matrix.rid }} .
+          tar -czf ${ARCHIVE_NAME} -C publish/${{ matrix.rid }} .
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CodyNET-${{ matrix.artifact_suffix }}
-          path: |
-            CodyNET-${{ github.ref_name }}-${{ matrix.artifact_suffix }}.zip
-            CodyNET-${{ github.ref_name }}-${{ matrix.artifact_suffix }}.tar.gz
+          name: CodyNET-${{ matrix.artifact_suffix }}-${{ env.RELEASE_TAG }}
+          path: ${{ env.ARCHIVE_NAME }}
 
       - name: Publish GitHub Release assets
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: |
-            CodyNET-${{ github.ref_name }}-${{ matrix.artifact_suffix }}.zip
-            CodyNET-${{ github.ref_name }}-${{ matrix.artifact_suffix }}.tar.gz
+          tag_name: ${{ env.RELEASE_TAG }}
+          files: ${{ env.ARCHIVE_NAME }}
           generate_release_notes: true
