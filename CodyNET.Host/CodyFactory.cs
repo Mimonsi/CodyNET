@@ -25,7 +25,7 @@ public static class CodyFactory
         var keyboard = CreateKeyboard();
 
         Cody cody = new(options, video, screen, keyboard);
-        return cody;
+        return cody; //TODO Next: Fix embedded rom
     }
 
     private static IScreenDevice? CreateScreen()
@@ -46,7 +46,7 @@ public static class CodyFactory
             }
         })
         {
-            Name = "CodyNET Avalonia UI",
+            Name = "CodyNET - Cody Computer Emulator",
             IsBackground = true,
         };
         
