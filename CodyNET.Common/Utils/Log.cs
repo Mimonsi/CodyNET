@@ -61,7 +61,8 @@ public static class Log
     }
 
     // Change console theme here
-    public static ConsoleTheme ConsoleTheme { get; set; } = AnsiConsoleTheme.Sixteen;
+    //public static ConsoleTheme ConsoleTheme { get; set; } = AnsiConsoleTheme.Sixteen;
+    public static ConsoleTheme ConsoleTheme { get; set; } = AnsiConsoleTheme.Literate;
 
     public static LogLevel Level
     {
@@ -132,11 +133,11 @@ public static class Log
         global::Serilog.Log.Debug(exception, messageTemplate, propertyValues);
     }
 
-    public static void Info(string message)
-    {
-        EnsureInitialized();
-        global::Serilog.Log.Information("{Message}", message);
-    }
+    // public static void Info(string message)
+    // {
+    //     EnsureInitialized();
+    //     global::Serilog.Log.Information("{Message}", message);
+    // }
     
     public static void Info(string messageTemplate, params object[] propertyValues)
     {

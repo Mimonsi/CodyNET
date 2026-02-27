@@ -5,9 +5,19 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <AssemblyName>CodyNET</AssemblyName>
+        <Version>0.0.2</Version>
+        <AssemblyVersion>0.0.3</AssemblyVersion>
+        <FileVersion>0.0.3</FileVersion>
+        <InformationalVersion>0.0.3</InformationalVersion>
+        <IncludeSourceRevisionInInformationalVersion>true</IncludeSourceRevisionInInformationalVersion>
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="Nerdbank.GitVersioning" Version="3.9.50">
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PrivateAssets>all</PrivateAssets>
+      </PackageReference>
       <PackageReference Include="System.CommandLine" Version="3.0.0-preview.1.26104.118" />
     </ItemGroup>
 

@@ -21,19 +21,22 @@ public class Memory
     
     public void RegisterDevice(IMemoryMappedDevice device)
     {
-        Log.Debug($"Registering device {device.GetType().Name} at {device.StartAddress:X4}..{device.EndAddress:X4} (R:{device.SupportsRead} W:{device.SupportsWrite})");
+        Log.Debug("Registering device {DeviceType} at {StartAddress:X4}..{EndAddress:X4} (R:{SupportsRead} W:{SupportsWrite})",
+            device.GetType().Name, device.StartAddress, device.EndAddress, device.SupportsRead, device.SupportsWrite);
         devices.Add(device);
     }
     
     public void UnregisterDevice(IMemoryMappedDevice device)
     {
-        Log.Debug($"Unregistering device {device.GetType().Name} at {device.StartAddress:X4}..{device.EndAddress:X4} (R:{device.SupportsRead} W:{device.SupportsWrite})");
+        Log.Debug("Unregistering device {DeviceType} at {StartAddress:X4}..{EndAddress:X4} (R:{SupportsRead} W:{SupportsWrite})",
+            device.GetType().Name, device.StartAddress, device.EndAddress, device.SupportsRead, device.SupportsWrite);
         devices.Remove(device);
     }
 
     public void RegisterTap(IMemoryAccessTapDevice device)
     {
         Log.Debug($"Registering tap device {device.GetType().Name} for memory access notifications");
+        Log.Debug("Registering tap device {DeviceType} for memory access notifications", device.GetType().Name);
         taps.Add(device);
     }
     

@@ -5,11 +5,14 @@ namespace CodyNET.Host;
 
 public static class InteractiveShell
 {
+    private const string Blue = "\u001b[34m";
+    private const string Cyan = "\u001b[36m";
+    private const string Reset = "\u001b[0m";
     public static int Run(RootCommand root, InvocationConfiguration invocationConfiguration)
     {
         Console.WriteLine("CodyNET interactive CLI");
-        Console.WriteLine("Type 'help' for help, 'exit' to quit.");
-        Console.WriteLine("Type 'boot' to run the emulator into the BASIC Shell.");
+        Console.WriteLine($"Type '{Cyan}help{Reset}' for help, '{Cyan}exit{Reset}' to quit.");
+        Console.WriteLine($"Type '{Cyan}boot{Reset}' to run the emulator into the BASIC Shell.");
         Console.WriteLine();
 
         while (true)
