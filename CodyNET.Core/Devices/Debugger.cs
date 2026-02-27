@@ -61,12 +61,13 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
 
     private void DBP(byte value)
     {
-        Log.Info($"[Debugger] DBP: {value}");
+        Log.Info("[Debugger] DBP: {value}", value);
     }
     
     private void DRS(byte index)
     {
-        Log.Info($"[Debugger] Register Dump #{index}\nPC={cpu.PC:X4} A={cpu.A:X2} X={cpu.X:X2} Y={cpu.Y:X2} S={cpu.S:X2} P={cpu.Status.ToByte():X2}");
+        Log.Info("[Debugger] Register Dump #{index}\nPC={PC:X4} A={A:X2} X={X:X2} Y={Y:X2} S={S:X2} P={P:X2}",
+            index, cpu.PC, cpu.A, cpu.X, cpu.Y, cpu.S, cpu.Status.ToByte());
     }
     
     private void DMP(byte index)
@@ -90,7 +91,7 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
     {
         if (Breakpoints.Count > 0 && Breakpoints.Contains(cpu.PC))
         {
-            Log.Info($"[Debugger] Breakpoint hit at PC={cpu.PC:X4}");
+            Log.Info("[Debugger] Breakpoint hit at PC={PC:X4}", cpu.PC);
             return true;
         }
 
@@ -111,7 +112,7 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
     {
         if (WatchAddresses.Contains(address))
         {
-            Log.Info($"[Debugger] Memory Watch: Wrote {value:X2} to address {address:X4}");
+            Log.Info("[Debugger] Memory Watch: Wrote {value:X2} to address {address:X4}", value, address);
         }
     }
     

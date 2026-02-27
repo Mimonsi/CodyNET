@@ -56,7 +56,7 @@ public class Program
         }
         Log.Level = LogLevel.Debug;
         Log.ConsoleLevel = LogLevel.Debug;
-        Log.Info($"Starting logger. Log File Path: {Log.LogFilePath}");
+        Log.Info("Starting logger. Log File Path: {LogFilePath}", Log.LogFilePath!);
 
         // Normal one-shot CLI
         return root.Parse(args).Invoke(invocationConfig);

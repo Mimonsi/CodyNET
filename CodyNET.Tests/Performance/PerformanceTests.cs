@@ -18,9 +18,9 @@ public class WaitTests
             Thread.Sleep(50);
             var elapsed = stopwatch.Elapsed.TotalMilliseconds;
             totalSleepTime += elapsed;
-            Log.Info($"Elapsed time: {elapsed} ms");
+            Log.Info("Elapsed time: {elapsed} ms", elapsed);
         }
-        Log.Info("Average sleep time: " + (totalSleepTime / 100) + " ms");
+        Log.Info("Average sleep time: {time} ms", (totalSleepTime / 100));
         
     }
     
@@ -38,9 +38,9 @@ public class WaitTests
             }
             var elapsed = stopwatch.Elapsed.TotalMilliseconds;
             totalSleepTime += elapsed;
-            Log.Info($"Elapsed time: {elapsed} ms");
+            Log.Info("Elapsed time: {elapsed} ms", elapsed);
         }
-        Log.Info("Average sleep time: " + (totalSleepTime / 100) + " ms");
+        Log.Info("Average sleep time: {time} ms", (totalSleepTime / 100));
         
     }
 }
@@ -114,7 +114,7 @@ public class PerformanceTests
     public double RunPerformanceTest(int seconds, long targetFrequency, bool logDisabled = false)
     {
         Log.Level = LogLevel.Debug;
-        Log.Info($"Starting Performance for {seconds} seconds with target frequency {Math.FormatSi(targetFrequency, "Hz")}");
+        Log.Info("Starting Performance for {seconds} seconds with target frequency {targetFrequency} Hz", seconds, Math.FormatSi(targetFrequency, "Hz"));
         CodySetupOptions options = new CodySetupOptions
         {
             FrequencyHz =  targetFrequency
@@ -133,10 +133,10 @@ public class PerformanceTests
             {
                 cycles += cody.SingleStep();
             }
-            Log.Info($"Cycles executed in 1 second: {cycles}. CPU Frequency: {Math.FormatSi(cycles, "Hz")}");
+            Log.Info("Cycles executed in 1 second: {cycles}. CPU Frequency: {frequency} Hz", cycles, Math.FormatSi(cycles, "Hz"));
             totalCycles += cycles;
         }
-        Log.Info("Final Average CPU Frequency: " + Math.FormatSi(totalCycles / (double) seconds, "Hz"));
+        Log.Info("Final Average CPU Frequency {frequency}", Math.FormatSi(totalCycles / (double) seconds, "Hz"));
         return totalCycles / (double) seconds;
     }
 }

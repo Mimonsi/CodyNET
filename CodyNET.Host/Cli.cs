@@ -76,18 +76,44 @@ public static class Cli
                 var user = "cli-user";
                 var operation = "logtest";
                 var durationMs = 42;
+                var retries = 1;
 
-                Log.Verbose("Trace sample: simple message without properties");
-                Log.Verbose("Trace sample: operation={Operation}", operation);
-                Log.Debug("Debug sample: simple message with interpolation, not structured: {operation}");
-                Log.Debug("Debug sample: operation={Operation} durationMs={DurationMs}", operation, durationMs);
-                Log.Info("Info sample: User={User} Operation={Operation}", user, operation);
-                Log.Info($"Info sample with normal message {operation}");
-                Log.Warn("Warn sample: User={User} Retries={Retries}", user, 1);
-                Log.Error("Error sample: simple message with interpolation, not structured: {operation}");
-                Log.Error("Error sample: User={User} ErrorCode={ErrorCode}", user, "E_LOGTEST");
+                var payload = new
+                {
+                    User = user,
+                    Operation = operation,
+                    DurationMs = durationMs,
+                    Retries = retries
+                };
 
-                Log.Info("Structured sample with named properties User={User} Operation={Operation} DurationMs={DurationMs}",
+                // --- VERBOSE ---
+                Log.Verbose("VERBOSE plain: no properties");
+                Log.Verbose($"VERBOSE interpolated: user={user} op={operation} durationMs={durationMs}");
+                Log.Verbose("VERBOSE structured: User={User} Operation={Operation} DurationMs={DurationMs}",
+                    user, operation, durationMs);
+
+                // --- DEBUG ---
+                Log.Debug("DEBUG plain: no properties");
+                Log.Debug($"DEBUG interpolated: user={user} op={operation} durationMs={durationMs}");
+                Log.Debug("DEBUG structured: User={User} Operation={Operation} DurationMs={DurationMs}",
+                    user, operation, durationMs);
+
+                // --- INFO ---
+                Log.Info("INFO plain: no properties");
+                Log.Info($"INFO interpolated: user={user} op={operation} durationMs={durationMs}");
+                Log.Info("INFO structured: User={User} Operation={Operation} DurationMs={DurationMs}",
+                    user, operation, durationMs);
+
+                // --- WARN ---
+                Log.Warn("WARN plain: no properties");
+                Log.Warn($"WARN interpolated: user={user} retries={retries}");
+                Log.Warn("WARN structured: User={User} Retries={Retries} Operation={Operation}",
+                    user, retries, operation);
+
+                // --- ERROR (incl. exception) ---
+                Log.Error("ERROR plain: no properties");
+                Log.Error($"ERROR interpolated: user={user} op={operation} durationMs={durationMs}");
+                Log.Error("ERROR structured: User={User} Operation={Operation} DurationMs={DurationMs}",
                     user, operation, durationMs);
 
                 try
@@ -96,8 +122,22 @@ public static class Cli
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Structured exception sample User={User} Operation={Operation}", user, operation);
+                    Log.Error(ex, "ERROR exception structured: User={User} Operation={Operation}", user, operation);
                 }
+
+                // --- EXTRA CASES (useful to see Serilog behavior) ---
+
+                // 1) Missing template values (bad practice; shows how Serilog renders missing holes)
+                Log.Warn("EXTRA missing args (bad): User={User} Operation={Operation} DurationMs={DurationMs}", user, operation);
+
+                // 2) Escaped braces (literal text, no structured props)
+                Log.Info("EXTRA escaped braces: User={{User}} Operation={{Operation}}");
+
+                // 3) Destructuring: capture object fields instead of ToString()
+                Log.Debug("EXTRA destructure object: Payload={@Payload}", payload);
+
+                // 4) Stringify: force ToString() even if it's an object (rarely needed)
+                Log.Debug("EXTRA stringify object: Payload={$Payload}", payload);
             }
             finally
             {

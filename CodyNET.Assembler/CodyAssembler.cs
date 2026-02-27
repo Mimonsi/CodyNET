@@ -9,12 +9,12 @@ public static class CodyAssembler
         try
         {
             string assemblyCode = File.ReadAllText(file);
-            Log.Info($"Assembling file {file}");
+            Log.Info("Assembling file {file}", file);
             return Assemble(assemblyCode);
         }
         catch (Exception ex)
         {
-            Log.Error($"Failed to assemble file {file}: {ex.Message}");
+            Log.Error("Failed to assemble file {file}: {ex.Message}", file, ex.Message);
             return Array.Empty<byte>();
         }
     }

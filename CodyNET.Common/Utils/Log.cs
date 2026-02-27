@@ -60,7 +60,8 @@ public static class Log
         set => timeSetting = value;
     }
 
-    public static ConsoleTheme ConsoleTheme { get; set; } = AnsiConsoleTheme.Literate;
+    // Change console theme here
+    public static ConsoleTheme ConsoleTheme { get; set; } = AnsiConsoleTheme.Sixteen;
 
     public static LogLevel Level
     {
@@ -95,11 +96,11 @@ public static class Log
 
     public static void Initialize() => EnsureInitialized();
 
-    public static void Verbose(string message)
-    {
-        EnsureInitialized();
-        global::Serilog.Log.Verbose("{Message}", message);
-    }
+    // public static void Verbose(string message)
+    // {
+    //     EnsureInitialized();
+    //     global::Serilog.Log.Verbose("{Message}", message);
+    // }
     
     public static void Verbose(string messageTemplate, params object[] propertyValues)
     {
@@ -113,11 +114,11 @@ public static class Log
         global::Serilog.Log.Verbose(exception, messageTemplate, propertyValues);
     }
 
-    public static void Debug(string message)
-    {
-        EnsureInitialized();
-        global::Serilog.Log.Debug("{Message}", message);
-    }
+    // public static void Debug(string message)
+    // {
+    //     EnsureInitialized();
+    //     global::Serilog.Log.Debug("{Message}", message);
+    // }
     
     public static void Debug(string messageTemplate, params object[] propertyValues)
     {
@@ -149,11 +150,11 @@ public static class Log
         global::Serilog.Log.Information(exception, messageTemplate, propertyValues);
     }
 
-    public static void Warn(string message)
-    {
-        EnsureInitialized();
-        global::Serilog.Log.Warning("{Message}", message);
-    }
+    // public static void Warn(string message)
+    // {
+    //     EnsureInitialized();
+    //     global::Serilog.Log.Warning("{Message}", message);
+    // }
     
     public static void Warn(string messageTemplate, params object[] propertyValues)
     {
@@ -167,12 +168,12 @@ public static class Log
         global::Serilog.Log.Warning(exception, messageTemplate, propertyValues);
     }
 
-    public static void Error(string message)
-    {
-        EnsureInitialized();
-        global::Serilog.Log.Error("{Message}", message);
-        BreakIfConfigured();
-    }
+    // public static void Error(string message)
+    // {
+    //     EnsureInitialized();
+    //     global::Serilog.Log.Error("{Message}", message);
+    //     BreakIfConfigured();
+    // }
     
     public static void Error(string messageTemplate, params object[] propertyValues)
     {

@@ -122,7 +122,7 @@ public class Cody
             // TEMP
             if (Debugger is not null && Debugger.IsAtBreakpoint())
             {
-                Log.Info("Execution paused by debugger on PC={Cpu.PC:X4}");
+                Log.Info("Execution paused by debugger on PC={PC:X4}", Cpu.PC);
                 //break;
             }
             if (VID is VideoDevice { Dirty: true } vid) // TODO: Only write when video is dirty
