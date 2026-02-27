@@ -34,7 +34,7 @@ public class Profiler
         else
         {
             var utilizationPercent = averageFrequencyHz / targetFrequencyHz * 100.0;
-            Log.Info("CPU frequency avg ({windowSeconds:F1}s): {avgHz:N0} Hz (target: {targetHz:N0} Hz, {utilizationPercent:F1}% utilization)",
+            Log.Info("CPU frequency avg ({windowSeconds:F1}s): {avgHz:N0} Hz (target: {targetHz:N0} Hz, {utilizationPercent:F1}% of target)",
                 elapsedSeconds, averageFrequencyHz, targetFrequencyHz, utilizationPercent);
         }
 
