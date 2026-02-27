@@ -33,7 +33,7 @@ namespace CodyNET.Tests.SingleStep
         /// </summary>
         /// <param name="opcodeHex"></param>
         [Explicit("Dev Test")]
-        [TestCase("0xe9")]
+        [TestCase("0x1e")]
         public void TestOpcode(string opcodeHex)
         {
             if (opcodeHex.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
@@ -317,8 +317,10 @@ namespace CodyNET.Tests.SingleStep
         {
             // CPU hookup with initial state
             var cpu = new Cpu(t.Initial.GetCpuState());
+            // Tests assume whole memory is RAM
+            cpu.Memory.RomIsWritable = true;
             cpu.SetState(t.Initial.GetCpuState());
-
+            
             // Execute exactly one instruction
             cpu.Step();
 

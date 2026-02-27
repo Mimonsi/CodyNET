@@ -1,13 +1,15 @@
-﻿using System.CommandLine;
+using System.CommandLine;
+using System.Diagnostics;
 
-namespace CodyNET.Core;
+namespace CodyNET.Host;
 
 public static class InteractiveShell
 {
-    public static int Run(RootCommand root)
+    public static int Run(RootCommand root, InvocationConfiguration invocationConfiguration)
     {
         Console.WriteLine("CodyNET interactive CLI");
         Console.WriteLine("Type 'help' for help, 'exit' to quit.");
+        Console.WriteLine("Type 'boot' to run the emulator into the BASIC Shell.");
         Console.WriteLine();
 
         while (true)
@@ -27,7 +29,7 @@ public static class InteractiveShell
             {
                 return 0;
             }
-            
+
             if (line.Equals("clear", StringComparison.OrdinalIgnoreCase))
             {
                 Console.Clear();
@@ -38,7 +40,7 @@ public static class InteractiveShell
             {
                 // Equivalent to: codynet --help
                 var pr = root.Parse(new[] { "--help" });
-                _ = pr.Invoke();
+                _ = pr.Invoke(invocationConfiguration);
                 continue;
             }
 
@@ -58,12 +60,15 @@ public static class InteractiveShell
             try
             {
                 ParseResult parseResult = root.Parse(args);
-                int exitCode = parseResult.Invoke();
+                int exitCode = parseResult.Invoke(invocationConfiguration);
                 if (exitCode != 0)
                     Console.WriteLine($"(exit code {exitCode})");
             }
             catch (Exception ex)
             {
+                if (Debugger.IsAttached)
+                    throw;
+
                 Console.WriteLine($"Unhandled error: {ex.Message}");
             }
         }
@@ -94,6 +99,7 @@ public static class InteractiveShell
                         yield return token.ToString();
                         token.Clear();
                     }
+
                     continue;
                 }
 

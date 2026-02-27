@@ -1,0 +1,42 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:CodyNET.Frontend.Controls"
+        xmlns:controls1="clr-namespace:CodyNET.Frontend.Controls"
+        x:Class="CodyNET.Frontend.MainWindow"
+        Title="Cody Computer Emulator"
+        SizeToContent="WidthAndHeight"
+        Background="#1E1E1E">
+    
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Load ROM..." />
+                <MenuItem Header="_Exit" />
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="Scale 100%" Tag="1.0" Click="OnScaleMenuClick" />
+                <MenuItem Header="Scale 200%" Tag="2.0" Click="OnScaleMenuClick" />
+                <MenuItem Header="Scale 300%" Tag="3.0" Click="OnScaleMenuClick" />
+                <MenuItem Header="Scale 400%" Tag="4.0" Click="OnScaleMenuClick" />
+                <MenuItem Header="Scale 600%" Tag="6.0" Click="OnScaleMenuClick" />
+                <MenuItem Header="Scale 800%" Tag="8.0" Click="OnScaleMenuClick" />
+            </MenuItem>
+            <MenuItem Header="_Emulation">
+                <MenuItem Header="_Start" />
+                <MenuItem Header="_Pause" />
+                <MenuItem Header="_Reset" />
+            </MenuItem>
+            <MenuItem Header="_Debug">
+                <MenuItem Header="Show _Debugger" />
+            </MenuItem>
+        </Menu>
+        
+        <Border Padding="20" DockPanel.Dock="Top">
+            <Border BorderBrush="Black" 
+                    BorderThickness="20" 
+                    Padding="10">
+                <controls1:ScreenControl x:Name="Screen" />
+            </Border>
+        </Border>
+    </DockPanel>
+</Window>

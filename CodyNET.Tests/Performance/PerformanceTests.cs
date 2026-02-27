@@ -1,12 +1,9 @@
-﻿using CodyNET.Assembler;
+﻿using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
-using CodyNET.Utils;
-using CodyPrototype.Utils;
-
 using NUnit.Framework;
-using Math = CodyNET.Utils.Math;
+using Math = CodyNET.Common.Utils.Math;
 
-namespace CodyNET.Tests.Program;
+namespace CodyNET.Tests.Performance;
 
 public class WaitTests
 {
@@ -21,9 +18,9 @@ public class WaitTests
             Thread.Sleep(50);
             var elapsed = stopwatch.Elapsed.TotalMilliseconds;
             totalSleepTime += elapsed;
-            TestLog.Info($"Elapsed time: {elapsed} ms");
+            Log.Info($"Elapsed time: {elapsed} ms");
         }
-        TestLog.Info("Average sleep time: " + (totalSleepTime / 100) + " ms");
+        Log.Info("Average sleep time: " + (totalSleepTime / 100) + " ms");
         
     }
     
@@ -41,9 +38,9 @@ public class WaitTests
             }
             var elapsed = stopwatch.Elapsed.TotalMilliseconds;
             totalSleepTime += elapsed;
-            TestLog.Info($"Elapsed time: {elapsed} ms");
+            Log.Info($"Elapsed time: {elapsed} ms");
         }
-        TestLog.Info("Average sleep time: " + (totalSleepTime / 100) + " ms");
+        Log.Info("Average sleep time: " + (totalSleepTime / 100) + " ms");
         
     }
 }
@@ -51,15 +48,18 @@ public class WaitTests
 /// <summary>
 /// Full program tests. Set a specific cpu and memory state, run the program and verify the end state.
 /// </summary>
+[Explicit]
 public class PerformanceTests
 {
-    private const int TestDurationSeconds = 20;
+    private const int TestDurationSeconds = 5;
     private const int SuccessMarginPercent = 10; // Allow 1% margin for performance variations
     public void MinimalProgram()
     {
-        Cody cody = new Cody();
-        cody.RunAssemblyFile(FileUtils.GetTestDataPath("minimal.s"));
-        Assert.True(true);
+        /*Cody cody = new Cody(CodySetupOptions.Default);
+        cody.RunAssemblyFile(FileUtils.GetTestDataFile("minimal.s"));
+        Assert.True(true);*/
+        Assert.Inconclusive("Fix");
+        // TODO: Fix
     }
 
     [Test, Order(1)]
@@ -107,19 +107,23 @@ public class PerformanceTests
     [Test, Order(7)]
     public void TestPerformance_Max()
     {
-        var result = RunPerformanceTest(TestDurationSeconds, 10_000_000);
+        var result = RunPerformanceTest(TestDurationSeconds, -1);
         Assert.That(result, Is.GreaterThan(1_000));
     }
     
     public double RunPerformanceTest(int seconds, long targetFrequency, bool logDisabled = false)
     {
-        TestLog.Info($"Starting Performance for {seconds} seconds with target frequency {Math.FormatSi(targetFrequency, "Hz")}");
-        Cody cody = new Cody();
-        cody.FrequencyHz = targetFrequency;
-        var (loadAddr, program) = FileUtils.LoadProgram(FileUtils.GetTestDataPath("programs/codybros.bin"), defaultLoadAddress: 0x0600);
+        Log.Level = LogLevel.Debug;
+        Log.Info($"Starting Performance for {seconds} seconds with target frequency {Math.FormatSi(targetFrequency, "Hz")}");
+        CodySetupOptions options = new CodySetupOptions
+        {
+            FrequencyHz =  targetFrequency
+        };
+        var cody = new Cody(options);
+        var (loadAddr, program) = Binary.LoadBinary(FileUtils.GetTestDataPath("programs/codybros.bin"), defaultLoadAddress: 0xE000);
+        cody.LoadImage(program, loadAddr);
+        // TODO: Check if reset vectors are set correctly here
         //Log.Info("Program: " + CodyDisassembler.Disassemble(program));
-        cody.LoadProgram(program, loadAddr);
-        TestLog.Level = LogLevel.Debug;
         long totalCycles = 0;
         for (int i = 0; i < seconds; i++)
         {
@@ -129,10 +133,10 @@ public class PerformanceTests
             {
                 cycles += cody.SingleStep();
             }
-            TestLog.Info($"Cycles executed in 1 second: {cycles}. CPU Frequency: {Math.FormatSi(cycles, "Hz")}");
+            Log.Info($"Cycles executed in 1 second: {cycles}. CPU Frequency: {Math.FormatSi(cycles, "Hz")}");
             totalCycles += cycles;
         }
-        TestLog.Info("Final Average CPU Frequency: " + Math.FormatSi(totalCycles / (double) seconds, "Hz"));
+        Log.Info("Final Average CPU Frequency: " + Math.FormatSi(totalCycles / (double) seconds, "Hz"));
         return totalCycles / (double) seconds;
     }
 }

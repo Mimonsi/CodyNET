@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 using CodyNET.Common;
-using CodyNET.Utils;
+using CodyNET.Common.Utils;
 using static CodyNET.Common.Mnemonic;
 using static CodyNET.Common.AddressingMode;
 
@@ -54,6 +54,7 @@ public class Cpu()
     
     public const byte INITIAL_STACK_POINTER = 0xFD;
     public const ushort NMI_VECTOR = 0xFFFA;
+    // This is where the CPU resets to, should be the first instruction of the loaded program
     public const ushort RESET_VECTOR = 0xFFFC;
     public const ushort IRQ_VECTOR = 0xFFFE;
 
@@ -67,6 +68,8 @@ public class Cpu()
     public long TotalCyclesExecuted = 0;
     public Stopwatch ExecutionStopwatch = new();
 
+    
+    public List<int> InstructionTimes = new(); // For testing: record time taken for each instruction execution (in microseconds)
 
     public Cpu(CpuState initialState) : this()
     {
@@ -132,25 +135,14 @@ public class Cpu()
         
         // Additional reset logic for variables
         TotalCyclesExecuted = 0;
+        Log.Debug("CPU Reset: PC Set to {0:X4}", PC);
         
-    }
-    
-    /// <summary>
-    /// Loads a program into RAM at the specified start address and resets the CPU's program counter to that address.
-    /// </summary>
-    /// <param name="program"></param>
-    /// <param name="startAddress"></param>
-    /// <exception cref="ArgumentException"></exception>
-    public void LoadRam(byte[] program, ushort startAddress)
-    {
-        if (startAddress + program.Length > Memory.Size)
-            throw new ArgumentException($"Program does not fit in memory at the given start address. ({startAddress} + {program.Length} > {Memory.Size})");
-        Memory.CopyFrom(program, startAddress);
-        ResetToAddress(startAddress);
     }
 
     private void WaitCycles(int cycles)
     {
+        if (CyclesPerSecond == -1) // No wait, run as fast as possible
+            return;
         var instructionTime = ExecutionStopwatch.Elapsed.TotalMicroseconds; // Time taken to execute the instruction in microseconds
         var expectedTime = (long)((cycles / (double)CyclesPerSecond) * 1_000_000); // Expected time for the instruction based on cycles and target frequency in microseconds
         var delta = expectedTime - instructionTime;
@@ -166,6 +158,7 @@ public class Cpu()
     {
         ExecutionStopwatch.Restart();
         instruction = OpcodeLookup.FromOpcode(Memory.Read(PC++));
+        //Log.Trace("Executing instruction at {0:X4}: {1} (opcode {2:X2})", PC - 1, instruction.Mnemonic, instruction.Opcode);
             
         cycles = instruction.Cycles;
         
@@ -294,8 +287,9 @@ public class Cpu()
             lastResult = Step();
             if (PC == 0)
             {
-                Log.Debug("PC overflow detected, stopping execution.");
-                break;
+                Log.Debug("PC = 0 detected");
+                // Log.Debug("PC overflow detected, stopping execution.");
+                // break;
             }
         }
         Log.Info("Program finished execution.");
@@ -743,6 +737,11 @@ public class Cpu()
     {
         var (addr, _) = ReadAddressOperand(instruction.AddressingMode);
         Memory.Write(addr, A);
+
+        /*if (instruction.Opcode == 0x91) // TODO: Remove
+        {
+            Log.Info($"OP {instruction.Opcode}, Param {instruction.AddressingMode}, STA (zp),Y -> eff={addr:X4} A={A:X2} Y={Y:X2} PC={PC:X4}");
+        }*/
         return true;
     }
     

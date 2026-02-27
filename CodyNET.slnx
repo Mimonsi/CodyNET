@@ -4,5 +4,7 @@
   <Project Path="CodyNET.Common/CodyNET.Common.csproj" />
   <Project Path="CodyNET.Core/CodyNET.Core.csproj" />
   <Project Path="CodyNET.Disassembler/CodyNET.Disassembler.csproj" />
+  <Project Path="CodyNET.Frontend/CodyNET.Frontend.csproj" />
+  <Project Path="CodyNET.Host/CodyNET.Host.csproj" />
   <Project Path="CodyNET.Tests/CodyNET.Tests.csproj" />
 </Solution>

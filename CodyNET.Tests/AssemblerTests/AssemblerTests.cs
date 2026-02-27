@@ -1,6 +1,6 @@
 ﻿using CodyNET.Assembler;
+using CodyNET.Common.Utils;
 using CodyNET.Disassembler;
-using CodyPrototype.Utils;
 using NUnit.Framework;
 
 namespace CodyNET.Tests.AssemblerTests;
@@ -14,7 +14,7 @@ public class AssemblerTests
     public void TestAssembler()
     {
         var bytes = TassAssembler.AssembleFile(FileUtils.GetTestDataPath("minimal.s"));
-        var expectedBytes = FileUtils.GetBytesFromFile(FileUtils.GetTestDataPath("minimal.bin"));
+        var expectedBytes = Binary.LoadBinaryText(FileUtils.GetTestDataPath("minimal.bin"));
         Assert.AreEqual(bytes, expectedBytes);
     }
     

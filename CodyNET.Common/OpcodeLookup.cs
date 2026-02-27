@@ -1,4 +1,5 @@
-﻿using static CodyNET.Common.Mnemonic;
+﻿using CodyNET.Common.Utils;
+using static CodyNET.Common.Mnemonic;
 // ReSharper disable InconsistentNaming
 
 namespace CodyNET.Common;
@@ -150,6 +151,9 @@ public enum AddressingMode
 public static class OpcodeLookup
 {
     public static List<Instruction> Instructions;
+    
+    // Array access is way faster than dictionary
+    public static readonly Instruction[] ByOpcode = new Instruction[256];
 
     /// <summary>
     /// Initializes all instructions according to 65C02 instruction set: https://feertech.com/legion/reference65c02.html
@@ -507,6 +511,19 @@ public static class OpcodeLookup
         ];
 
         AddDebugInstructions();
+        InitializeLookup();
+    }
+    
+    private static void InitializeLookup()
+    {
+        for(int i = 0; i < ByOpcode.Length; i++)
+        {
+            ByOpcode[i] = InvalidInstruction((byte) i);
+        }
+        foreach (var instruction in Instructions)
+        {
+            ByOpcode[instruction.Opcode] = instruction;
+        }
     }
 
     /// <summary>
@@ -570,16 +587,22 @@ public static class OpcodeLookup
         // new (0xFB, Mnemonic.NOP, AddressingMode.None, 1, 2),
     }
 
+    public static Instruction InvalidInstruction(byte opcode)
+    {
+        return new Instruction(opcode, NOP, AddressingMode.None, 1, 2); // TODO: Check if this is the right approach
+    }
+
     public static Instruction FromOpcode(byte opcode)
     {
         try
         {
-            return Instructions.First(i => i.Opcode == opcode);
+            return ByOpcode[opcode];
+            //return Instructions.First(i => i.Opcode == opcode);
         }
         catch(Exception x)
         {
-            Console.WriteLine("No instruction matching opcode: " + opcode.ToString("X2"));
-            return new Instruction(opcode, NOP, AddressingMode.None, 1, 2); // TODO: Check if this is the right approach
+            Log.Warn("No instruction matching opcode: " + opcode.ToString("X2"));
+            return InvalidInstruction(opcode);
             //throw x;
         }
     }
