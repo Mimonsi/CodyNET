@@ -18,13 +18,13 @@
     </ItemGroup>
     
     <ItemGroup>
-        <EmbeddedResource Include="Assets\roms\codybasic.bin"/>
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\CodyNET.Assembler\CodyNET.Assembler.csproj" />
       <ProjectReference Include="..\CodyNET.Common\CodyNET.Common.csproj" />
       <ProjectReference Include="..\CodyNET.Disassembler\CodyNET.Disassembler.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="Roms\codybasic.bin" />
     </ItemGroup>
 
 </Project>

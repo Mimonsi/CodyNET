@@ -3,6 +3,7 @@ using CodyNET.Common.Video;
 using CodyNET.Common.Utils;
 using CodyNET.Core.Devices;
 using CodyNET.Core.Interfaces;
+using CodyNET.Core.Roms;
 using Debugger = CodyNET.Core.Devices.Debugger;
 
 namespace CodyNET.Core.Cody;
@@ -212,21 +213,18 @@ public class Cody
         Log.Debug("Booting Cody with CodyBASIC ROM.");
         try
         {
-            var resolvedPath = ResolveBasicRomPath();
-            Log.Verbose("Resolved CodyBASIC ROM path: {path}", resolvedPath);
-
             var options = new CodyLoadOptions
             {
-                File = new FileInfo(resolvedPath),
                 LoadAddress = 0xE000,
                 AsCartridge = false,
                 AutoSetResetVector = false,
             };
-            RunBinaryFile(options);
+            var codyBasicRom = RomLoader.LoadEmbeddedCodyBasic();
+            RunBinary(codyBasicRom, options);
         }
         catch (FileNotFoundException e)
         {
-            Log.Error("CodyBASIC ROM not found at path. If you are running this executable from an archive, please extract it first. If this error keeps happening, download and manually load the ROM using the run command. {Message}", e.Message);
+            Log.Error("Bundled CodyBASIC ROM not found as embedded resource. If this error keeps happening, please run and specify file manually instead. {message}", e.Message);
         }
     }
 

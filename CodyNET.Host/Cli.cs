@@ -9,6 +9,11 @@ namespace CodyNET.Host;
 
 public static class Cli
 {
+    private static void SetVerbose()
+    {
+        Log.Level = LogLevel.Verbose;
+    }
+    
     public static RootCommand BuildRootCommand()
     {
         var root = new RootCommand("CodyNET");
@@ -213,7 +218,7 @@ public static class Cli
         cmd.SetAction(parseResult =>
         {
             if (parseResult.GetValue(verboseOption))
-                Log.Level = LogLevel.Debug;
+                SetVerbose();
             
             var setupOptions = new CodySetupOptions
             {
@@ -316,7 +321,7 @@ public static class Cli
         cmd.SetAction(parseResult =>
         {
             if (parseResult.GetValue(verboseOption))
-                Log.Level = LogLevel.Debug;
+                SetVerbose();
 
             var inputFile = parseResult.GetValue(fileArg)
                 ?? throw new ArgumentException("Missing input file argument.");
@@ -456,7 +461,7 @@ public static class Cli
         cmd.SetAction(parseResult =>
         {
             if (parseResult.GetValue(verboseOption))
-                Log.Level = LogLevel.Debug;
+                SetVerbose();
 
             var inputFile = parseResult.GetValue(fileArg)
                 ?? throw new ArgumentException("Missing input file argument.");
@@ -523,7 +528,7 @@ public static class Cli
         cmd.SetAction(parseResult =>
         {
             if (parseResult.GetValue(verboseOption))
-                Log.Level = LogLevel.Debug;
+                SetVerbose();
 
             var inputFile = parseResult.GetValue(fileArg)
                 ?? throw new ArgumentException("Missing input file argument.");
