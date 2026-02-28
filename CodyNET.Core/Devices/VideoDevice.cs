@@ -77,6 +77,16 @@ public class VideoDevice : IVideoDevice
     public const ushort VID_CONTROL_BANK = 0xD040;
     public const ushort VID_DATA_BANK = 0xD060;
     public const ushort VID_SPRITE_BANKS = 0xD080;
+    
+    // Control registers and state
+    private const int CONTROL_REGISTER = 0xD001;
+    private bool disableDisplay; // If set, disables display output and only show border color
+    private bool vScrolling; // If set, enables vertical scrolling (and reduces screen height by one row)
+    private bool hScrolling; // If set, enables horizontal scrolling (and reduces screen width by two columns)
+    private bool rowEffects; // If set, enables row effects
+    private bool bitmapMode; // If set, enables bitmap mode
+    private bool hiresMode; // If set, enables high resolution mode (320x200 instead of 160x200)
+    private bool blackAndWhite; // If set, enables black and white mode (disables color output)
 
     // === IMemoryMappedDevice ===
     public ushort StartAddress => VID_BASE;
@@ -87,7 +97,7 @@ public class VideoDevice : IVideoDevice
     // Screen constants
     // Height and width of character-based screen
     public const byte CONTENT_WIDTH = 160;
-    public const ushort HIRES_WIDTH = 2 * CONTENT_WIDTH; // 320 pixels in hires mode
+    public const ushort HIRES_WIDTH = 2 * CONTENT_WIDTH; // 320 pixels in hires (high resolution) mode
     public const byte CONTENT_HEIGHT = 200;
     public const int BORDER_X = 4;
     public const int BORDER_Y = 8;
@@ -97,9 +107,9 @@ public class VideoDevice : IVideoDevice
     // === Address Constants in shared memory ===
     private const ushort TEXT_SCREEN_BASE = 0xA000; // 1000 bytes
     private const ushort TEXT_COLOR_BASE = 0xA000 + 0x0400;
+
     private const ushort CHARSET_BASE = 0xA800;
-    
-    // Sprite geometry in lores
+    // Sprite geometry in lores (low resolution)
     private const int SPRITE_W = 12;
     private const int SPRITE_H = 21;
 
@@ -130,10 +140,22 @@ public class VideoDevice : IVideoDevice
         _videoMemory[0x02] = (byte)(colorIndex & 0x0F); // Store border color in video memory for easy access
         Dirty = true;
     }
-
-    private int offset = 0;
+    
+    private void ReadControlRegister()
+    {
+        byte value = _videoMemory[CONTROL_REGISTER - StartAddress];
+        disableDisplay = (value & (1 << 0)) != 0;
+        vScrolling     = (value & (1 << 1)) != 0;
+        hScrolling     = (value & (1 << 2)) != 0;
+        rowEffects     = (value & (1 << 3)) != 0;
+        bitmapMode     = (value & (1 << 4)) != 0;
+        hiresMode      = (value & (1 << 5)) != 0;
+        blackAndWhite  = (value & (1 << 6)) != 0;
+    }
+    
     public VideoFrame RenderTextFrame(Memory memory)
     {
+        ReadControlRegister();
         const int COLS = 40;
         const int ROWS = 25;
         const int CHAR_W = 8;
@@ -144,47 +166,20 @@ public class VideoDevice : IVideoDevice
         // 1. Fill with border color (0x02 register, low 4 bits as color index)
         var borderColor = Color.PALETTE[_videoMemory[0x02] & 0x0F].ToRgba32(); // 0x02 as border color
         FillRect(pixels, WIDTH, 0, 0, WIDTH, HEIGHT, borderColor);
-
-        /*for (int row = 0; row < ROWS; row++)
+        if (disableDisplay) // if screen disabled, only show border color
         {
-            for (int col = 0; col < COLS; col++)
-            {
-                int cellIndex = row * COLS + col;
-
-                byte ch = memory.Read((ushort)(TEXT_SCREEN_BASE + cellIndex));
-                byte colorByte = memory.Read((ushort)(TEXT_COLOR_BASE + cellIndex));
-                
-                int foregroundColorIndex = colorByte & 0x0F; // Low Nibble
-                int backgroundColorIndex = (colorByte >> 4) & 0x0F; // High Nibble
-
-                uint foregroundColor = Color.PALETTE[foregroundColorIndex].ToRgba32();
-                uint backgroundColor = Color.PALETTE[backgroundColorIndex].ToRgba32();
-                
-                ushort glyphBase = (ushort)(CHARSET_BASE + ch * CHAR_H);
-
-                int px0 = BORDER_X + col * CHAR_W; // Left pixel position of the character cell
-                int py0 = BORDER_Y + row * CHAR_H; // Top pixel position of the character cell
-
-                for (int gy = 0; gy < CHAR_H; gy++)
-                {
-                    byte charRowData = memory.Read((ushort)(glyphBase + gy));
-                    for (int gx = 0; gx < CHAR_W; gx++) // 0..7
-                    {
-                        int bit = 3 - (gx >> 1); // gx 0..1->bit3, 2..3->bit2, 4..5->bit1, 6..7->bit0
-                        bool pixelOn = ((charRowData >> bit) & 1) != 0;
-
-                        int x = px0 + gx;
-                        int y = py0 + gy;
-                        pixels[y * WIDTH + x] = pixelOn ? foregroundColor : backgroundColor;
-                    }
-                }
-            }
-        }*/
+            Dirty = false;
+            return new VideoFrame(WIDTH, HEIGHT, pixels);
+        }
+        
+        var colorRamBank = ???
+        
 
         Dirty = false;
         return new VideoFrame(WIDTH, HEIGHT, pixels);
     }
 
+    // Test only
     private static void FillBlackWhite(uint[] pixels)
     {
         bool isWhite = true;
