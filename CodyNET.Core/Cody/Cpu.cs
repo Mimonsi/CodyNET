@@ -3,6 +3,7 @@ using CodyNET.Common;
 using CodyNET.Common.Utils;
 using static CodyNET.Common.Mnemonic;
 using static CodyNET.Common.AddressingMode;
+using Math = System.Math;
 
 namespace CodyNET.Core.Cody;
 
@@ -66,10 +67,6 @@ public class Cpu()
     public bool wait = false; // Set to true by WAI instruction, can be used by external code to pause execution until an event occurs (e.g. interrupt)
     public long CyclesPerSecond = 1_000_000; // 1 MHz, typical for 65C02
     public long TotalCyclesExecuted = 0;
-    public Stopwatch ExecutionStopwatch = new();
-
-    
-    public List<int> InstructionTimes = new(); // For testing: record time taken for each instruction execution (in microseconds)
 
     public Cpu(CpuState initialState) : this()
     {
@@ -139,16 +136,33 @@ public class Cpu()
         
     }
 
+    private long _nextDeadlineTicks;
+
+    private void InitTiming()
+    {
+        _nextDeadlineTicks = Stopwatch.GetTimestamp();
+    }
+
     private void WaitCycles(int cycles)
     {
-        if (CyclesPerSecond == -1) // No wait, run as fast as possible
+        if (CyclesPerSecond == -1)
             return;
-        var instructionTime = ExecutionStopwatch.Elapsed.TotalMicroseconds; // Time taken to execute the instruction in microseconds
-        var expectedTime = (long)((cycles / (double)CyclesPerSecond) * 1_000_000); // Expected time for the instruction based on cycles and target frequency in microseconds
-        var delta = expectedTime - instructionTime;
-        while (delta > 0)
+        
+        long now = Stopwatch.GetTimestamp();
+
+        // targetTicks = cycles * (Stopwatch.Frequency / CyclesPerSecond)
+        // Use integer math with rounding to avoid systematic undershoot.
+        long targetTicks = (long)Math.Round(cycles * (Stopwatch.Frequency / (double)CyclesPerSecond));
+
+        // 2) Move deadline forward (monotonic pacing)
+        _nextDeadlineTicks += targetTicks;
+
+        // 3) If we're behind, don't wait (can't magically catch up)
+        while (now < _nextDeadlineTicks)
         {
-            delta = expectedTime - ExecutionStopwatch.Elapsed.TotalMicroseconds;
+            // Busy-wait for sub-millisecond precision.
+            // Optionally: Thread.SpinWait(20);
+            now = Stopwatch.GetTimestamp();
         }
     }
 
@@ -156,7 +170,8 @@ public class Cpu()
     private int cycles;
     public StepResult Step()
     {
-        ExecutionStopwatch.Restart();
+        if (_nextDeadlineTicks == 0)
+            InitTiming();
         instruction = OpcodeLookup.FromOpcode(Memory.Read(PC++));
         //Log.Trace("Executing instruction at {0:X4}: {1} (opcode {2:X2})", PC - 1, instruction.Mnemonic, instruction.Opcode);
             
@@ -275,7 +290,7 @@ public class Cpu()
         }
         TotalCyclesExecuted += cycles;
         WaitCycles(cycles); // Calculates if wait is needed and block if so, then resets batch cycles
-        
+
         return StepResult.Success;
     }
 
