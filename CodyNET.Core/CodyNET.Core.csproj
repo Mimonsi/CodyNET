@@ -15,9 +15,10 @@
       <None Update="Assembler\64tass\linux-x64\64tass">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <Content Include="..\roms\codybasic.bin" Link="roms\codybasic.bin">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
+    </ItemGroup>
+    
+    <ItemGroup>
+        <EmbeddedResource Include="Assets\roms\codybasic.bin"/>
     </ItemGroup>
 
     <ItemGroup>

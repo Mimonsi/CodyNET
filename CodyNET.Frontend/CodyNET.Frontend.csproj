@@ -22,12 +22,6 @@
     <ItemGroup>
         <ProjectReference Include="..\CodyNET.Core\CodyNET.Core.csproj" />
     </ItemGroup>
-
-    <ItemGroup>
-        <Content Include="..\roms\codybasic.bin" Link="roms\codybasic.bin">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-    </ItemGroup>
     <ItemGroup>
         <AvaloniaResource Include="Assets\**" />
     </ItemGroup>

@@ -13,10 +13,4 @@
       <ProjectReference Include="..\CodyNET.Disassembler\CodyNET.Disassembler.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Content Include="..\roms\codybasic.bin" Link="roms\codybasic.bin">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
-    </ItemGroup>
-
 </Project>
