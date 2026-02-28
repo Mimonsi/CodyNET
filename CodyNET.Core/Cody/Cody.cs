@@ -24,7 +24,7 @@ public sealed record CodyLoadOptions
     public FileInfo? File { get; init; }
     public bool AsCartridge { get; init; }
     public ushort LoadAddress { get; init; } = 0xE000;
-    public bool AutoSetResetVector { get; init; } = true; // If true, sets reset vector to load address if not explicitly overridden
+    public bool AutoSetResetVector { get; init; } = false; // [UNUSED] If true, sets reset vector to load address if not explicitly overridden
     public ushort? ResetVectorOverride { get; init; }
     public ushort? IrqVectorOverride { get; init; }
     public ushort? NmiVectorOverride { get; init; }
@@ -182,7 +182,7 @@ public class Cody
     public void RunBinaryFile(CodyLoadOptions loadOptions)
     {
         CheckFilePath(loadOptions.File);
-        Log.Debug($"Running binary file: '{loadOptions.File!.FullName}'");
+        Log.Debug("Running binary file: '{fileName}'", loadOptions.File!.FullName);
 
         var bytes = File.ReadAllBytes(loadOptions.File!.FullName);
         RunBinary(bytes, loadOptions);
