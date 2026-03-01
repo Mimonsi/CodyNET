@@ -25,7 +25,7 @@ public static class CodyFactory
         var keyboard = CreateKeyboard();
 
         Cody cody = new(options, video, screen, keyboard);
-        return cody; //TODO Next: Fix embedded rom
+        return cody;
     }
 
     private static IScreenDevice? CreateScreen()
