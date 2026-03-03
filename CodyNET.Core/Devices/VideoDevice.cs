@@ -146,7 +146,8 @@ public class VideoDevice : IVideoDevice
     
     public void SetBorderColor(byte colorIndex)
     {
-        _videoMemory[0x02] = (byte)(colorIndex & 0x0F); // Store border color in video memory for easy access
+        int i = REG_BORDER_COLOR - StartAddress;
+        _videoMemory[i] = (byte)((_videoMemory[i] & 0xF0) | (colorIndex & 0x0F));
         Dirty = true;
     }
     
@@ -180,6 +181,7 @@ public class VideoDevice : IVideoDevice
             return new VideoFrame(WIDTH, HEIGHT, pixels);
         }
         
+        // 2. Render content area
         // Calculate content area dimensions based on control register flags
         
         int width  = CONTENT_WIDTH - (enableHScroll ? 2 * 4 : 0);
@@ -244,9 +246,33 @@ public class VideoDevice : IVideoDevice
             }
             else
             {
-                Log.Verbose("RenderLine lowres not implemented");
-                return;
-                // TODO: Implement lores
+                // lores: 2bits per pixel (background/sprite/fine scroll)
+                byte rowData = bitmapMode
+                    ? memory.Read((ushort)(screenMemStart + 8 * tileIndex + inTileY))
+                    : ReadCharRow(memory, screenMemStart, charMemStart, tileIndex, inTileY);
+                
+                int twoBits = (rowData >> (2 * (3 - inTileX))) & 0x03;
+                int paletteIndex = twoBits switch
+                {
+                    0 => (localColors & 0x0F),
+                    1 => (localColors >> 4),
+                    2 => (screenColors & 0x0F),
+                    3 => (screenColors >> 4),
+                    _ => 0
+                };
+                
+                // TODO: Sprites
+                paletteIndex = ApplySprites(paletteIndex, x, y, spriteReg, memory);
+
+                color = Color.PALETTE[paletteIndex].ToRgba32();
+                
+                // lores doubles horizontal pixels
+                int outY = y + borderY;
+                int outX = 2 * x + borderX;
+                int p = outY * WIDTH + outX;
+                pixels[p] = color;
+                pixels[p + 1] = color;
+                continue;
             }
             
             // hires: one pixel per x
@@ -256,10 +282,18 @@ public class VideoDevice : IVideoDevice
         }
     }
 
+    private int ApplySprites(int paletteIndex, int i, int i1, byte spriteReg, Memory memory)
+    {
+        //throw new NotImplementedException();
+        // TODO:
+        return paletteIndex;
+    }
+
     private byte ReadCharRow(Memory memory, ushort screenMemStart, ushort charMemStart, int tileIndex, int inTileY)
     {
         byte ch = memory.Read((ushort)(screenMemStart + tileIndex));
-        return memory.Read((ushort)(charMemStart + 8 * ch + inTileY));
+        var value = memory.Read((ushort)(charMemStart + 8 * ch + inTileY));
+        return value;
     }
 
     // Test only

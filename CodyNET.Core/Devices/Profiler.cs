@@ -8,6 +8,7 @@ public class Profiler
     private readonly Stopwatch _windowStopwatch = Stopwatch.StartNew();
     private readonly TimeSpan _logInterval;
     private long _lastCycleCount;
+    private long _lastFrameCount;
 
     public Profiler(TimeSpan logInterval)
     {
@@ -37,8 +38,16 @@ public class Profiler
             Log.Info("CPU frequency avg ({windowSeconds:F1}s): {avgHz:N0} Hz (target: {targetHz:N0} Hz, {utilizationPercent:F1}% of target)",
                 elapsedSeconds, averageFrequencyHz, targetFrequencyHz, utilizationPercent);
         }
+        
+        Log.Info("Screen: {frameCount} frames in last {windowSeconds:F1}s ({fps:F1} FPS)", _lastFrameCount, elapsedSeconds, _lastFrameCount / elapsedSeconds);
 
         _lastCycleCount = totalCyclesExecuted;
+        _lastFrameCount = 0;
         _windowStopwatch.Restart();
+    }
+
+    public void FrameRendered()
+    {
+        _lastFrameCount++;
     }
 }

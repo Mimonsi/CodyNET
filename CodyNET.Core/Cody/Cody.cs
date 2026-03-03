@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using CodyNET.Assembler;
 using CodyNET.Common.Video;
 using CodyNET.Common.Utils;
@@ -112,8 +113,10 @@ public class Cody
         return Cpu.Step();
     }
 
+    private Stopwatch screenStopwatch = new();
     public void RunUntilFinish()
     {
+        screenStopwatch.Start();
         //Log.Level = LogLevel.Trace;
         while (true)
         {
@@ -126,10 +129,16 @@ public class Cody
                 Log.Info("Execution paused by debugger on PC={PC:X4}", Cpu.PC);
                 //break;
             }
-            if (VID is VideoDevice { Dirty: true } vid) // TODO: Only write when video is dirty
+            // 60 times per second
+            if (screenStopwatch.Elapsed >= TimeSpan.FromSeconds(1.0 / 60))
             {
-                var frame = vid.RenderTextFrame(Cpu.Memory);
-                Screen?.RenderFrame(frame);
+                screenStopwatch.Restart();
+                if (VID != null)
+                {
+                    var frame = VID.RenderTextFrame(Cpu.Memory);
+                    Screen?.RenderFrame(frame);
+                    Profiler.FrameRendered();
+                }
             }
         }
     }
