@@ -175,8 +175,8 @@ public class Cpu()
     public StepResult Step()
     {
         if (!Run)
-            return StepResult.Stopped;
-First         var interrupt = Memory.Update(TotalCyclesExecuted);
+            return StepResult.Stopped; 
+        var interrupt = Memory.Update(TotalCyclesExecuted);
         if (interrupt.IRQ || interrupt.NMI) // If interrupt occured, handle it here
         {
             Wait = false;

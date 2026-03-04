@@ -29,6 +29,7 @@
     </ItemGroup>
     
     <ItemGroup>
+      <Folder Include="Component\Input\" />
       <Folder Include="testdata\programs\assembly\" />
     </ItemGroup>
 

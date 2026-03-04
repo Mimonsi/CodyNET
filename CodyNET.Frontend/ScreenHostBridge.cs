@@ -10,7 +10,7 @@ public static class ScreenHostBridge
     private static TaskCompletionSource<IScreenDevice> screenSource = CreateScreenSource();
 
     public static Task<IScreenDevice> ScreenTask => screenSource.Task;
-    public static LogicalKeyboard? Keyboard { get; private set; }
+    public static Keyboard? Keyboard { get; private set; }
 
     public static void Reset()
     {
@@ -23,7 +23,7 @@ public static class ScreenHostBridge
         screenSource.TrySetResult(screen);
     }
 
-    public static void SetKeyboard(LogicalKeyboard keyboard)
+    public static void SetKeyboard(Keyboard keyboard)
     {
         Keyboard = keyboard;
     }

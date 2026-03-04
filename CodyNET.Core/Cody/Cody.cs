@@ -40,7 +40,7 @@ public class Cody
     public Debugger? Debugger { get; private set; }
     public IVideoDevice? VID { get; private set; }
     public IScreenDevice? Screen { get; init; }
-    public IInputDevice? Keyboard { get; init; }
+    public Keyboard? Keyboard { get; init; }
     public Profiler? Profiler;
 
     public long FrequencyHz
@@ -59,7 +59,7 @@ public class Cody
     }
 
     // TODO: Cody shouldn't need setup options, as Factory create devices based on options and passes them in. Refactor to remove this dependency.
-    public Cody(CodySetupOptions options, IVideoDevice? videoDevice = null, IScreenDevice? screen = null, IInputDevice? keyboard = null)
+    public Cody(CodySetupOptions options, IVideoDevice? videoDevice = null, IScreenDevice? screen = null, Keyboard? keyboard = null)
     {
         VID = videoDevice;
         Screen = screen;

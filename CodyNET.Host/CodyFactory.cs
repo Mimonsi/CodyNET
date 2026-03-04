@@ -61,9 +61,9 @@ public static class CodyFactory
         return ScreenHostBridge.ScreenTask.GetAwaiter().GetResult();
     }
 
-    private static IInputDevice? CreateKeyboard()
+    private static Keyboard? CreateKeyboard()
     {
-        var keyboard = new LogicalKeyboard();
+        var keyboard = new Keyboard();
         ScreenHostBridge.SetKeyboard(keyboard);
         return keyboard;
     }

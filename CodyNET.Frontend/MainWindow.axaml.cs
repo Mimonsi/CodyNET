@@ -21,8 +21,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         InitializeScreen();
         KeyDown += OnKeyDown;
-        // Zeichen-Eingabe (layout-aware: DE/US/AltGr/Shift/IME)
-        AddHandler(TextInputEvent, OnTextInput, RoutingStrategies.Tunnel);
+        KeyUp += OnKeyUp;
         
         Closed += OnWindowClosed; // Close whole application on window close
     }
@@ -70,9 +69,26 @@ public partial class MainWindow : Window
         bool alt   = (e.KeyModifiers & KeyModifiers.Alt) != 0;
         
         Log.Verbose("Key down: {Key} (Modifiers: {Modifiers})", e.Key, e.KeyModifiers);
-        Log.Verbose("Translated Key: " + LogicalKeyboard.TranslateLogicalKeyDE(e.Key.ToString(), ctrl, shift, alt));
+        Log.Verbose("Translated Key: " + Keyboard.TranslateLogicalKeyDE(e.Key.ToString(), ctrl, shift, alt));
 
-        if (keyboard.KeyPressed(e.Key.ToString(), ctrl, shift, alt))
+        if (keyboard.KeyDown(e.Key.ToString(), ctrl, shift, alt))
+            e.Handled = true;
+    }
+    
+    private void OnKeyUp(object? sender, KeyEventArgs e)
+    {
+        var keyboard = ScreenHostBridge.Keyboard;
+        if (keyboard == null)
+            return;
+
+        bool shift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
+        bool ctrl  = (e.KeyModifiers & KeyModifiers.Control) != 0;
+        bool alt   = (e.KeyModifiers & KeyModifiers.Alt) != 0;
+        
+        Log.Verbose("Key down: {Key} (Modifiers: {Modifiers})", e.Key, e.KeyModifiers);
+        Log.Verbose("Translated Key: " + Keyboard.TranslateLogicalKeyDE(e.Key.ToString(), ctrl, shift, alt));
+
+        if (keyboard.KeyUp(e.Key.ToString(), ctrl, shift, alt))
             e.Handled = true;
     }
 }

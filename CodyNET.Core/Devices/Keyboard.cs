@@ -62,7 +62,7 @@ public enum CodyModifier
     Meta
 }
 
-public class LogicalKeyboard : IInputDevice
+public class Keyboard : IMemoryMappedDevice
 {
     private Dictionary<string, (CodyKeyCode, CodyModifier)> logicalMap =
         new()
@@ -265,9 +265,15 @@ public class LogicalKeyboard : IInputDevice
     public bool SupportsRead => true;
     public bool SupportsWrite => true;
 
+    public bool KeysChanged = false;
+
     public Interrupt Update(long cycle)
     {
-        // TODO: Check
+        if (KeysChanged)
+        {
+            KeysChanged = false;
+            return new Interrupt() {IRQ = true};
+        }
         return Interrupt.None;
     }
 
@@ -281,12 +287,27 @@ public class LogicalKeyboard : IInputDevice
 
     }
 
-    public void GetInputState(Memory memory)
+    public void GetInputState(Memory memory) // Unused, from old interface
     {
         _ = memory;
     }
+    
+    private List<CodyKeyCode> PressedKeys = new();
 
-    public bool KeyPressed(string keyName, bool ctrl, bool shift, bool alt)
+    public bool KeyDown(string keyName, bool ctrl, bool shift, bool alt)
+    {
+        // TODO: Update matrix with new state
+        if (physicalMap.TryGetValue(keyName, out (CodyKeyCode code, CodyModifier modifier) mapping))
+        {
+            // TODO: Refactor and think how it should work
+            PressedKeys.Add(mapping.code);
+            return true;
+        }
+
+        return false;
+    }
+    
+    public bool KeyUp(string keyName, bool ctrl, bool shift, bool alt)
     {
         return true;
     }
