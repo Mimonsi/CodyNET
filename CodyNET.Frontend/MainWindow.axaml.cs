@@ -3,9 +3,11 @@ using System.Globalization;
 using System.IO;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
 using CodyNET.Common.Utils;
 using CodyNET.Common.Video;
+using CodyNET.Core.Devices;
 using CodyNET.Frontend.Controls;
 
 namespace CodyNET.Frontend;
@@ -19,6 +21,9 @@ public partial class MainWindow : Window
         InitializeComponent();
         InitializeScreen();
         KeyDown += OnKeyDown;
+        // Zeichen-Eingabe (layout-aware: DE/US/AltGr/Shift/IME)
+        AddHandler(TextInputEvent, OnTextInput, RoutingStrategies.Tunnel);
+        
         Closed += OnWindowClosed; // Close whole application on window close
     }
 
@@ -51,21 +56,23 @@ public partial class MainWindow : Window
             screen.ScaleFactor = scale;
         }
     }
-    
-    
+
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
-        Log.Verbose("Key down: {Key} (Modifiers: {Modifiers})", e.Key, e.KeyModifiers);
+        // KeyDown weiter benutzen für Nicht-Text-Tasten:
+        // Enter, Backspace, Pfeile, F-Tasten, etc. und Ctrl-shortcuts
         var keyboard = ScreenHostBridge.Keyboard;
         if (keyboard == null)
             return;
 
         bool shift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
-        bool ctrl = (e.KeyModifiers & KeyModifiers.Control) != 0;
-        bool alt = (e.KeyModifiers & KeyModifiers.Alt) != 0;
+        bool ctrl  = (e.KeyModifiers & KeyModifiers.Control) != 0;
+        bool alt   = (e.KeyModifiers & KeyModifiers.Alt) != 0;
+        
+        Log.Verbose("Key down: {Key} (Modifiers: {Modifiers})", e.Key, e.KeyModifiers);
+        Log.Verbose("Translated Key: " + LogicalKeyboard.TranslateLogicalKeyDE(e.Key.ToString(), ctrl, shift, alt));
+
         if (keyboard.KeyPressed(e.Key.ToString(), ctrl, shift, alt))
-        {
             e.Handled = true;
-        }
     }
 }
