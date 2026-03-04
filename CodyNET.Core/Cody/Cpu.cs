@@ -176,6 +176,22 @@ public class Cpu()
     {
         if (!Run)
             return StepResult.Stopped;
+First         var interrupt = Memory.Update(TotalCyclesExecuted);
+        if (interrupt.IRQ || interrupt.NMI) // If interrupt occured, handle it here
+        {
+            Wait = false;
+            if (interrupt.NMI || (interrupt.IRQ && !Status.InterruptDisable))
+            {
+                PushPC(); 
+                // TODO: Check if true or false, or entirely different method
+                PushFlags(false);
+                var readAddress = IRQ_VECTOR;
+                if (interrupt.NMI)
+                    readAddress = NMI_VECTOR;
+                PC = ReadShort(readAddress);
+            }
+        }
+        
         if (_nextDeadlineTicks == 0)
             InitTiming();
         instruction = OpcodeLookup.FromOpcode(Memory.Read(PC++));

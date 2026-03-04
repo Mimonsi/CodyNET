@@ -1,4 +1,6 @@
-﻿namespace CodyNET.Core.Interfaces;
+﻿using CodyNET.Core.Cody;
+
+namespace CodyNET.Core.Interfaces;
 
 /// <summary>
 /// Represents a memory-mapped device with read and write capabilities.
@@ -19,6 +21,8 @@ public interface IMemoryMappedDevice
     /// Indicates whether the device handles writes within its address range.
     /// </summary>
     bool SupportsWrite { get; }
+
+    Interrupt Update(long cycle);
     
     byte Read(ushort address);
     void Write(ushort address, byte value);

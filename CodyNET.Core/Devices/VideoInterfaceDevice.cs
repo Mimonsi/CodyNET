@@ -144,6 +144,12 @@ public class VideoDevice : IVideoDevice
         Dirty = true;
     }
     
+    public Interrupt Update(long cycle)
+    {
+        // TODO: Check
+        return Interrupt.None;
+    }
+    
     public void SetBorderColor(byte colorIndex)
     {
         int i = REG_BORDER_COLOR - StartAddress;

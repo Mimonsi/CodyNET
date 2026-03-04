@@ -218,4 +218,20 @@ public class Memory
                 break;
         }
     }
+
+    /// <summary>
+    /// Updates all registered memory-mapped devices that require periodic updates
+    /// </summary>
+    /// <param name="totalCyclesExecuted"></param>
+    /// <returns></returns>
+    public Interrupt Update(long totalCyclesExecuted)
+    {
+        var interrupt = Interrupt.None;
+        foreach (var device in devices)
+        {
+            interrupt = interrupt.Or(device.Update(totalCyclesExecuted));
+        }
+
+        return interrupt;
+    }
 }

@@ -1,4 +1,5 @@
-﻿using CodyNET.Core.Interfaces;
+﻿using CodyNET.Core.Cody;
+using CodyNET.Core.Interfaces;
 
 namespace CodyNET.Core.Devices;
 
@@ -8,6 +9,13 @@ public class VersatileInterfaceAdapter : IMemoryMappedDevice
     public ushort EndAddress { get; } = 0xD20F;
     public bool SupportsRead { get; } = true;
     public bool SupportsWrite { get; } = false;
+    
+    public Interrupt Update(long cycle)
+    {
+        // TODO: Check
+        return Interrupt.None;
+    }
+    
     public byte Read(ushort address)
     {
         return 0;

@@ -265,6 +265,12 @@ public class LogicalKeyboard : IInputDevice
     public bool SupportsRead => true;
     public bool SupportsWrite => true;
 
+    public Interrupt Update(long cycle)
+    {
+        // TODO: Check
+        return Interrupt.None;
+    }
+
     public byte Read(ushort address)
     {
         return 0;

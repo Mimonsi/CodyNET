@@ -16,7 +16,13 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
     public List<ushort> WatchAddresses { get; set; } = [];
     // Breakpoints (Essentially watch PC)
     public List<ushort> Breakpoints { get; set; } = [];
-    
+
+    public Interrupt Update(long cycle)
+    {
+        // TODO: Check
+        return Interrupt.None;
+    }
+
     public byte Read(ushort address)
     {
         return 0;
