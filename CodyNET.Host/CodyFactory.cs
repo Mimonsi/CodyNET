@@ -63,7 +63,8 @@ public static class CodyFactory
 
     private static IInputDevice? CreateKeyboard()
     {
-        // TODO: Keyboard initialization
-        return null;
+        var keyboard = new LogicalKeyboard();
+        ScreenHostBridge.SetKeyboard(keyboard);
+        return keyboard;
     }
 }

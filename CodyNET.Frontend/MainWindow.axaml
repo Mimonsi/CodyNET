@@ -35,7 +35,7 @@
             <Border BorderBrush="Black" 
                     BorderThickness="20" 
                     Padding="10">
-                <controls1:ScreenControl x:Name="Screen" />
+                <controls1:ScreenControl x:Name="Screen" Focusable="True" />
             </Border>
         </Border>
     </DockPanel>
