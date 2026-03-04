@@ -214,48 +214,48 @@ public static class OpcodeLookup
             new(0xEF, BBS6, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
             new(0xFF, BBS7, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
 
-            // BCC (Branch if Carry Clear)
+            // BCC (Branch if Carry Clear) ☑
             new(0x90, BCC, AddressingMode.ProgramCounterRelative, 2,
                 2), // +1 if branch taken, +2 if to a new page
 
-            // BCS (Branch if Carry Set)
+            // BCS (Branch if Carry Set) ☑
             new(0xB0, BCS, AddressingMode.ProgramCounterRelative, 2,
                 2), // +1 if branch taken, +2 if to a new page
 
-            // BEQ (Branch if Equal)
+            // BEQ (Branch if Equal) ☑
             new(0xF0, BEQ, AddressingMode.ProgramCounterRelative, 2,
                 2), // +1 if branch taken, +2 if to a new page
 
-            // BIT (Bit Test)
+            // BIT (Bit Test) ☑
             new(0x89, BIT, AddressingMode.Immediate, 2, 2),
             new(0x24, BIT, AddressingMode.ZeroPage, 2, 3),
             new(0x34, BIT, AddressingMode.ZeroPageIndexedX, 2, 4),
             new(0x2C, BIT, AddressingMode.Absolute, 3, 4),
             new(0x3C, BIT, AddressingMode.AbsoluteIndexedX, 3, 4), // +1 if page crossed
 
-            // BMI (Branch if Minus)
+            // BMI (Branch if Minus) ☑
             new(0x30, BMI, AddressingMode.ProgramCounterRelative, 2,
                 2), // +1 if branch taken, +2 if to a new page
 
-            // BNE (Branch if Not Equal)
+            // BNE (Branch if Not Equal) ☑
             new(0xD0, BNE, AddressingMode.ProgramCounterRelative, 2,
                 2), // +1 if branch taken, +2 if to a new page
 
-            // BPL (Branch if Positive)
+            // BPL (Branch if Positive) ☑
             new(0x10, BPL, AddressingMode.ProgramCounterRelative, 2,
                 2), // +1 if branch taken, +2 if to a new page
 
-            // BRA (Branch Always)
+            // BRA (Branch Always) ☑
             new(0x80, BRA, AddressingMode.ProgramCounterRelative, 2, 3), // +1 if branch taken
 
-            // BRK (Break / Interrupt)
+            // BRK (Break / Interrupt) ☑
             new(0x00, BRK, AddressingMode.None, 1, 7),
 
-            // BVC (Branch if Overflow Clear)
+            // BVC (Branch if Overflow Clear) ☑
             new(0x50, BVC, AddressingMode.ProgramCounterRelative, 2,
                 2), // +1 if branch taken, +2 if to a new page
 
-            // BVS (Branch if Overflow Set)
+            // BVS (Branch if Overflow Set) ☑
             new(0x70, BVS, AddressingMode.ProgramCounterRelative, 2,
                 2), // +1 if branch taken, +2 if to a new page
 
@@ -362,7 +362,7 @@ public static class OpcodeLookup
             new(0xAC, LDY, AddressingMode.Absolute, 3, 4),
             new(0xBC, LDY, AddressingMode.AbsoluteIndexedX, 3, 4), // +1 if page crossed
 
-            // LSR (Logical Shift Right)
+            // LSR (Logical Shift Right) ☑
             new(0x4A, LSR, AddressingMode.Accumulator, 1, 2),
             new(0x46, LSR, AddressingMode.ZeroPage, 2, 5),
             new(0x56, LSR, AddressingMode.ZeroPageIndexedX, 2, 6),
@@ -372,7 +372,7 @@ public static class OpcodeLookup
             // NOP (No Operation) ☑
             new(0xEA, NOP, AddressingMode.None, 1, 2),
 
-            // ORA (OR with Accumulator)
+            // ORA (OR with Accumulator) ☑
             new(0x09, ORA, AddressingMode.Immediate, 2, 2),
             new(0x05, ORA, AddressingMode.ZeroPage, 2, 3),
             new(0x15, ORA, AddressingMode.ZeroPageIndexedX, 2, 4),
@@ -383,23 +383,23 @@ public static class OpcodeLookup
             new(0x01, ORA, AddressingMode.ZeroPageIndexedIndirectX, 2, 6),
             new(0x11, ORA, AddressingMode.ZeroPageIndirectIndexedY, 2, 5), // +1 if page crossed
 
-            // PHA/PHX/PHY (Push Accumulator/X/Y)
+            // PHA/PHX/PHY (Push Accumulator/X/Y) ☑
             new(0x48, PHA, AddressingMode.None, 1, 3),
             new(0xDA, PHX, AddressingMode.None, 1, 3),
             new(0x5A, PHY, AddressingMode.None, 1, 3),
 
-            // PHP (Push Processor Status)
+            // PHP (Push Processor Status) ☑
             new(0x08, PHP, AddressingMode.None, 1, 3),
 
-            // PLA/PLX/PLY (Pull Accumulator/X/Y)
+            // PLA/PLX/PLY (Pull Accumulator/X/Y) ☑
             new(0x68, PLA, AddressingMode.None, 1, 4),
             new(0xFA, PLX, AddressingMode.None, 1, 4),
             new(0x7A, PLY, AddressingMode.None, 1, 4),
 
-            // PLP (Pull Processor Status)
+            // PLP (Pull Processor Status) ☑
             new(0x28, PLP, AddressingMode.None, 1, 4),
 
-            // RMB (Reset Memory Bit)
+            // RMB (Reset Memory Bit) ☑
             new(0x07, RMB0, AddressingMode.ZeroPage, 2, 5),
             new(0x17, RMB1, AddressingMode.ZeroPage, 2, 5),
             new(0x27, RMB2, AddressingMode.ZeroPage, 2, 5),
@@ -409,27 +409,27 @@ public static class OpcodeLookup
             new(0x67, RMB6, AddressingMode.ZeroPage, 2, 5),
             new(0x77, RMB7, AddressingMode.ZeroPage, 2, 5),
 
-            // ROL (Rotate Left)
+            // ROL (Rotate Left) ☑
             new(0x2A, ROL, AddressingMode.Accumulator, 1, 2),
             new(0x26, ROL, AddressingMode.ZeroPage, 2, 5),
             new(0x36, ROL, AddressingMode.ZeroPageIndexedX, 2, 6),
             new(0x2E, ROL, AddressingMode.Absolute, 3, 6),
             new(0x3E, ROL, AddressingMode.AbsoluteIndexedX, 3, 7),
 
-            // ROR (Rotate Right)
+            // ROR (Rotate Right) ☑
             new(0x6A, ROR, AddressingMode.Accumulator, 1, 2),
             new(0x66, ROR, AddressingMode.ZeroPage, 2, 5),
             new(0x76, ROR, AddressingMode.ZeroPageIndexedX, 2, 6),
             new(0x6E, ROR, AddressingMode.Absolute, 3, 6),
             new(0x7E, ROR, AddressingMode.AbsoluteIndexedX, 3, 7),
 
-            // RTI (Return from Interrupt)
+            // RTI (Return from Interrupt) ☑
             new(0x40, RTI, AddressingMode.None, 1, 6),
 
-            // RTS (Return from Subroutine)
+            // RTS (Return from Subroutine) ☑
             new(0x60, RTS, AddressingMode.None, 1, 6),
 
-            // SBC (Subtract with Borrow)
+            // SBC (Subtract with Borrow) ☑
             new(0xE9, SBC, AddressingMode.Immediate, 2, 2),
             new(0xE5, SBC, AddressingMode.ZeroPage, 2, 3),
             new(0xF5, SBC, AddressingMode.ZeroPageIndexedX, 2, 4),
@@ -449,7 +449,7 @@ public static class OpcodeLookup
             // SEI (Set Interrupt Disable) ☑
             new(0x78, SEI, AddressingMode.None, 1, 2),
 
-            // SMB (Set Memory Bit)
+            // SMB (Set Memory Bit) ☑
             new(0x87, SMB0, AddressingMode.ZeroPage, 2, 5),
             new(0x97, SMB1, AddressingMode.ZeroPage, 2, 5),
             new(0xA7, SMB2, AddressingMode.ZeroPage, 2, 5),
@@ -459,7 +459,7 @@ public static class OpcodeLookup
             new(0xE7, SMB6, AddressingMode.ZeroPage, 2, 5),
             new(0xF7, SMB7, AddressingMode.ZeroPage, 2, 5),
 
-            // STA (Store Accumulator)
+            // STA (Store Accumulator) ☑
             new(0x85, STA, AddressingMode.ZeroPage, 2, 3),
             new(0x95, STA, AddressingMode.ZeroPageIndexedX, 2, 4),
             new(0x8D, STA, AddressingMode.Absolute, 3, 4),
@@ -469,44 +469,44 @@ public static class OpcodeLookup
             new(0x81, STA, AddressingMode.ZeroPageIndexedIndirectX, 2, 6),
             new(0x91, STA, AddressingMode.ZeroPageIndirectIndexedY, 2, 6),
 
-            // STP (Stop Processor)
+            // STP (Stop Processor) ☑
             new(0xDB, STP, AddressingMode.None, 1, 3),
 
-            // STX (Store X)
+            // STX (Store X) ☑
             new(0x86, STX, AddressingMode.ZeroPage, 2, 3),
             new(0x96, STX, AddressingMode.ZeroPageIndexedY, 2, 4),
             new(0x8E, STX, AddressingMode.Absolute, 3, 4),
 
-            // STY (Store Y)
+            // STY (Store Y) ☑
             new(0x84, STY, AddressingMode.ZeroPage, 2, 3),
             new(0x94, STY, AddressingMode.ZeroPageIndexedX, 2, 4),
             new(0x8C, STY, AddressingMode.Absolute, 3, 4),
 
-            // STZ (Store Zero)
+            // STZ (Store Zero) ☑
             new(0x64, STZ, AddressingMode.ZeroPage, 2, 3),
             new(0x74, STZ, AddressingMode.ZeroPageIndexedX, 2, 4),
             new(0x9C, STZ, AddressingMode.Absolute, 3, 4),
             new(0x9E, STZ, AddressingMode.AbsoluteIndexedX, 3, 5),
 
-            // TAX/TAY/TXA/TYA (Transfer)
+            // TAX/TAY/TXA/TYA (Transfer) ☑
             new(0xAA, TAX, AddressingMode.None, 1, 2),
             new(0xA8, TAY, AddressingMode.None, 1, 2),
             new(0x8A, TXA, AddressingMode.None, 1, 2),
             new(0x98, TYA, AddressingMode.None, 1, 2),
 
-            // TRB (Test and Reset Bits)
+            // TRB (Test and Reset Bits) ☑
             new(0x14, TRB, AddressingMode.ZeroPage, 2, 5),
             new(0x1C, TRB, AddressingMode.Absolute, 3, 6),
 
-            // TSB (Test and Set Bits)
+            // TSB (Test and Set Bits) ☑
             new(0x04, TSB, AddressingMode.ZeroPage, 2, 5),
             new(0x0C, TSB, AddressingMode.Absolute, 3, 6),
 
-            // TSX/TXS (Transfer)
+            // TSX/TXS (Transfer) ☑
             new(0xBA, TSX, AddressingMode.None, 1, 2),
             new(0x9A, TXS, AddressingMode.None, 1, 2),
 
-            // WAI (Wait for Interrupt)
+            // WAI (Wait for Interrupt) ☑
             new(0xCB, WAI, AddressingMode.None, 1, 3)
         ];
 

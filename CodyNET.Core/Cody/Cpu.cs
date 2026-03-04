@@ -11,7 +11,7 @@ public enum StepResult
 {
     Success,
     UnknownOpcode,
-    PcOverflow,
+    Stopped,
     EmptyBytecode,
 }
 
@@ -64,7 +64,8 @@ public class Cpu()
     public ushort PC; // 16 bit program counter
     public readonly Memory Memory = new(); // 64KB memory
 
-    public bool wait = false; // Set to true by WAI instruction, can be used by external code to pause execution until an event occurs (e.g. interrupt)
+    public bool Run = false; // Set to false by STP instruction
+    public bool Wait = false; // Set to true by WAI instruction, can be used by external code to pause execution until an event occurs (e.g. interrupt)
     public long CyclesPerSecond = 1_000_000; // 1 MHz, typical for 65C02
     public long TotalCyclesExecuted = 0;
 
@@ -76,6 +77,8 @@ public class Cpu()
     #region CpuState
     public void SetState(CpuState state)
     {
+        Run = true;
+        Wait = false;
         _a = state.A;
         _x = state.X;
         _y = state.Y;
@@ -122,6 +125,7 @@ public class Cpu()
     
     public void Reset()
     {
+        Run = true;
         A = X = Y = 0;
         S = INITIAL_STACK_POINTER;
         Status = new Status()
@@ -170,6 +174,8 @@ public class Cpu()
     private int cycles;
     public StepResult Step()
     {
+        if (!Run)
+            return StepResult.Stopped;
         if (_nextDeadlineTicks == 0)
             InitTiming();
         instruction = OpcodeLookup.FromOpcode(Memory.Read(PC++));
@@ -256,6 +262,9 @@ public class Cpu()
             case RTI: DoRTI(); break;
             case RTS: DoRTS(); break;
             case SBC: DoSBC(); break;
+            case SEC: Status.Carry = true; break;
+            case SED: Status.DecimalMode = true; break;
+            case SEI: Status.InterruptDisable = true; break;
             case SMB0: DoSmb(0); break;
             case SMB1: DoSmb(1); break;
             case SMB2: DoSmb(2); break;
@@ -264,26 +273,22 @@ public class Cpu()
             case SMB5: DoSmb(5); break;
             case SMB6: DoSmb(6); break;
             case SMB7: DoSmb(7); break;
-            
+            case STA: DoSTA(); break;
+            case STP: Run = false; break;
             case STX: DoSTX(); break;
             case STY: DoSTY(); break;
             case STZ: DoSTZ(); break;
             
             case TAX: DoTAX(); break;
             case TAY: DoTAY(); break;
-            
             case TRB: DoTRB(); break;
             case TSB: DoTSB(); break;
-            
             case TSX: DoTSX(); break;
             case TXA: DoTXA(); break;
             case TXS: DoTXS(); break;
             case TYA: DoTYA(); break;
-            case SEC: Status.Carry = true; break;
-            case SED: Status.DecimalMode = true; break;
-            case SEI: Status.InterruptDisable = true; break;
-            case STA: DoSTA(); break;
-            case WAI: wait = true; break;
+            
+            case WAI: Wait = true; break;
             
             default:
                 return StepResult.UnknownOpcode;
@@ -296,18 +301,10 @@ public class Cpu()
 
     public void RunUntilFinish()
     {
-        StepResult lastResult = StepResult.Success;
-        while (lastResult != StepResult.PcOverflow && lastResult != StepResult.EmptyBytecode)
+        while (Run)
         {
-            lastResult = Step();
-            if (PC == 0)
-            {
-                Log.Debug("PC = 0 detected");
-                // Log.Debug("PC overflow detected, stopping execution.");
-                // break;
-            }
+            Step();
         }
-        Log.Info("Program finished execution.");
     }
     
     #region CPU Instructions
