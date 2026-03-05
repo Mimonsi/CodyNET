@@ -87,7 +87,7 @@ public class KeyState
     }
 }
 
-public class VersatileInterfaceAdapter(KeyState keystate) : IMemoryMappedDevice
+public class VersatileInterfaceAdapter(KeyState KeyState) : IMemoryMappedDevice
 {
     private const ushort VIA_BASE = 0x9F00;
     // VIA register offsets.
@@ -173,8 +173,6 @@ public class VersatileInterfaceAdapter(KeyState keystate) : IMemoryMappedDevice
 
         return (byte)(keys | output);
     }
-
-    public KeyState KeyState = keystate;
 
     /// <summary>
     /// Set the state of the interrupt flag register, which controls which interrupts are currently active.
