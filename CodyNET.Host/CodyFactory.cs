@@ -23,6 +23,10 @@ public static class CodyFactory
         }
 
         Cody cody = new(options, video, screen);
+        if (options.EnableScreen && cody.Keyboard != null)
+        {
+            ScreenHostBridge.SetKeyboard(cody.Keyboard);
+        }
         return cody;
     }
 

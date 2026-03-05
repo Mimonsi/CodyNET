@@ -73,10 +73,7 @@ public class KeyState
     public void SetPressed(CodyKeyCode code, bool pressed)
     {
         byte c = (byte)code;
-
-        // Rust:
-        // bit = (code % 5) + 3;
-        // index = code / 5;
+        
         int bit = (c % 5) + 3;   // Bits 3..7
         int index = c / 5;       // 0..7 (for 0..39)
 

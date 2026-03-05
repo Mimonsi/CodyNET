@@ -22,8 +22,14 @@ public partial class MainWindow : Window
         InitializeScreen();
         KeyDown += OnKeyDown;
         KeyUp += OnKeyUp;
+        Opened += OnOpened;
         
         Closed += OnWindowClosed; // Close whole application on window close
+    }
+    
+    private void OnOpened(object? sender, EventArgs e)
+    {
+        screen?.Focus();
     }
 
     private void OnWindowClosed(object? sender, EventArgs e)
@@ -85,7 +91,7 @@ public partial class MainWindow : Window
         bool ctrl  = (e.KeyModifiers & KeyModifiers.Control) != 0;
         bool alt   = (e.KeyModifiers & KeyModifiers.Alt) != 0;
         
-        Log.Verbose("Key down: {Key} (Modifiers: {Modifiers})", e.Key, e.KeyModifiers);
+        Log.Verbose("Key up: {Key} (Modifiers: {Modifiers})", e.Key, e.KeyModifiers);
         Log.Verbose("Translated Key: " + Keyboard.TranslateLogicalKeyDE(e.Key.ToString(), ctrl, shift, alt));
 
         if (keyboard.KeyUp(e.Key.ToString(), ctrl, shift, alt))
