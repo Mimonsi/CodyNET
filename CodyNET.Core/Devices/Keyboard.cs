@@ -12,7 +12,7 @@ public enum CodyModifier
     Meta
 }
 
-public class Keyboard : IMemoryMappedDevice
+public class Keyboard
 {
     private Dictionary<string, (CodyKeyCode, CodyModifier)> logicalMap =
         new()
@@ -208,71 +208,18 @@ public class Keyboard : IMemoryMappedDevice
         }
     }
     
-    
-    public const ushort KEYBOARD_BASE = 0xD100;
-    public const ushort REG_STATUS = KEYBOARD_BASE;
-    public const ushort REG_CODE = KEYBOARD_BASE + 1;
-    public const ushort REG_CONTROL = KEYBOARD_BASE + 2;
+    private KeyState KeyState;
 
-    private readonly ConcurrentQueue<byte> keyQueue = new();
-    private byte lastCode;
-
-    public ushort StartAddress => KEYBOARD_BASE;
-    public ushort EndAddress => REG_CONTROL;
-    public bool SupportsRead => true;
-    public bool SupportsWrite => true;
-
-    // CODY BASIC USES THESE STATES
-    private const ushort ROW0_STATE = 0x10;
-    private const ushort ROW1_STATE = 0x11;
-    private const ushort ROW2_STATE = 0x12;
-    private const ushort ROW3_STATE = 0x13;
-    private const ushort ROW4_STATE = 0x14;
-    private const ushort ROW5_STATE = 0x15;
-    private const ushort JOYSTICK1_STATE = 0x16;
-    private const ushort JOYSTICK2_STATE = 0x17;
-
-    public bool KeysChanged = false;
-    private readonly HashSet<CodyKeyCode> pressedKeys = new();
-    private readonly object keySync = new();
-
-    public Interrupt Update(long cycle)
+    public Keyboard(KeyState keyState)
     {
-        if (KeysChanged)
-        {
-            KeysChanged = false;
-            return new Interrupt() {IRQ = true};
-        }
-        return Interrupt.None;
-    }
-
-    public byte Read(ushort address)
-    {
-        return 0;
-    }
-
-    public void Write(ushort address, byte value)
-    {
-
-    }
-
-    public void GetInputState(Memory memory) // Unused, from old interface
-    {
-        _ = memory;
+        KeyState = keyState;
     }
     
-    private List<CodyKeyCode> PressedKeys = new();
-
     public bool KeyDown(string keyName, bool ctrl, bool shift, bool alt)
     {
         if (physicalMap.TryGetValue(keyName, out (CodyKeyCode code, CodyModifier modifier) mapping))
         {
-            lock (keySync)
-            {
-                pressedKeys.Add(mapping.code);
-            }
-
-            KeysChanged = true;
+            KeyState.SetPressed(mapping.code, true);
             return true;
         }
 
@@ -283,42 +230,10 @@ public class Keyboard : IMemoryMappedDevice
     {
         if (physicalMap.TryGetValue(keyName, out (CodyKeyCode code, CodyModifier modifier) mapping))
         {
-            lock (keySync)
-            {
-                pressedKeys.Remove(mapping.code);
-            }
-
-            KeysChanged = true;
+            KeyState.SetPressed(mapping.code, false);
             return true;
         }
 
         return false;
-    }
-
-    public byte ReadKeyboardRow(byte row)
-    {
-        if (row > 7)
-        {
-            return 0xF8;
-        }
-
-        byte columnState = 0b1_1111;
-
-        lock (keySync)
-        {
-            foreach (var key in pressedKeys)
-            {
-                var keyIndex = (int)key;
-                if (keyIndex / 5 != row)
-                {
-                    continue;
-                }
-
-                var column = keyIndex % 5;
-                columnState = (byte)(columnState & ~(1 << column));
-            }
-        }
-
-        return (byte)((columnState << 3) | (row & 0x07));
     }
 }

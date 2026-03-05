@@ -39,8 +39,9 @@ public class Cody
     public Memory Memory => Cpu.Memory;
     public Debugger? Debugger { get; private set; }
     public IVideoDevice? VID { get; private set; }
+    public VersatileInterfaceAdapter? VIA { get; init; }
+    public Keyboard? Keyboard { get; private set; }
     public IScreenDevice? Screen { get; init; }
-    public Keyboard? Keyboard { get; init; }
     public Profiler? Profiler;
 
     public long FrequencyHz
@@ -59,11 +60,10 @@ public class Cody
     }
 
     // TODO: Cody shouldn't need setup options, as Factory create devices based on options and passes them in. Refactor to remove this dependency.
-    public Cody(CodySetupOptions options, IVideoDevice? videoDevice = null, IScreenDevice? screen = null, Keyboard? keyboard = null)
+    public Cody(CodySetupOptions options, IVideoDevice? videoDevice = null, IScreenDevice? screen = null)
     {
         VID = videoDevice;
         Screen = screen;
-        Keyboard = keyboard;
         
         // 1. Set up CPU (and memory)
         // CPU also initializes memory
@@ -92,17 +92,15 @@ public class Cody
             Memory.RegisterTap(Debugger);
         }
 
+        KeyState keyState = new KeyState();
+        VIA = new VersatileInterfaceAdapter(keyState);
+        Memory.RegisterDevice(VIA);
+        Keyboard = new Keyboard(keyState);
+
         if (VID != null)
         {
             Memory.RegisterDevice(VID);
         }
-
-        if (Keyboard != null)
-        {
-            Memory.RegisterDevice(Keyboard);
-        }
-        
-        Memory.RegisterDevice(new VersatileInterfaceAdapter());
     }
 
     public void Reset()

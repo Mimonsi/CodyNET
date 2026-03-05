@@ -22,9 +22,7 @@ public static class CodyFactory
             video = new VideoDevice();
         }
 
-        var keyboard = CreateKeyboard();
-
-        Cody cody = new(options, video, screen, keyboard);
+        Cody cody = new(options, video, screen);
         return cody;
     }
 
@@ -59,12 +57,5 @@ public static class CodyFactory
 
         Log.Info("Avalonia screen device created successfully.");
         return ScreenHostBridge.ScreenTask.GetAwaiter().GetResult();
-    }
-
-    private static Keyboard? CreateKeyboard()
-    {
-        var keyboard = new Keyboard();
-        ScreenHostBridge.SetKeyboard(keyboard);
-        return keyboard;
     }
 }
