@@ -185,7 +185,7 @@ public class VersatileInterfaceAdapter : IMemoryMappedDevice
     /// <param name="ifr"></param>
     private void SetIfr(byte ifr)
     {
-        ifr = (byte)(ifr & 0x0F);
+        ifr = (byte)(ifr & 0x7F);
         
         if ((ifr & _ier) != 0)
             ifr |= 0x80; // Set bit 7 if any enabled interrupts are active.
