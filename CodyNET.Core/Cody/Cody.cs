@@ -101,6 +101,8 @@ public class Cody
         {
             Memory.RegisterDevice(Keyboard);
         }
+        
+        Memory.RegisterDevice(new VersatileInterfaceAdapter());
     }
 
     public void Reset()

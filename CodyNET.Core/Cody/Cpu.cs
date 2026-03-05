@@ -185,6 +185,8 @@ public class Cpu()
                 PushPC(); 
                 // TODO: Check if true or false, or entirely different method
                 PushFlags(false);
+                Status.InterruptDisable = true;
+                Status.DecimalMode = false;
                 var readAddress = IRQ_VECTOR;
                 if (interrupt.NMI)
                     readAddress = NMI_VECTOR;
@@ -449,7 +451,7 @@ public class Cpu()
         PushFlags(true);
         Status.InterruptDisable = true;
         Status.DecimalMode = false;
-        PC = ReadShort(0xFFFE);
+        PC = ReadShort(IRQ_VECTOR);
         return true;
     }
 
