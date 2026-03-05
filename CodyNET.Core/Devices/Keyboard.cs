@@ -5,56 +5,6 @@ using CodyNET.Core.Interfaces;
 
 namespace CodyNET.Core.Devices;
 
-public enum CodyKeyCode : byte
-{
-    // Row 1
-    KeyQ = 0,
-    KeyE = 1,
-    KeyT = 2,
-    KeyU = 3,
-    KeyO = 4,
-    // Row 2
-    KeyA = 5,
-    KeyD = 6,
-    KeyG = 7,
-    KeyJ = 8,
-    KeyL = 9,
-    // Row 3
-    Cody = 10,
-    KeyX = 11,
-    KeyV = 12,
-    KeyN = 13,
-    Meta = 14,
-    // Row 4
-    KeyZ = 15,
-    KeyC = 16,
-    KeyB = 17,
-    KeyM = 18,
-    Arrow = 19,
-    // Row 5
-    KeyS = 20,
-    KeyF = 21,
-    KeyH = 22,
-    KeyK = 23,
-    Space = 24,
-    // Row 6
-    KeyW = 25,
-    KeyR = 26,
-    KeyY = 27,
-    KeyI = 28,
-    KeyP = 29,
-    Joystick1Up = 30,
-    Joystick1Down = 31,
-    Joystick1Left = 32,
-    Joystick1Right = 33,
-    Joystick1Fire = 34,
-    Joystick2Up = 35,
-    Joystick2Down = 36,
-    Joystick2Left = 37,
-    Joystick2Right = 38,
-    Joystick2Fire = 39,
-}
-
 public enum CodyModifier
 {
     None,
@@ -82,6 +32,12 @@ public class Keyboard : IMemoryMappedDevice
             { "V", (CodyKeyCode.KeyV, CodyModifier.None) },
             { "N", (CodyKeyCode.KeyN, CodyModifier.None) },
             { "LeftAlt", (CodyKeyCode.Meta, CodyModifier.Meta) }, // ALT => Meta
+            { "Z", (CodyKeyCode.KeyZ, CodyModifier.None) },
+            { "C", (CodyKeyCode.KeyC, CodyModifier.None) },
+            { "B", (CodyKeyCode.KeyB, CodyModifier.None) },
+            { "M", (CodyKeyCode.KeyM, CodyModifier.None) },
+            { "Enter", (CodyKeyCode.Arrow, CodyModifier.None) },
+            { "Return", (CodyKeyCode.Arrow, CodyModifier.None) },
             { "S", (CodyKeyCode.KeyS, CodyModifier.None) },
             { "F", (CodyKeyCode.KeyF, CodyModifier.None) },
             { "H", (CodyKeyCode.KeyH, CodyModifier.None) },
@@ -121,6 +77,7 @@ public class Keyboard : IMemoryMappedDevice
             { "B", (CodyKeyCode.KeyB, CodyModifier.None) },
             { "M", (CodyKeyCode.KeyM, CodyModifier.None) },
             { "Enter", (CodyKeyCode.Arrow, CodyModifier.None) },
+            { "Return", (CodyKeyCode.Arrow, CodyModifier.None) },
             { "S", (CodyKeyCode.KeyS, CodyModifier.None) },
             { "F", (CodyKeyCode.KeyF, CodyModifier.None) },
             { "H", (CodyKeyCode.KeyH, CodyModifier.None) },
@@ -265,7 +222,19 @@ public class Keyboard : IMemoryMappedDevice
     public bool SupportsRead => true;
     public bool SupportsWrite => true;
 
+    // CODY BASIC USES THESE STATES
+    private const ushort ROW0_STATE = 0x10;
+    private const ushort ROW1_STATE = 0x11;
+    private const ushort ROW2_STATE = 0x12;
+    private const ushort ROW3_STATE = 0x13;
+    private const ushort ROW4_STATE = 0x14;
+    private const ushort ROW5_STATE = 0x15;
+    private const ushort JOYSTICK1_STATE = 0x16;
+    private const ushort JOYSTICK2_STATE = 0x17;
+
     public bool KeysChanged = false;
+    private readonly HashSet<CodyKeyCode> pressedKeys = new();
+    private readonly object keySync = new();
 
     public Interrupt Update(long cycle)
     {
@@ -296,11 +265,14 @@ public class Keyboard : IMemoryMappedDevice
 
     public bool KeyDown(string keyName, bool ctrl, bool shift, bool alt)
     {
-        // TODO: Update matrix with new state
         if (physicalMap.TryGetValue(keyName, out (CodyKeyCode code, CodyModifier modifier) mapping))
         {
-            // TODO: Refactor and think how it should work
-            PressedKeys.Add(mapping.code);
+            lock (keySync)
+            {
+                pressedKeys.Add(mapping.code);
+            }
+
+            KeysChanged = true;
             return true;
         }
 
@@ -309,6 +281,44 @@ public class Keyboard : IMemoryMappedDevice
     
     public bool KeyUp(string keyName, bool ctrl, bool shift, bool alt)
     {
-        return true;
+        if (physicalMap.TryGetValue(keyName, out (CodyKeyCode code, CodyModifier modifier) mapping))
+        {
+            lock (keySync)
+            {
+                pressedKeys.Remove(mapping.code);
+            }
+
+            KeysChanged = true;
+            return true;
+        }
+
+        return false;
+    }
+
+    public byte ReadKeyboardRow(byte row)
+    {
+        if (row > 7)
+        {
+            return 0xF8;
+        }
+
+        byte columnState = 0b1_1111;
+
+        lock (keySync)
+        {
+            foreach (var key in pressedKeys)
+            {
+                var keyIndex = (int)key;
+                if (keyIndex / 5 != row)
+                {
+                    continue;
+                }
+
+                var column = keyIndex % 5;
+                columnState = (byte)(columnState & ~(1 << column));
+            }
+        }
+
+        return (byte)((columnState << 3) | (row & 0x07));
     }
 }

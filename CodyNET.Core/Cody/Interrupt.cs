@@ -6,6 +6,8 @@ public class Interrupt
     public bool NMI;
 
     public static Interrupt None => new();
+    public static Interrupt IrqReq => new() { IRQ = true };
+    public static Interrupt NmiReq => new() { NMI = true };
 
     public Interrupt Or(Interrupt update)
     {
