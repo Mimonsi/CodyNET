@@ -61,7 +61,7 @@ public class KeyState
     {
         for(int i = 0;i < State.Length; i++)
         {
-            State[i] = 0xFF; // Unpressed keys read as 1.
+            State[i] = 0xF8; // Unpressed keys read as 1.
         }
     }
     
@@ -87,7 +87,7 @@ public class KeyState
     }
 }
 
-public class VersatileInterfaceAdapter(KeyState KeyState) : IMemoryMappedDevice
+public class VersatileInterfaceAdapter(KeyState keyState) : IMemoryMappedDevice
 {
     private const ushort VIA_BASE = 0x9F00;
     // VIA register offsets.
@@ -166,9 +166,9 @@ public class VersatileInterfaceAdapter(KeyState KeyState) : IMemoryMappedDevice
 
         byte output = (byte)(ior & ddr);
         byte keys;
-        lock (KeyState)
+        lock (keyState)
         {
-            keys = KeyState.State[output];
+            keys = keyState.State[output];
         }
 
         return (byte)(keys | output);

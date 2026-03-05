@@ -75,9 +75,10 @@ public partial class MainWindow : Window
         bool alt   = (e.KeyModifiers & KeyModifiers.Alt) != 0;
         
         Log.Verbose("Key down: {Key} (Modifiers: {Modifiers})", e.Key, e.KeyModifiers);
-        Log.Verbose("Translated Key: " + Keyboard.TranslateLogicalKeyDE(e.Key.ToString(), ctrl, shift, alt));
+        var translatedKey = Keyboard.TranslateLogicalKeyDE(e.Key.ToString(), ctrl, shift, alt);
+        Log.Verbose("Translated Key: " + translatedKey, ctrl, shift, alt);
 
-        if (keyboard.KeyDown(e.Key.ToString(), ctrl, shift, alt))
+        if (keyboard.KeyDown(translatedKey, ctrl, shift, alt))
             e.Handled = true;
     }
     
@@ -92,9 +93,10 @@ public partial class MainWindow : Window
         bool alt   = (e.KeyModifiers & KeyModifiers.Alt) != 0;
         
         Log.Verbose("Key up: {Key} (Modifiers: {Modifiers})", e.Key, e.KeyModifiers);
-        Log.Verbose("Translated Key: " + Keyboard.TranslateLogicalKeyDE(e.Key.ToString(), ctrl, shift, alt));
+        var translatedKey = Keyboard.TranslateLogicalKeyDE(e.Key.ToString(), ctrl, shift, alt);
+        Log.Verbose("Translated Key: " + translatedKey, ctrl, shift, alt);
 
-        if (keyboard.KeyUp(e.Key.ToString(), ctrl, shift, alt))
+        if (keyboard.KeyUp(translatedKey, ctrl, shift, alt))
             e.Handled = true;
     }
 }
