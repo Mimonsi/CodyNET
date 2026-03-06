@@ -77,7 +77,7 @@ public partial class MainWindow : Window
         var translatedKey = Keyboard.TranslateLogicalKeyDE(e.Key.ToString(), ctrl, shift, alt);
         Log.Verbose("Translated Key: " + translatedKey, ctrl, shift, alt);
 
-        if (keyboard.KeyDown(translatedKey, ctrl, shift, alt))
+        if (keyboard.KeyDown(e.Key.ToString(), ctrl, shift, alt))
             e.Handled = true;
     }
     
@@ -95,7 +95,7 @@ public partial class MainWindow : Window
         var translatedKey = Keyboard.TranslateLogicalKeyDE(e.Key.ToString(), ctrl, shift, alt);
         Log.Verbose("Translated Key: " + translatedKey, ctrl, shift, alt);
 
-        if (keyboard.KeyUp(translatedKey, ctrl, shift, alt))
+        if (keyboard.KeyUp(e.Key.ToString(), ctrl, shift, alt))
             e.Handled = true;
     }
 }

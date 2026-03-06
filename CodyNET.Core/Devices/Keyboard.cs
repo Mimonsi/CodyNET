@@ -48,10 +48,47 @@ public class Keyboard
             { "Y", (CodyKeyCode.KeyY, CodyModifier.None) },
             { "I", (CodyKeyCode.KeyI, CodyModifier.None) },
             { "P", (CodyKeyCode.KeyP, CodyModifier.None) },
-            { "Up", (CodyKeyCode.Joystick1Up, CodyModifier.None) },
-            // DEAD END: ! would not work...
+
+            { "1", (CodyKeyCode.KeyQ, CodyModifier.Cody) }, // 1 => Q + Cody
+            { "!", (CodyKeyCode.KeyQ, CodyModifier.Meta) }, // ! => Q + Meta
+            { "2", (CodyKeyCode.KeyW, CodyModifier.Cody) }, // 2 => W + Cody
+            { "\"", (CodyKeyCode.KeyW, CodyModifier.Meta) }, // " => W + Meta
+            { "3", (CodyKeyCode.KeyE, CodyModifier.Cody) }, // 3 => E + Cody
+            { "#", (CodyKeyCode.KeyE, CodyModifier.Meta) }, // # => E + Meta
+            { "4", (CodyKeyCode.KeyR, CodyModifier.Cody) }, // 4 => R + Cody
+            { "$", (CodyKeyCode.KeyR, CodyModifier.Meta) }, // $ => R + Meta
+            { "5", (CodyKeyCode.KeyT, CodyModifier.Cody) }, // 5 => T + Cody
+            { "%", (CodyKeyCode.KeyT, CodyModifier.Meta) }, // % => T + Meta
+            { "6", (CodyKeyCode.KeyY, CodyModifier.Cody) }, // 6 => Y + Cody
+            { "^", (CodyKeyCode.KeyY, CodyModifier.Meta) }, // ^ => Y + Meta
+            { "7", (CodyKeyCode.KeyU, CodyModifier.Cody) }, // 7 => U + Cody
+            { "&", (CodyKeyCode.KeyU, CodyModifier.Meta) }, // & => U + Meta
+            { "8", (CodyKeyCode.KeyI, CodyModifier.Cody) }, // 8 => I + Cody
+            { "*", (CodyKeyCode.KeyI, CodyModifier.Meta) }, // * => I + Meta
+            { "9", (CodyKeyCode.KeyO, CodyModifier.Cody) }, // 9 => O + Cody
+            { "(", (CodyKeyCode.KeyO, CodyModifier.Meta) }, // ( => O + Meta
+            { "0", (CodyKeyCode.KeyP, CodyModifier.Cody) }, // 0 => P + Cody
+            { ")", (CodyKeyCode.KeyP, CodyModifier.Meta) }, // ) => P + Meta
+
+            { "@", (CodyKeyCode.KeyA, CodyModifier.Meta) }, // @ => A + Meta
+            { "=", (CodyKeyCode.KeyS, CodyModifier.Meta) }, // = => S + Meta
+            { "-", (CodyKeyCode.KeyD, CodyModifier.Meta) }, // - => D + Meta
+            { "+", (CodyKeyCode.KeyF, CodyModifier.Meta) }, // + => F + Meta
+            { ":", (CodyKeyCode.KeyG, CodyModifier.Meta) }, // : => G + Meta
+            { ";", (CodyKeyCode.KeyH, CodyModifier.Meta) }, // ; => H + Meta
+            { "'", (CodyKeyCode.KeyJ, CodyModifier.Meta) }, // ' => J + Meta
+            { "[", (CodyKeyCode.KeyK, CodyModifier.Meta) }, // [ => K + Meta
+            { "]", (CodyKeyCode.KeyL, CodyModifier.Meta) }, // ] => L + Meta
+            { "\\", (CodyKeyCode.KeyZ, CodyModifier.Meta) }, // \ => Z + Meta
+            { "<", (CodyKeyCode.KeyX, CodyModifier.Meta) }, // < => X + Meta
+            { ">", (CodyKeyCode.KeyC, CodyModifier.Meta) }, // > => C + Meta
+            { ",", (CodyKeyCode.KeyV, CodyModifier.Meta) }, // , => V + Meta
+            { ".", (CodyKeyCode.KeyB, CodyModifier.Meta) }, // . => B + Meta
+            { "?", (CodyKeyCode.KeyN, CodyModifier.Meta) }, // ? => N + Meta
+            { "/", (CodyKeyCode.KeyM, CodyModifier.Meta) }, // / => M + Meta
+            { "Up", (CodyKeyCode.Joystick1Up, CodyModifier.None) }, 
             
-            // Joystick mappings can be added here as needed    
+            // TODO: Joystick mappings can be added here as needed    
         };
     
     private Dictionary<string, (CodyKeyCode, CodyModifier)> physicalMap =
@@ -152,7 +189,17 @@ public class Keyboard
         }
     }
     
-    // German layout
+    /// <summary>
+    /// Translates key input to text written, German Layout:
+    /// Shift + 1 => !
+    /// Shift + 2 => "
+    /// ...
+    /// </summary>
+    /// <param name="keyName"></param>
+    /// <param name="ctrl"></param>
+    /// <param name="shift"></param>
+    /// <param name="alt"></param>
+    /// <returns></returns>
     public static string TranslateLogicalKeyDE(string keyName, bool ctrl, bool shift, bool alt)
     {
         switch (keyName)
@@ -203,9 +250,20 @@ public class Keyboard
                 return keyName;
             case "OemBackslash":
                 return shift ? ">" : "<";
+            case "D3":
+                return shift ? "§" : "3";
             default:
                 return keyName;
         }
+    }
+
+    private string TranslateLogicalKey(string keyName, bool ctrl, bool shift, bool alt, string locale)
+    {
+        return locale switch
+        {
+            "de-DE" => TranslateLogicalKeyDE(keyName, ctrl, shift, alt),
+            _ => TranslateLogicalKeyUS(keyName, ctrl, shift, alt)
+        };
     }
     
     private KeyState KeyState;
@@ -245,7 +303,8 @@ public class Keyboard
         else
         {
             // TODO: Fix logical
-            if (logicalMap.TryGetValue(rawKeyName, out (CodyKeyCode code, CodyModifier modifier) mapping))
+            var translatedKey = TranslateLogicalKey(rawKeyName, ctrl, shift, alt, "de-DE");
+            if (logicalMap.TryGetValue(translatedKey, out (CodyKeyCode code, CodyModifier modifier) mapping))
             {
                 var modifierKey = modifierToKey(mapping.modifier);
                 if (modifierKey.HasValue)
@@ -256,6 +315,7 @@ public class Keyboard
                 Log.Verbose("Setting pressed to {Value} for key {Code} due to key {RawKeyName}", value, mapping.code, rawKeyName);
                 KeyState.SetPressed(mapping.code, value);
             }
+
         }
 
         return false;
