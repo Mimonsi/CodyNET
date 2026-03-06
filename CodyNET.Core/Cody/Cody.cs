@@ -95,7 +95,10 @@ public class Cody
         KeyState keyState = new KeyState();
         VIA = new VersatileInterfaceAdapter(keyState);
         Memory.RegisterDevice(VIA);
-        Keyboard = new Keyboard(keyState);
+        Keyboard = new Keyboard(keyState)
+        {
+            UsePhysicalKeyboard = options.PhysicalKeyboard
+        };
 
         if (VID != null)
         {

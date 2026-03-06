@@ -43,7 +43,6 @@ public partial class MainWindow : Window
         screen = this.FindControl<ScreenControl>("Screen");
         if (screen != null)
         {
-            screen.ScaleFactor = 4.0;
             ScreenHostBridge.SetScreen(screen);
         }
     }

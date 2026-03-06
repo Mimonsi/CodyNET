@@ -209,31 +209,65 @@ public class Keyboard
     }
     
     private KeyState KeyState;
+    public bool UsePhysicalKeyboard = false;
 
     public Keyboard(KeyState keyState)
     {
         KeyState = keyState;
     }
-    
-    public bool KeyDown(string keyName, bool ctrl, bool shift, bool alt)
+
+    private CodyKeyCode? modifierToKey(CodyModifier? modifier)
     {
-        if (physicalMap.TryGetValue(keyName, out (CodyKeyCode code, CodyModifier modifier) mapping))
+        return modifier switch
         {
-            KeyState.SetPressed(mapping.code, true);
-            return true;
+            CodyModifier.Cody => CodyKeyCode.Cody,
+            CodyModifier.Meta => CodyKeyCode.Meta,
+            _ => null
+        };
+    }
+
+    private bool SetKeyState(string rawKeyName, bool ctrl, bool shift, bool alt, bool value)
+    {
+        if (UsePhysicalKeyboard)
+        {
+            if (physicalMap.TryGetValue(rawKeyName, out (CodyKeyCode code, CodyModifier modifier) mapping))
+            {
+                var modifierKey = modifierToKey(mapping.modifier);
+                if (modifierKey.HasValue)
+                {
+                    Log.Verbose("Setting pressed to {Value} for modifier {ModifierKey} due to key {RawKeyName}", value, modifierKey.Value, rawKeyName);
+                    KeyState.SetPressed(modifierKey.Value, value);
+                }
+                Log.Verbose("Setting pressed to {Value} for key {Code} due to key {RawKeyName}", value, mapping.code, rawKeyName);
+                KeyState.SetPressed(mapping.code, value);
+            }
+        }
+        else
+        {
+            // TODO: Fix logical
+            if (logicalMap.TryGetValue(rawKeyName, out (CodyKeyCode code, CodyModifier modifier) mapping))
+            {
+                var modifierKey = modifierToKey(mapping.modifier);
+                if (modifierKey.HasValue)
+                {
+                    Log.Verbose("Setting pressed to {Value} for modifier {ModifierKey} due to key {RawKeyName}", value, modifierKey.Value, rawKeyName);
+                    KeyState.SetPressed(modifierKey.Value, value);
+                }
+                Log.Verbose("Setting pressed to {Value} for key {Code} due to key {RawKeyName}", value, mapping.code, rawKeyName);
+                KeyState.SetPressed(mapping.code, value);
+            }
         }
 
         return false;
     }
     
+    public bool KeyDown(string keyName, bool ctrl, bool shift, bool alt)
+    {
+        return SetKeyState(keyName, ctrl, shift, alt, true);
+    }
+    
     public bool KeyUp(string keyName, bool ctrl, bool shift, bool alt)
     {
-        if (physicalMap.TryGetValue(keyName, out (CodyKeyCode code, CodyModifier modifier) mapping))
-        {
-            KeyState.SetPressed(mapping.code, false);
-            return true;
-        }
-
-        return false;
+        return SetKeyState(keyName, ctrl, shift, alt, false);
     }
 }
