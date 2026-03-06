@@ -38,6 +38,7 @@ public class Keyboard
             { "M", (CodyKeyCode.KeyM, CodyModifier.None) },
             { "Enter", (CodyKeyCode.Arrow, CodyModifier.None) },
             { "Return", (CodyKeyCode.Arrow, CodyModifier.None) },
+            { "Back", (CodyKeyCode.Arrow, CodyModifier.Meta) }, // Backspace => Meta + Arrow
             { "S", (CodyKeyCode.KeyS, CodyModifier.None) },
             { "F", (CodyKeyCode.KeyF, CodyModifier.None) },
             { "H", (CodyKeyCode.KeyH, CodyModifier.None) },
