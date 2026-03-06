@@ -141,132 +141,6 @@ public class Keyboard
             { "NumPad0", (CodyKeyCode.Joystick2Fire, CodyModifier.None) },
         };
     
-    public static string TranslateLogicalKeyUS(string keyName, bool ctrl, bool shift, bool alt)
-    {
-        switch (keyName)
-        {
-            case "D1":
-                return shift ? "!" : "1";
-            case "D2":
-                return shift ? "@" : "2";
-            case "D3":
-                return shift ? "#" : "3";
-            case "D4":
-                return shift ? "$" : "4";
-            case "D5":
-                return shift ? "%" : "5";
-            case "D6":
-                return shift ? "^" : "6";
-            case "D7":
-                return shift ? "&" : "7";
-            case "D8":
-                return shift ? "*" : "8";
-            case "D9":
-                return shift ? "(" : "9";
-            case "D0":
-                return shift ? ")" : "0";
-            case "OemCloseBrackets":
-                return shift ? "+" : "=";
-            case "Oem4":
-                return "-";
-            case "Oem3":
-                return shift ? ":" : ";";
-            case "OemQuotes":
-                return shift ? "\"" : "'";
-            case "OemSemicolon":
-                return "[";
-            case "OemPlus":
-                return "]";
-            case "OemBackslash":
-                return "\\";
-            case "OemComma":
-                return shift ? "<" : ",";
-            case "OemPeriod":
-                return shift ? ">" : ".";
-            case "OemMinus":
-                return shift ? "?" : "/";
-            default:
-                return keyName;
-        }
-    }
-    
-    /// <summary>
-    /// Translates key input to text written, German Layout:
-    /// Shift + 1 => !
-    /// Shift + 2 => "
-    /// ...
-    /// </summary>
-    /// <param name="keyName"></param>
-    /// <param name="ctrl"></param>
-    /// <param name="shift"></param>
-    /// <param name="alt"></param>
-    /// <returns></returns>
-    public static string TranslateLogicalKeyDE(string keyName, bool ctrl, bool shift, bool alt)
-    {
-        switch (keyName)
-        {
-            case "D1":
-                return shift ? "!" : "1";
-            case "D2":
-                return shift ? "\"" : "2";
-            case "D4":
-                return shift ? "$" : "4";
-            case "D5":
-                return shift ? "%" : "5";
-            case "D6":
-                return shift ? "&" : "6";
-            case "D7":
-                return shift ? "/" : "7";
-            case "D8":
-                if (ctrl && alt)
-                    return "[";
-                return shift ? "(" : "8";
-            case "D9":
-                if (ctrl && alt)
-                    return "]";
-                return shift ? ")" : "9";
-            case "D0":
-                return shift ? "=" : "0";
-            case "Q": // @
-                if (ctrl && alt)
-                    return "@";
-                return "Q";
-            case "OemQuestion":
-                return shift ? "'" : "#";
-            case "OemPipe":
-                return shift ? "^" : "Q";
-            case "OemPlus":
-                return shift ? "*" : "+";
-            case "OemMinus":
-                return "-";
-            case "OemComma":
-                return shift ? ";" : ",";
-            case "OemPeriod":
-                return shift ? ":" : ".";
-            case "Oem4":
-                if (ctrl && alt)
-                    return "\\";
-                if (shift)
-                    return "?";
-                return keyName;
-            case "OemBackslash":
-                return shift ? ">" : "<";
-            case "D3":
-                return shift ? "§" : "3";
-            default:
-                return keyName;
-        }
-    }
-
-    private string TranslateLogicalKey(string keyName, bool ctrl, bool shift, bool alt, string locale)
-    {
-        return locale switch
-        {
-            "de-DE" => TranslateLogicalKeyDE(keyName, ctrl, shift, alt),
-            _ => TranslateLogicalKeyUS(keyName, ctrl, shift, alt)
-        };
-    }
-    
     private KeyState KeyState;
     public bool UsePhysicalKeyboard = false;
 
@@ -285,7 +159,7 @@ public class Keyboard
         };
     }
 
-    private bool SetKeyState(string rawKeyName, bool ctrl, bool shift, bool alt, bool value)
+    private bool SetKeyState(string rawKeyName, string keySymbolName, bool value)
     {
         if (UsePhysicalKeyboard)
         {
@@ -294,26 +168,30 @@ public class Keyboard
                 var modifierKey = modifierToKey(mapping.modifier);
                 if (modifierKey.HasValue)
                 {
-                    Log.Verbose("Setting pressed to {Value} for modifier {ModifierKey} due to key {RawKeyName}", value, modifierKey.Value, rawKeyName);
+                    //Log.Verbose("Setting pressed to {Value} for modifier {ModifierKey} due to key {RawKeyName}", value, modifierKey.Value, rawKeyName);
                     KeyState.SetPressed(modifierKey.Value, value);
                 }
-                Log.Verbose("Setting pressed to {Value} for key {Code} due to key {RawKeyName}", value, mapping.code, rawKeyName);
+                //Log.Verbose("Setting pressed to {Value} for key {Code} due to key {RawKeyName}", value, mapping.code, rawKeyName);A
                 KeyState.SetPressed(mapping.code, value);
             }
         }
         else
         {
             // TODO: Fix logical
-            var translatedKey = TranslateLogicalKey(rawKeyName, ctrl, shift, alt, "de-DE");
-            if (logicalMap.TryGetValue(translatedKey, out (CodyKeyCode code, CodyModifier modifier) mapping))
+            var logicalKeyName = keySymbolName.ToUpper(); // Use key symbol for logical mapping, as it represents the character that will be input
+            if (string.IsNullOrEmpty(logicalKeyName))
+            {
+                return false;
+            }
+            if (logicalMap.TryGetValue(logicalKeyName, out (CodyKeyCode code, CodyModifier modifier) mapping))
             {
                 var modifierKey = modifierToKey(mapping.modifier);
                 if (modifierKey.HasValue)
                 {
-                    Log.Verbose("Setting pressed to {Value} for modifier {ModifierKey} due to key {RawKeyName}", value, modifierKey.Value, rawKeyName);
+                    //Log.Verbose("Setting pressed to {Value} for modifier {ModifierKey} due to key {RawKeyName}", value, modifierKey.Value, rawKeyName);
                     KeyState.SetPressed(modifierKey.Value, value);
                 }
-                Log.Verbose("Setting pressed to {Value} for key {Code} due to key {RawKeyName}", value, mapping.code, rawKeyName);
+                //Log.Verbose("Setting pressed to {Value} for key {Code} due to key {RawKeyName}", value, mapping.code, rawKeyName);
                 KeyState.SetPressed(mapping.code, value);
             }
 
@@ -322,13 +200,13 @@ public class Keyboard
         return false;
     }
     
-    public bool KeyDown(string keyName, bool ctrl, bool shift, bool alt)
+    public bool KeyDown(string keyName, string keySymbolName)
     {
-        return SetKeyState(keyName, ctrl, shift, alt, true);
+        return SetKeyState(keyName, keySymbolName, true);
     }
     
-    public bool KeyUp(string keyName, bool ctrl, bool shift, bool alt)
+    public bool KeyUp(string keyName, string keySymbolName)
     {
-        return SetKeyState(keyName, ctrl, shift, alt, false);
+        return SetKeyState(keyName, keySymbolName, false);
     }
 }

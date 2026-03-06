@@ -47,7 +47,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OnScaleMenuClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private void OnScaleMenuClick(object? sender, RoutedEventArgs e)
     {
         if (screen == null || sender is not MenuItem menuItem)
         {
@@ -66,12 +66,10 @@ public partial class MainWindow : Window
         var keyboard = ScreenHostBridge.Keyboard;
         if (keyboard == null)
             return;
-
-        bool shift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
-        bool ctrl  = (e.KeyModifiers & KeyModifiers.Control) != 0;
-        bool alt   = (e.KeyModifiers & KeyModifiers.Alt) != 0;
         
-        if (keyboard.KeyDown(e.Key.ToString(), ctrl, shift, alt))
+        //Log.Verbose("Key down: {Key}, Symbol: {Symbol}, Ctrl: {Ctrl}, Shift: {Shift}, Alt: {Alt}", e.Key, e.KeySymbol, ctrl, shift, alt);
+        
+        if (keyboard.KeyDown(e.Key.ToString(), e.KeySymbol))
             e.Handled = true;
     }
     
@@ -81,11 +79,7 @@ public partial class MainWindow : Window
         if (keyboard == null)
             return;
 
-        bool shift = (e.KeyModifiers & KeyModifiers.Shift) != 0;
-        bool ctrl  = (e.KeyModifiers & KeyModifiers.Control) != 0;
-        bool alt   = (e.KeyModifiers & KeyModifiers.Alt) != 0;
-
-        if (keyboard.KeyUp(e.Key.ToString(), ctrl, shift, alt))
+        if (keyboard.KeyDown(e.Key.ToString(), e.KeySymbol))
             e.Handled = true;
     }
 }
