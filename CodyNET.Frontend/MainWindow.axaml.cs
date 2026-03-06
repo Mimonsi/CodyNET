@@ -63,14 +63,21 @@ public partial class MainWindow : Window
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
-        var keyboard = ScreenHostBridge.Keyboard;
-        if (keyboard == null)
-            return;
-        
-        //Log.Verbose("Key down: {Key}, Symbol: {Symbol}, Ctrl: {Ctrl}, Shift: {Shift}, Alt: {Alt}", e.Key, e.KeySymbol, ctrl, shift, alt);
-        
-        if (keyboard.KeyDown(e.Key.ToString(), e.KeySymbol))
-            e.Handled = true;
+        try
+        {
+            var keyboard = ScreenHostBridge.Keyboard;
+            if (keyboard == null)
+                return;
+
+            //Log.Verbose("Key down: {Key}, Symbol: {Symbol}, Ctrl: {Ctrl}, Shift: {Shift}, Alt: {Alt}", e.Key, e.KeySymbol, ctrl, shift, alt);
+
+            if (keyboard.KeyDown(e.Key.ToString(), e.KeySymbol))
+                e.Handled = true;
+        }
+        catch (Exception x)
+        {
+            Log.Error(x.ToString());
+        }
     }
     
     private void OnKeyUp(object? sender, KeyEventArgs e)
@@ -79,7 +86,7 @@ public partial class MainWindow : Window
         if (keyboard == null)
             return;
 
-        if (keyboard.KeyDown(e.Key.ToString(), e.KeySymbol))
+        if (keyboard.KeyUp(e.Key.ToString(), e.KeySymbol))
             e.Handled = true;
     }
 }

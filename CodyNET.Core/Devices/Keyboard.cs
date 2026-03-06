@@ -159,7 +159,7 @@ public class Keyboard
         };
     }
 
-    private bool SetKeyState(string rawKeyName, string keySymbolName, bool value)
+    private bool SetKeyState(string rawKeyName, string? keySymbolName, bool value)
     {
         if (UsePhysicalKeyboard)
         {
@@ -168,44 +168,50 @@ public class Keyboard
                 var modifierKey = modifierToKey(mapping.modifier);
                 if (modifierKey.HasValue)
                 {
-                    //Log.Verbose("Setting pressed to {Value} for modifier {ModifierKey} due to key {RawKeyName}", value, modifierKey.Value, rawKeyName);
                     KeyState.SetPressed(modifierKey.Value, value);
                 }
-                //Log.Verbose("Setting pressed to {Value} for key {Code} due to key {RawKeyName}", value, mapping.code, rawKeyName);A
                 KeyState.SetPressed(mapping.code, value);
             }
         }
         else
         {
-            // TODO: Fix logical
-            var logicalKeyName = keySymbolName.ToUpper(); // Use key symbol for logical mapping, as it represents the character that will be input
-            if (string.IsNullOrEmpty(logicalKeyName))
+            if (!string.IsNullOrEmpty(keySymbolName))
             {
-                return false;
+                var logicalKeyName =
+                    keySymbolName
+                        .ToUpper(); // Use key symbol for logical mapping, as it represents the character that will be input
+                if (logicalMap.TryGetValue(logicalKeyName, out (CodyKeyCode code, CodyModifier modifier) mapping))
+                {
+                    var modifierKey = modifierToKey(mapping.modifier);
+                    if (modifierKey.HasValue)
+                    {
+                        KeyState.SetPressed(modifierKey.Value, value);
+                    }
+                    KeyState.SetPressed(mapping.code, value);
+                    return true;
+                }
             }
-            if (logicalMap.TryGetValue(logicalKeyName, out (CodyKeyCode code, CodyModifier modifier) mapping))
+            if (logicalMap.TryGetValue(rawKeyName, out (CodyKeyCode code, CodyModifier modifier) rawMapping)) // Special keys that don't have a symbol (e.g. Enter, Backspace) can be handled here if needed
             {
-                var modifierKey = modifierToKey(mapping.modifier);
+                var modifierKey = modifierToKey(rawMapping.modifier);
                 if (modifierKey.HasValue)
                 {
-                    //Log.Verbose("Setting pressed to {Value} for modifier {ModifierKey} due to key {RawKeyName}", value, modifierKey.Value, rawKeyName);
                     KeyState.SetPressed(modifierKey.Value, value);
                 }
-                //Log.Verbose("Setting pressed to {Value} for key {Code} due to key {RawKeyName}", value, mapping.code, rawKeyName);
-                KeyState.SetPressed(mapping.code, value);
+                KeyState.SetPressed(rawMapping.code, value);
+                return true;
             }
-
+            Log.Warn("No mapping found for key {RawKeyName} with symbol {KeySymbolName} in logical map", rawKeyName, keySymbolName);
         }
-
         return false;
     }
     
-    public bool KeyDown(string keyName, string keySymbolName)
+    public bool KeyDown(string keyName, string? keySymbolName)
     {
         return SetKeyState(keyName, keySymbolName, true);
     }
     
-    public bool KeyUp(string keyName, string keySymbolName)
+    public bool KeyUp(string keyName, string? keySymbolName)
     {
         return SetKeyState(keyName, keySymbolName, false);
     }
