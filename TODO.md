@@ -3,6 +3,5 @@
 - VID Sprite Support
 - Blanking
 - Interrupts
-- Keyboard
 - UART
 - (Audio)

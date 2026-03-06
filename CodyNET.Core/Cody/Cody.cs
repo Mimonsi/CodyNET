@@ -26,7 +26,7 @@ public sealed record CodyLoadOptions
     public FileInfo? File { get; init; }
     public bool AsCartridge { get; init; }
     public ushort LoadAddress { get; init; } = 0xE000;
-    public bool AutoSetResetVector { get; init; } = false; // [UNUSED] If true, sets reset vector to load address if not explicitly overridden
+    public bool AutoSetResetVector { get; set; } = false; // Only used when cartridge is loaded, set by program
     public ushort? ResetVectorOverride { get; init; }
     public ushort? IrqVectorOverride { get; init; }
     public ushort? NmiVectorOverride { get; init; }
@@ -120,18 +120,19 @@ public class Cody
     public void RunUntilFinish()
     {
         screenStopwatch.Start();
+        StepResult result;
         //Log.Level = LogLevel.Trace;
-        while (true)
+        do
         {
-            Cpu.Step();
-            Profiler.SampleCpu(Cpu.TotalCyclesExecuted, Cpu.CyclesPerSecond);
-            // TODO: Interrupts
+            result = Cpu.Step();
+            Profiler?.SampleCpu(Cpu.TotalCyclesExecuted, Cpu.CyclesPerSecond);
             // TEMP
             if (Debugger is not null && Debugger.IsAtBreakpoint())
             {
                 Log.Info("Execution paused by debugger on PC={PC:X4}", Cpu.PC);
                 //break;
             }
+
             // 60 times per second
             if (screenStopwatch.Elapsed >= TimeSpan.FromSeconds(1.0 / 60))
             {
@@ -140,10 +141,10 @@ public class Cody
                 {
                     var frame = VID.RenderTextFrame(Cpu.Memory);
                     Screen?.RenderFrame(frame);
-                    Profiler.FrameRendered();
+                    Profiler?.FrameRendered();
                 }
             }
-        }
+        } while (result != StepResult.Stopped);
     }
 
     /// <summary>
@@ -267,6 +268,7 @@ public class Cody
 
         var image = new byte[len];
         Buffer.BlockCopy(bytes, 4, image, 0, len);
+        options.AutoSetResetVector = true; // Auto set reset vector to start of cartridge if not explicitly overridden
         return (image, start);
     }
 

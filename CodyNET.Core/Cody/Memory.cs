@@ -35,7 +35,6 @@ public class Memory
 
     public void RegisterTap(IMemoryAccessTapDevice device)
     {
-        Log.Debug($"Registering tap device {device.GetType().Name} for memory access notifications");
         Log.Debug("Registering tap device {DeviceType} for memory access notifications", device.GetType().Name);
         taps.Add(device);
     }
