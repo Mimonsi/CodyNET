@@ -22,9 +22,14 @@
                 <MenuItem Header="Scale 800%" Tag="8.0" Click="OnScaleMenuClick" />
             </MenuItem>
             <MenuItem Header="_Emulation">
-                <MenuItem Header="_Start" />
                 <MenuItem Header="_Pause" />
                 <MenuItem Header="_Reset" />
+            </MenuItem>
+            <MenuItem Header="_Clock">
+                <MenuItem Header="500 _kHz" Tag="500000" Click="OnClockMenuClick" />
+                <MenuItem Header="_1 MHz (Standard)" Tag="1000000" Click="OnClockMenuClick" />
+                <MenuItem Header="_2 MHz" Tag="2000000" Click="OnClockMenuClick" />
+                <MenuItem Header="_Unthrottled" Tag="-1" Click="OnClockMenuClick" />
             </MenuItem>
             <MenuItem Header="_Debug">
                 <MenuItem Header="Show _Debugger" />

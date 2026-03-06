@@ -60,6 +60,20 @@ public partial class MainWindow : Window
             screen.ScaleFactor = scale;
         }
     }
+    
+    private void OnClockMenuClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem menuItem)
+            return;
+
+        if (menuItem.Tag is not string tagValue)
+            return;
+
+        if (!long.TryParse(tagValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out long frequencyHz))
+            return;
+
+        FrontendHostBridge.SetClockFrequency(frequencyHz);
+    }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {

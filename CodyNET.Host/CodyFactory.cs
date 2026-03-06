@@ -23,11 +23,17 @@ public static class CodyFactory
         }
 
         Cody cody = new(options, video, screen);
+        RegisterBindings(cody);
         if (options.EnableScreen && cody.Keyboard != null)
         {
             FrontendHostBridge.SetKeyboard(cody.Keyboard);
         }
         return cody;
+    }
+
+    private static void RegisterBindings(Cody cody)
+    {
+        FrontendHostBridge.RegisterClockFrequencySetter(frequencyHz => cody.FrequencyHz = frequencyHz);
     }
 
     private static IScreenDevice? CreateScreen()

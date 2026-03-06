@@ -11,11 +11,16 @@ public static class FrontendHostBridge
 
     public static Task<IScreenDevice> ScreenTask => screenSource.Task;
     public static Keyboard? Keyboard { get; private set; }
+    
+    // Frontend Bindings
+    private static Action<long>? setClockFrequencyAction;
 
     public static void Reset()
     {
         screenSource = CreateScreenSource();
         Keyboard = null;
+
+        setClockFrequencyAction = null;
     }
 
     public static void SetScreen(IScreenDevice screen)
@@ -26,6 +31,16 @@ public static class FrontendHostBridge
     public static void SetKeyboard(Keyboard keyboard)
     {
         Keyboard = keyboard;
+    }
+    
+    public static void SetClockFrequency(long frequencyHz)
+    {
+        setClockFrequencyAction?.Invoke(frequencyHz);
+    }
+
+    public static void RegisterClockFrequencySetter(Action<long> setter)
+    {
+        setClockFrequencyAction = setter;
     }
 
     public static void SetInitializationError(Exception exception)
