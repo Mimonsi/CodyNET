@@ -5,7 +5,7 @@ using CodyNET.Core.Devices;
 
 namespace CodyNET.Frontend;
 
-public static class ScreenHostBridge
+public static class FrontendHostBridge
 {
     private static TaskCompletionSource<IScreenDevice> screenSource = CreateScreenSource();
 

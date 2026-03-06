@@ -25,7 +25,7 @@ public static class CodyFactory
         Cody cody = new(options, video, screen);
         if (options.EnableScreen && cody.Keyboard != null)
         {
-            ScreenHostBridge.SetKeyboard(cody.Keyboard);
+            FrontendHostBridge.SetKeyboard(cody.Keyboard);
         }
         return cody;
     }
@@ -33,7 +33,7 @@ public static class CodyFactory
     private static IScreenDevice? CreateScreen()
     {
         Log.Debug("Creating Avalonia screen device...");
-        ScreenHostBridge.Reset();
+        FrontendHostBridge.Reset();
         
 
         var uiThread = new Thread(() =>
@@ -44,7 +44,7 @@ public static class CodyFactory
             }
             catch (Exception ex)
             {
-                ScreenHostBridge.SetInitializationError(ex);
+                FrontendHostBridge.SetInitializationError(ex);
             }
         })
         {
@@ -54,12 +54,12 @@ public static class CodyFactory
         
         uiThread.Start();
 
-        if (!ScreenHostBridge.ScreenTask.Wait(ScreenStartupTimeout))
+        if (!FrontendHostBridge.ScreenTask.Wait(ScreenStartupTimeout))
         {
             throw new TimeoutException($"Avalonia screen was not initialized within {ScreenStartupTimeout.TotalSeconds:0} seconds.");
         }
 
         Log.Info("Avalonia screen device created successfully.");
-        return ScreenHostBridge.ScreenTask.GetAwaiter().GetResult();
+        return FrontendHostBridge.ScreenTask.GetAwaiter().GetResult();
     }
 }

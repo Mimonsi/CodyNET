@@ -43,7 +43,7 @@ public partial class MainWindow : Window
         screen = this.FindControl<ScreenControl>("Screen");
         if (screen != null)
         {
-            ScreenHostBridge.SetScreen(screen);
+            FrontendHostBridge.SetScreen(screen);
         }
     }
 
@@ -65,7 +65,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            var keyboard = ScreenHostBridge.Keyboard;
+            var keyboard = FrontendHostBridge.Keyboard;
             if (keyboard == null)
                 return;
 
@@ -82,7 +82,7 @@ public partial class MainWindow : Window
     
     private void OnKeyUp(object? sender, KeyEventArgs e)
     {
-        var keyboard = ScreenHostBridge.Keyboard;
+        var keyboard = FrontendHostBridge.Keyboard;
         if (keyboard == null)
             return;
 
