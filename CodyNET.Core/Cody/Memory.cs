@@ -1,4 +1,5 @@
-﻿using CodyNET.Common.Utils;
+﻿using System.Text;
+using CodyNET.Common.Utils;
 using CodyNET.Core.Interfaces;
 using Math = System.Math;
 
@@ -232,5 +233,35 @@ public class Memory
         }
 
         return interrupt;
+    }
+
+    public string GetMemoryOverview()
+    {
+        // Loop through whole memory and print start and end address of each device in-order
+        
+        // Output format
+        /*
+        0x0000..0x0010: RAM
+        0x0011..0x3FFF: Device A
+        0x4000..0x7FFF: Device B
+        0x8000..0x9FFF: RAM
+        0xA000..0xBFFF: Prop RAM
+         */
+        
+        var sb = new StringBuilder();
+        int currentAddress = 0;
+        var allDevices = devices.OrderBy(d => d.StartAddress).ToList();
+        foreach (var device in allDevices)
+        {
+            if (device.StartAddress > currentAddress)
+            {
+                // There's a gap before this device, which is RAM
+                sb.AppendLine($"0x{currentAddress:X4}..0x{device.StartAddress - 1:X4}: RAM");
+            }
+            sb.AppendLine($"0x{device.StartAddress:X4}..0x{device.EndAddress:X4}: {device.GetType().Name}");
+            currentAddress = device.EndAddress + 1;
+        }
+
+        return sb.ToString();
     }
 }
