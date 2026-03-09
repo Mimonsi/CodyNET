@@ -5,15 +5,15 @@ using CodyNET.Core.Interfaces;
 
 namespace CodyNET.Core.Devices;
 
-public class UartDevice(UartSource? source = null) : IMemoryMappedDevice
+public class UartDevice(ushort startAddress, UartSource? source = null) : IMemoryMappedDevice
 {
-    public ushort StartAddress { get; } = UART1_BASE; // UART1 starts at 0xD480
-    public ushort EndAddress { get; } = UART1_BASE + UART_SIZE - 1; // 32 bytes for UART registers
+    public ushort StartAddress { get; init; } = startAddress;
+    public ushort EndAddress => (ushort)(StartAddress + UART_SIZE - 1);  // 32 bytes for UART registers
     public bool SupportsRead { get; } = true;
     public bool SupportsWrite { get; } = true;
     
-    public const ushort UART1_BASE = 0xD480;
-    public const ushort UART2_BASE = 0xD4A0;
+    //public const ushort UART1_BASE = 0xD480;
+    //public const ushort UART2_BASE = 0xD4A0;
     
     /// <summary> Control register </summary>
     public const ushort UART_CNTL = 0;
@@ -44,6 +44,15 @@ public class UartDevice(UartSource? source = null) : IMemoryMappedDevice
     private RingBuffer _receiveBuffer = new(UART_BUFFER_SIZE);
     private RingBuffer _transmitBuffer = new(UART_BUFFER_SIZE);
     private UartSource _source = source ?? UartSource.Empty;
+    public UartSource Source
+    {
+        get => _source;
+        set
+        {
+            _source = value ?? UartSource.Empty;
+            Log.Info("UART source set to {Source}", _source); // TODO: Check if additional steps are required
+        }
+    }
     public Interrupt Update(long cycle)
     {
         UpdateState();

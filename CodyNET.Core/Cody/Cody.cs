@@ -31,6 +31,7 @@ public sealed record CodyLoadOptions
     public ushort? IrqVectorOverride { get; init; }
     public ushort? NmiVectorOverride { get; init; }
     public FileInfo? Uart1Source { get; init; }
+    public bool FixUartNewlines { get; set; }
 }
 
 public class Cody
@@ -41,6 +42,8 @@ public class Cody
     public IVideoDevice? VID { get; private set; }
     public VersatileInterfaceAdapter? VIA { get; init; }
     public Keyboard? Keyboard { get; private set; }
+    public UartDevice Uart1 { get; private set; }
+    public UartDevice Uart2 { get; private set; }
     public IScreenDevice? Screen { get; init; }
     public Profiler? Profiler;
 
@@ -92,6 +95,7 @@ public class Cody
             Memory.RegisterTap(Debugger);
         }
 
+        // Input Setup (VIA + Keyboard)
         KeyState keyState = new KeyState();
         VIA = new VersatileInterfaceAdapter(keyState);
         Memory.RegisterDevice(VIA);
@@ -99,6 +103,12 @@ public class Cody
         {
             UsePhysicalKeyboard = options.PhysicalKeyboard
         };
+        
+        // Uart Setup: Uart1 is prop plug, Uart2 is extension port (cartridge)
+        Uart1 = new UartDevice(0xD480);
+        Memory.RegisterDevice(Uart1);
+        Uart2 = new UartDevice(0xD4A0);
+        Memory.RegisterDevice(Uart2);
 
         if (VID != null)
         {

@@ -342,7 +342,8 @@ public static class Cli
                 ResetVectorOverride = ParseOptionalHexUShort(parseResult.GetValue(resetVector), nameof(resetVector)),
                 IrqVectorOverride = ParseOptionalHexUShort(parseResult.GetValue(irqVector), nameof(irqVector)),
                 NmiVectorOverride = ParseOptionalHexUShort(parseResult.GetValue(nmiVector), nameof(nmiVector)),
-                //uart1Source = parseResult.GetValue(uart1Source) TODO
+                Uart1Source = ParseFileOption(parseResult.GetValue(uart1Source), nameof(uart1Source)),
+                FixUartNewlines = parseResult.GetValue(fixNewlines)
             };
 
             ExecuteRunCommand(setupOptions, loadOptions);
@@ -413,6 +414,18 @@ public static class Cli
             return parsed;
 
         throw new ArgumentException($"Invalid 16-bit hex value for {paramName}: '{value}'.");
+    }
+    
+    public static FileInfo? ParseFileOption(string? path, string paramName)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return null;
+
+        var fileInfo = new FileInfo(path);
+        if (!fileInfo.Exists)
+            throw new ArgumentException($"File specified in {paramName} does not exist: '{path}'.");
+
+        return fileInfo;
     }
 
     private static Command BuildAssembleCommand(Option<bool> verboseOption)
