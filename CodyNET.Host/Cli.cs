@@ -187,6 +187,21 @@ public static class Cli
             Description = "Enable debugger (interactive)"
         };
         
+        var uart1Source = new Option<string?>("--uart1-source")
+        {
+            Description = "Path of file used to fill the UART1 receive buffer with bytes"
+        };        
+        
+        var uart2Source = new Option<string?>("--uart2-source")
+        {
+            Description = "Path of file used to fill the UART2 receive buffer with bytes"
+        };
+
+        var fixNewlines = new Option<bool>("--fix-newlines")
+        {
+            Description = "Normalize newlines when reading UART text input (CRLF -> LF)"
+        };
+        
         var physicalKeyboard = new Option<bool>("--physical-keyboard")
         {
             Description = "Physical Cody keyboard mapping (ignores host layout)"
@@ -209,6 +224,9 @@ public static class Cli
         };
 
         cmd.Add(debug);
+        cmd.Add(uart1Source);
+        cmd.Add(uart2Source);
+        cmd.Add(fixNewlines);
         cmd.Add(physicalKeyboard);
         cmd.Add(clock);
         cmd.Add(fast);
@@ -225,22 +243,29 @@ public static class Cli
                 EnableDebugger = parseResult.GetValue(debug),
                 PhysicalKeyboard = parseResult.GetValue(physicalKeyboard),
                 FrequencyHz = parseResult.GetValue(fast) ? -1 : ParseClock(parseResult.GetValue(clock)),
-                EnableScreen = !parseResult.GetValue(headless)
+                EnableScreen = !parseResult.GetValue(headless),
             };
             
-            ExecuteBootCommand(setupOptions);
+            var loadOptions = new CodyLoadOptions
+            {
+                Uart1Source = ParseFileOption(parseResult.GetValue(uart1Source), nameof(uart1Source)),
+                Uart2Source = ParseFileOption(parseResult.GetValue(uart2Source), nameof(uart2Source)),
+                FixUartNewlines = parseResult.GetValue(fixNewlines)
+            };
+            
+            ExecuteBootCommand(setupOptions, loadOptions);
             return 0;
         });
 
         return cmd;
     }
 
-    private static void ExecuteBootCommand(CodySetupOptions options)
+    private static void ExecuteBootCommand(CodySetupOptions setupOptions, CodyLoadOptions loadOptions)
     {
         Log.Info("Executing boot command");
         // Create cody and pass screen
-        Cody cody = CodyFactory.CreateCody(options);
-        cody.Boot();
+        Cody cody = CodyFactory.CreateCody(setupOptions);
+        cody.Boot(loadOptions);
     }
 
     private static Command BuildRunCommand(Option<bool> verboseOption)
@@ -277,6 +302,11 @@ public static class Cli
         var uart1Source = new Option<string?>("--uart1-source")
         {
             Description = "Path of file used to fill the UART1 receive buffer with bytes"
+        };        
+        
+        var uart2Source = new Option<string?>("--uart2-source")
+        {
+            Description = "Path of file used to fill the UART2 receive buffer with bytes"
         };
 
         var fixNewlines = new Option<bool>("--fix-newlines")
@@ -312,6 +342,7 @@ public static class Cli
         cmd.Options.Add(irqVector);
         cmd.Options.Add(nmiVector);
         cmd.Options.Add(uart1Source);
+        cmd.Options.Add(uart2Source);
         cmd.Options.Add(fixNewlines);
         cmd.Options.Add(physicalKeyboard);
         cmd.Options.Add(clock);
@@ -343,6 +374,7 @@ public static class Cli
                 IrqVectorOverride = ParseOptionalHexUShort(parseResult.GetValue(irqVector), nameof(irqVector)),
                 NmiVectorOverride = ParseOptionalHexUShort(parseResult.GetValue(nmiVector), nameof(nmiVector)),
                 Uart1Source = ParseFileOption(parseResult.GetValue(uart1Source), nameof(uart1Source)),
+                Uart2Source = ParseFileOption(parseResult.GetValue(uart2Source), nameof(uart2Source)),
                 FixUartNewlines = parseResult.GetValue(fixNewlines)
             };
 
@@ -392,7 +424,6 @@ public static class Cli
         Log.Info("Executing run command");
 
         Cody cody = CodyFactory.CreateCody(setupOptions);
-        // TODO: Uart1Source
         cody.RunBinaryFile(loadOptions);
     }
 

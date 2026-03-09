@@ -11,6 +11,9 @@ public class Memory
     private readonly byte[] prop = new byte[0x4000]; // 16 KB of Prop RAM, for the Propeller microcontroller (0xA000 - 0xDFFF)
     private readonly byte[] rom = new byte[0x2000]; // 8 KB of ROM, for BASIC and other built-in code (0xE000 - 0xFFFF)
     private List<IMemoryMappedDevice> devices = [];
+    // For efficient memory access, each read/write operation checks the exact address to see which device is mapped. This is far more efficient than iterating through all devices each time
+    private readonly IMemoryMappedDevice?[] readDeviceMap = new IMemoryMappedDevice?[ushort.MaxValue + 1];
+    private readonly List<IMemoryMappedDevice>?[] writeDeviceMap = new List<IMemoryMappedDevice>?[ushort.MaxValue + 1];
     // All devices that want to tap into memory access (e.g. for debugging, logging, etc.) can register here and will be notified on every read/write
     private List<IMemoryAccessTapDevice> taps = [];
 
@@ -25,6 +28,7 @@ public class Memory
         Log.Debug("Registering device {DeviceType} at {StartAddress:X4}..{EndAddress:X4} (R:{SupportsRead} W:{SupportsWrite})",
             device.GetType().Name, device.StartAddress, device.EndAddress, device.SupportsRead, device.SupportsWrite);
         devices.Add(device);
+        RebuildDeviceMaps();
     }
     
     public void UnregisterDevice(IMemoryMappedDevice device)
@@ -32,6 +36,40 @@ public class Memory
         Log.Debug("Unregistering device {DeviceType} at {StartAddress:X4}..{EndAddress:X4} (R:{SupportsRead} W:{SupportsWrite})",
             device.GetType().Name, device.StartAddress, device.EndAddress, device.SupportsRead, device.SupportsWrite);
         devices.Remove(device);
+        RebuildDeviceMaps();
+    }
+
+    /// <summary>
+    /// For efficient read/write operations, memory maps
+    /// </summary>
+    private void RebuildDeviceMaps()
+    {
+        Array.Clear(readDeviceMap, 0, readDeviceMap.Length);
+
+        for (int i = 0; i < writeDeviceMap.Length; i++)
+            writeDeviceMap[i]?.Clear();
+
+        for (int i = 0; i < devices.Count; i++)
+        {
+            var device = devices[i];
+            for (int addr = device.StartAddress; addr <= device.EndAddress; addr++)
+            {
+                if (device.SupportsRead && readDeviceMap[addr] == null)
+                    readDeviceMap[addr] = device;
+
+                if (!device.SupportsWrite)
+                    continue;
+
+                var writeTargets = writeDeviceMap[addr];
+                if (writeTargets == null)
+                {
+                    writeTargets = [];
+                    writeDeviceMap[addr] = writeTargets;
+                }
+
+                writeTargets.Add(device);
+            }
+        }
     }
 
     public void RegisterTap(IMemoryAccessTapDevice device)
@@ -159,11 +197,8 @@ public class Memory
     {
         foreach(var tap in taps)
             tap.OnRead(address);
-        var device = devices.FirstOrDefault(d =>
-            d.SupportsRead &&
-            address >= d.StartAddress &&
-            address <= d.EndAddress);
 
+        var device = readDeviceMap[address];
         if (device != null)
             return device.Read(address);
         
@@ -193,12 +228,12 @@ public class Memory
     {
         foreach(var tap in taps)
             tap.OnWrite(address, value);
-        var mapped = devices.Where(d =>
-            d.SupportsWrite && address >= d.StartAddress && address <= d.EndAddress).ToList();
 
-        if (mapped.Count > 0)
+        var mapped = writeDeviceMap[address];
+        if (mapped != null)
         {
-            foreach (var d in mapped) d.Write(address, value);
+            for (int i = 0; i < mapped.Count; i++)
+                mapped[i].Write(address, value);
             return;
         }
         

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using CodyNET.Assembler;
+using CodyNET.Common;
 using CodyNET.Common.Video;
 using CodyNET.Common.Utils;
 using CodyNET.Core.Devices;
@@ -31,6 +32,7 @@ public sealed record CodyLoadOptions
     public ushort? IrqVectorOverride { get; init; }
     public ushort? NmiVectorOverride { get; init; }
     public FileInfo? Uart1Source { get; init; }
+    public FileInfo? Uart2Source { get; init; }
     public bool FixUartNewlines { get; set; }
 }
 
@@ -176,6 +178,16 @@ public class Cody
             throw new FileNotFoundException($"File not found: {file.FullName}");
     }
 
+    /// <summary>
+    /// Loads the given binary file as uart source for the specified UART (1 = prop plug, 2 = cartridge)
+    /// </summary>
+    /// <param name="file"></param>
+    /// <param name="uartNumber"></param>
+    public void LoadUartSource(FileInfo file, int uartNumber = 1)
+    {
+        Uart1.Source = UartSource.FromFile(file);
+    }
+
     public void LoadBinaryFile(CodyLoadOptions options)
     {
         CheckFilePath(options.File);
@@ -190,6 +202,9 @@ public class Cody
         
         options ??= new CodyLoadOptions();
 
+        if (options.Uart1Source != null) // TODO: Check if this is the right place to load UART source
+            LoadUartSource(options.Uart1Source, 1);
+        // Uart2 load here
         var (image, loadAddress) = ParseImage(bytes, options);
         LoadImage(image, loadAddress);
         ApplyVectors(loadAddress, options);
@@ -231,12 +246,13 @@ public class Cody
     /// <summary>
     /// Boots the machine by loading the built-in CodyBASIC ROM.
     /// </summary>
-    public void Boot()
+    public void Boot(CodyLoadOptions? options = null)
     {
         Log.Debug("Booting Cody with CodyBASIC ROM.");
         try
         {
-            var options = new CodyLoadOptions
+            options ??= new CodyLoadOptions();
+            options = options with
             {
                 LoadAddress = 0xE000,
                 AsCartridge = false,
