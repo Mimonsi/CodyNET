@@ -183,9 +183,17 @@ public class Cody
     /// </summary>
     /// <param name="file"></param>
     /// <param name="uartNumber"></param>
-    public void LoadUartSource(FileInfo file, int uartNumber = 1)
+    /// <param name="fixNewlines"></param>
+    public void LoadUartSource(FileInfo file, int uartNumber = 1, bool fixNewlines = false)
     {
-        Uart1.Source = UartSource.FromFile(file);
+        var source = UartSource.FromFile(file, fixNewlines);
+
+        if (uartNumber == 1)
+            Uart1.Source = source;
+        else if (uartNumber == 2)
+            Uart2.Source = source;
+        else
+            throw new ArgumentException("Invalid UART number. Must be 1 or 2.", nameof(uartNumber));
     }
 
     public void LoadBinaryFile(CodyLoadOptions options)
@@ -203,7 +211,9 @@ public class Cody
         options ??= new CodyLoadOptions();
 
         if (options.Uart1Source != null) // TODO: Check if this is the right place to load UART source
-            LoadUartSource(options.Uart1Source, 1);
+            LoadUartSource(options.Uart1Source, 1, options.FixUartNewlines);
+        if (options.Uart2Source != null)
+            LoadUartSource(options.Uart2Source, 2, options.FixUartNewlines);
         // Uart2 load here
         var (image, loadAddress) = ParseImage(bytes, options);
         LoadImage(image, loadAddress);

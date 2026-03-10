@@ -23,12 +23,25 @@ public class UartSource
         return new UartSource(System.Text.Encoding.ASCII.GetBytes(str));
     }
 
-    public static UartSource FromFile(FileInfo file)
+    public static UartSource FromFile(FileInfo file, bool normalizeLineEndings)
     {
         if (!file.Exists)
             throw new FileNotFoundException("UART source file not found", file.FullName);
-        var bytes = File.ReadAllBytes(file.FullName);
-        return new UartSource(bytes);
+
+        var data = new List<byte>();
+
+        foreach (var line in File.ReadLines(file.FullName))
+        {
+            if (string.IsNullOrEmpty(line))
+                continue;
+
+            data.AddRange(System.Text.Encoding.ASCII.GetBytes(line));
+            data.Add((byte)'\n');
+        }
+
+        // CodyBASIC LOAD termination line
+        data.Add((byte)'\n');
+        return new UartSource(data.ToArray());
     }
     
     public int Position => _position;

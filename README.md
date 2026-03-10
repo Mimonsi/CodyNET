@@ -121,3 +121,6 @@ LDA $2000 <- Next instruction
 JSR $FFD2
 [...]
 ```
+
+## Running the emulator
+After starting basic, type LOAD 1,0 to load the UART1-source
