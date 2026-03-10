@@ -4,6 +4,16 @@ CodyNET is a .NET based emulator for the [Cody Computer](https://codycomputer.or
 This implementation is using [iTitus' Cody Emulator](https://github.com/iTitus/cody_emulator) as a reference.
 It aims to enhance the original emulator with extended features.
 
+## Usage
+The emulator can be be double clicked (on windows) or started from the command line. Double clicking or starting will open the interactive console.
+
+Use the command `boot` to start the emulator with default parameters into the Cody BASIC interpreter. Use `help` to see a list of available commands.
+
+## Loading BASIC program
+BASIC programs are loaded using UART. The source file can either be set as run command using `--uart1-source <path>` or set over UI during runtime by clicking on "File" -> "Load UART1 Source" and selecting the file. After attaching the source, type `LOAD 1,0` in the BASIC interpreter to load the program. Then type `RUN` to execute the program.
+
+# Random Development Notes
+
 ## Original features
 - Emulation of Cody Basic and Assembly
 - ...
