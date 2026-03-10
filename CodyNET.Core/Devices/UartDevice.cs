@@ -142,7 +142,7 @@ public class UartDevice(ushort startAddress, UartSource? source = null) : IMemor
                 break;
             // For demonstration, we just log the transmitted byte as a character
             char c = (char)data.Value;
-            Log.Info("UART Transmit: '{c}' ({char})", c, ToPrintable(data.Value));
+            Log.Verbose("UART Transmit: '{c}' ({char})", c, ToPrintable(data.Value));
         }
     }
 

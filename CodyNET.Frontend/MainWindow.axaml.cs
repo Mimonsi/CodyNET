@@ -1,14 +1,17 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CodyNET.Common.Utils;
 using CodyNET.Common.Video;
 using CodyNET.Core.Devices;
 using CodyNET.Frontend.Controls;
+using MsBox.Avalonia;
 
 namespace CodyNET.Frontend;
 
@@ -59,6 +62,49 @@ public partial class MainWindow : Window
         {
             screen.ScaleFactor = scale;
         }
+    }
+    
+    private async void OnLoadUart1Click(object? sender, RoutedEventArgs e)
+    {
+        if (screen == null || sender is not MenuItem menuItem)
+        {
+            return;
+        }
+        var files = await StorageProvider.OpenFilePickerAsync(
+            new FilePickerOpenOptions
+            {
+                Title = "Load UART1 Source",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("BASIC files")
+                    {
+                        Patterns = new[] { "*.bas" }
+                    },
+                    new FilePickerFileType("All files")
+                    {
+                        Patterns = new[] { "*.*" }
+                    }
+                }
+        });
+        
+        if (files.Count == 0)
+            return;
+
+        var path = files[0].TryGetLocalPath();
+        if (path == null)
+            return;
+
+        var fileInfo = new FileInfo(path);
+        FrontendHostBridge.LoadUartSource(fileInfo);
+    }
+    
+    private void MessageBox(string title, string message)
+    {
+        Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            await MessageBoxManager.GetMessageBoxStandard(title, message).ShowAsPopupAsync(this);
+        });
     }
     
     private void OnClockMenuClick(object? sender, RoutedEventArgs e)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using CodyNET.Common.Video;
 using CodyNET.Core.Devices;
@@ -14,6 +15,7 @@ public static class FrontendHostBridge
     
     // Frontend Bindings
     private static Action<long>? setClockFrequencyAction;
+    private static Action<FileInfo>? loadUart1SourceAction;
 
     public static void Reset()
     {
@@ -21,6 +23,7 @@ public static class FrontendHostBridge
         Keyboard = null;
 
         setClockFrequencyAction = null;
+        loadUart1SourceAction = null;
     }
 
     public static void SetScreen(IScreenDevice screen)
@@ -32,16 +35,6 @@ public static class FrontendHostBridge
     {
         Keyboard = keyboard;
     }
-    
-    public static void SetClockFrequency(long frequencyHz)
-    {
-        setClockFrequencyAction?.Invoke(frequencyHz);
-    }
-
-    public static void RegisterClockFrequencySetter(Action<long> setter)
-    {
-        setClockFrequencyAction = setter;
-    }
 
     public static void SetInitializationError(Exception exception)
     {
@@ -52,4 +45,29 @@ public static class FrontendHostBridge
     {
         return new TaskCompletionSource<IScreenDevice>(TaskCreationOptions.RunContinuationsAsynchronously);
     }
+    
+    #region Frontend Bindings
+    
+    public static void RegisterUart1SourceLoader(Action<FileInfo> loader)
+    {
+        loadUart1SourceAction = loader;
+    }
+
+    public static void LoadUartSource(FileInfo fileInfo)
+    {
+        loadUart1SourceAction?.Invoke(fileInfo);
+    }
+    
+    public static void RegisterClockFrequencySetter(Action<long> setter)
+    {
+        setClockFrequencyAction = setter;
+    }
+    
+    public static void SetClockFrequency(long frequencyHz)
+    {
+        setClockFrequencyAction?.Invoke(frequencyHz);
+    }
+    
+    #endregion
+
 }
