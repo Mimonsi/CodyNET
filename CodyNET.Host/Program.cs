@@ -6,59 +6,53 @@ namespace CodyNET.Host;
 
 public class Program
 {
+    [STAThread]
     public static int Main(string[] args)
     {
         Log.TimeSetting = TimeSetting.Relative;
         Log.StartNewFileOnStartup = true;
         Log.Initialize();
-        bool interactive = false;
-        
-        // TODO: Decide start behavior without parameters:
-        // 1. Run Boot command when no parameters are supplied
-        // 2. Start in interactive mode when no parameters are supplied
-        // 3. Show help when no parameters are supplied
 
-        // Filter args: detect -i / --interactive
-        var filteredArgs = new List<string>();
-
-        if (args.Length == 0) // When no arguments are provided, start in interactive mode by default
+        var startupOptions = ParseStartupOptions(args);
+        RootCommand root = Cli.BuildRootCommand();
+        var invocationConfig = new InvocationConfiguration
         {
-            interactive = true;
+            EnableDefaultExceptionHandler = !Debugger.IsAttached
+        };
+
+        if (startupOptions.Interactive)
+        {
+            if (startupOptions.CommandArgs.Length > 0)
+                root.Parse(startupOptions.CommandArgs).Invoke(invocationConfig);
+
+            return InteractiveShell.Run(root, invocationConfig);
         }
-        
+
+        Log.Level = LogLevel.Debug;
+        Log.ConsoleLevel = LogLevel.Debug;
+        Log.Info("Starting logger. Log File Path: {LogFilePath}", Log.LogFilePath!);
+
+        return root.Parse(startupOptions.CommandArgs).Invoke(invocationConfig);
+    }
+
+    private static StartupOptions ParseStartupOptions(string[] args)
+    {
+        var interactive = args.Length == 0;
+        var filteredArgs = new List<string>(args.Length);
+
         foreach (var arg in args)
         {
             if (arg is "-i" or "--interactive")
             {
                 interactive = true;
+                continue;
             }
-            else
-            {
-                filteredArgs.Add(arg);
-            }
-        }
-        
-        RootCommand root = Cli.BuildRootCommand();
-        var invocationConfig = new InvocationConfiguration // if debugger is attached, don't catch exceptions
-        {
-            EnableDefaultExceptionHandler = !Debugger.IsAttached
-        };
 
-        // Interactive REPL
-        if (interactive)
-        {
-            // Optional: execute initial command first
-            if (filteredArgs.Count > 0)
-            {
-                root.Parse(filteredArgs.ToArray()).Invoke(invocationConfig);
-            }
-            return InteractiveShell.Run(root, invocationConfig);
+            filteredArgs.Add(arg);
         }
-        Log.Level = LogLevel.Debug;
-        Log.ConsoleLevel = LogLevel.Debug;
-        Log.Info("Starting logger. Log File Path: {LogFilePath}", Log.LogFilePath!);
 
-        // Normal one-shot CLI
-        return root.Parse(args).Invoke(invocationConfig);
+        return new StartupOptions(interactive, [.. filteredArgs]);
     }
+
+    private sealed record StartupOptions(bool Interactive, string[] CommandArgs);
 }

@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Completions;
 using System.Globalization;
+using CodyNET.Assembler;
 using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
 using CodyNET.Disassembler;
@@ -9,9 +10,25 @@ namespace CodyNET.Host;
 
 public static class Cli
 {
-    private static void SetVerbose()
+    private const string DefaultClock = "1MHz";
+    private const string DefaultLoadAddress = "0xE000";
+    private const string RawFormat = "raw";
+    private const string CartridgeFormat = "cartridge";
+
+    private sealed record ExecutionOptions(
+        Option<bool>? Debug,
+        Option<string?> Uart1Source,
+        Option<string?> Uart2Source,
+        Option<bool> FixNewlines,
+        Option<bool> PhysicalKeyboard,
+        Option<string?> Clock,
+        Option<bool> Fast,
+        Option<bool> Headless);
+    
+    private static void ApplyLogging(ParseResult parseResult, Option<bool> verboseOption)
     {
-        Log.Level = LogLevel.Verbose;
+        if (parseResult.GetValue(verboseOption))
+            Log.Level = LogLevel.Verbose;
     }
     
     public static RootCommand BuildRootCommand()
@@ -49,8 +66,7 @@ public static class Cli
         
         var recursive = new Option<bool>("--recursive", ["-r"])
         {
-            Description = "Shows number of files in subdirectories",
-            DefaultValueFactory = _ => false
+            Description = "Shows number of files in subdirectories"
         };
         cmd.Add(recursive);
         
@@ -172,20 +188,21 @@ public static class Cli
                     lines.Add($"  {Path.GetFileName(subdir)}/: {count} files");
             }
         }
-
-        // TODO: Build cody using factory/builder
         
         return string.Join(Environment.NewLine, lines);
     }
 
-    private static Command BuildBootCommand(Option<bool> verboseOption)
+    private static ExecutionOptions AddExecutionOptions(Command cmd, bool includeDebug)
     {
-        var cmd = new Command("boot", "Boot the emulator with the built-in CodyBASIC");
-        
-        var debug = new Option<bool>("--debug", ["-d"])
+        Option<bool>? debug = null;
+        if (includeDebug)
         {
-            Description = "Enable debugger (interactive)"
-        };
+            debug = new Option<bool>("--debug", ["-d"])
+            {
+                Description = "Enable debugger (interactive)"
+            };
+            cmd.Add(debug);
+        }
         
         var uart1Source = new Option<string?>("--uart1-source")
         {
@@ -210,7 +227,7 @@ public static class Cli
         var clock = new Option<string?>("--clock")
         {
             Description = "Target CPU clock rate (e.g. 1000000, 1MHz, 500kHz)",
-            DefaultValueFactory = _ => "1MHz" // Default to 1 MHz
+            DefaultValueFactory = _ => DefaultClock
         };
 
         var fast = new Option<bool>("--fast")
@@ -231,29 +248,45 @@ public static class Cli
         cmd.Add(clock);
         cmd.Add(fast);
         cmd.Add(headless);
+        
+        return new ExecutionOptions(debug, uart1Source, uart2Source, fixNewlines, physicalKeyboard, clock, fast, headless);
+    }
 
+    private static CodySetupOptions BuildSetupOptions(ParseResult parseResult, ExecutionOptions options)
+    {
+        return new CodySetupOptions
+        {
+            EnableDebugger = options.Debug is not null && parseResult.GetValue(options.Debug),
+            PhysicalKeyboard = parseResult.GetValue(options.PhysicalKeyboard),
+            FrequencyHz = parseResult.GetValue(options.Fast)
+                ? -1
+                : CliValueParser.ParseClock(parseResult.GetValue(options.Clock)),
+            EnableScreen = !parseResult.GetValue(options.Headless)
+        };
+    }
+
+    private static CodyLoadOptions BuildSharedLoadOptions(ParseResult parseResult, ExecutionOptions options)
+    {
+        return new CodyLoadOptions
+        {
+            Uart1Source = CliValueParser.ParseExistingFile(parseResult.GetValue(options.Uart1Source), options.Uart1Source.Name),
+            Uart2Source = CliValueParser.ParseExistingFile(parseResult.GetValue(options.Uart2Source), options.Uart2Source.Name),
+            FixUartNewlines = parseResult.GetValue(options.FixNewlines)
+        };
+    }
+
+    private static Command BuildBootCommand(Option<bool> verboseOption)
+    {
+        var cmd = new Command("boot", "Boot the emulator with the built-in CodyBASIC");
+        var executionOptions = AddExecutionOptions(cmd, includeDebug: true);
         
         cmd.SetAction(parseResult =>
         {
-            if (parseResult.GetValue(verboseOption))
-                SetVerbose();
-            
-            var setupOptions = new CodySetupOptions
-            {
-                EnableDebugger = parseResult.GetValue(debug),
-                PhysicalKeyboard = parseResult.GetValue(physicalKeyboard),
-                FrequencyHz = parseResult.GetValue(fast) ? -1 : ParseClock(parseResult.GetValue(clock)),
-                EnableScreen = !parseResult.GetValue(headless),
-            };
-            
-            var loadOptions = new CodyLoadOptions
-            {
-                Uart1Source = ParseFileOption(parseResult.GetValue(uart1Source), nameof(uart1Source)),
-                Uart2Source = ParseFileOption(parseResult.GetValue(uart2Source), nameof(uart2Source)),
-                FixUartNewlines = parseResult.GetValue(fixNewlines)
-            };
-            
-            ExecuteBootCommand(setupOptions, loadOptions);
+            ApplyLogging(parseResult, verboseOption);
+            ExecuteBootCommand(
+                BuildSetupOptions(parseResult, executionOptions),
+                BuildSharedLoadOptions(parseResult, executionOptions));
+
             return 0;
         });
 
@@ -263,7 +296,6 @@ public static class Cli
     private static void ExecuteBootCommand(CodySetupOptions setupOptions, CodyLoadOptions loadOptions)
     {
         Log.Info("Executing boot command");
-        // Create cody and pass screen
         Cody cody = CodyFactory.CreateCody(setupOptions);
         cody.Boot(loadOptions);
     }
@@ -277,146 +309,51 @@ public static class Cli
             Description = "Binary file (raw or cartridge image if --as-cartridge is set)"
         }.AcceptExistingOnly();
         cmd.Arguments.Add(fileArg);
-        
-        var debug = new Option<bool>("--debug", ["-d"])
-        {
-            Description = "Enable debugger (interactive)"
-        };
 
         var asCartridge = new Option<bool>("--as-cartridge")
         {
-            Description = "Load <file> as cartridge (expects cartridge header)",
-            DefaultValueFactory = _ => false
+            Description = "Load <file> as cartridge (expects cartridge header)"
         };
 
         var loadAddress = new Option<string>("--load-address", ["-l"])
         {
-            Description = "Load address for raw binaries (default: 0xE000)",
-            DefaultValueFactory = _ => "0xE000"
+            Description = $"Load address for raw binaries",
+            DefaultValueFactory = _ => DefaultLoadAddress
         };
 
         var resetVector = new Option<string?>("--reset-vector") { Description = "Override Reset Vector (0xFFFC)" };
         var irqVector = new Option<string?>("--irq-vector") { Description = "Override IRQ Vector (0xFFFE)" };
         var nmiVector = new Option<string?>("--nmi-vector") { Description = "Override NMI Vector (0xFFFA)" };
-
-        var uart1Source = new Option<string?>("--uart1-source")
-        {
-            Description = "Path of file used to fill the UART1 receive buffer with bytes"
-        };        
+        var executionOptions = AddExecutionOptions(cmd, includeDebug: true);
         
-        var uart2Source = new Option<string?>("--uart2-source")
-        {
-            Description = "Path of file used to fill the UART2 receive buffer with bytes"
-        };
-
-        var fixNewlines = new Option<bool>("--fix-newlines")
-        {
-            Description = "Normalize newlines when reading UART text input (CRLF -> LF)"
-        };
-
-        var physicalKeyboard = new Option<bool>("--physical-keyboard")
-        {
-            Description = "Physical Cody keyboard mapping (ignores host layout)"
-        };
-
-        var clock = new Option<string?>("--clock")
-        {
-            Description = "Target CPU clock rate (e.g. 1000000, 1MHz, 500kHz)",
-            DefaultValueFactory = _ => "1MHz"
-        };
-
-        var fast = new Option<bool>("--fast")
-        {
-            Description = "Run as fast as possible (ignores --clock)"
-        };
-        
-        var headless = new Option<bool>("--headless")
-        {
-            Description = "Run without video output"
-        };
-
-        cmd.Options.Add(debug);
         cmd.Options.Add(asCartridge);
         cmd.Options.Add(loadAddress);
         cmd.Options.Add(resetVector);
         cmd.Options.Add(irqVector);
         cmd.Options.Add(nmiVector);
-        cmd.Options.Add(uart1Source);
-        cmd.Options.Add(uart2Source);
-        cmd.Options.Add(fixNewlines);
-        cmd.Options.Add(physicalKeyboard);
-        cmd.Options.Add(clock);
-        cmd.Options.Add(fast);
-        cmd.Options.Add(headless);
 
         cmd.SetAction(parseResult =>
         {
-            if (parseResult.GetValue(verboseOption))
-                SetVerbose();
+            ApplyLogging(parseResult, verboseOption);
 
             var inputFile = parseResult.GetValue(fileArg)
-                ?? throw new ArgumentException("Missing input file argument.");
-            var parsedLoadAddress = parseResult.GetValue(loadAddress) ?? "0xE000";
+                            ?? throw new ArgumentException("Missing input file argument.");
 
-            var setupOptions = new CodySetupOptions()
-            {
-                EnableDebugger = parseResult.GetValue(debug),
-                PhysicalKeyboard = parseResult.GetValue(physicalKeyboard),
-                FrequencyHz = parseResult.GetValue(fast) ? -1 : ParseClock(parseResult.GetValue(clock)),
-                EnableScreen = !parseResult.GetValue(headless)
-            };
-            var loadOptions = new CodyLoadOptions()
+            var loadOptions = BuildSharedLoadOptions(parseResult, executionOptions) with
             {
                 File = inputFile,
                 AsCartridge = parseResult.GetValue(asCartridge),
-                LoadAddress = ParseHexUShort(parsedLoadAddress, nameof(loadAddress)),
-                ResetVectorOverride = ParseOptionalHexUShort(parseResult.GetValue(resetVector), nameof(resetVector)),
-                IrqVectorOverride = ParseOptionalHexUShort(parseResult.GetValue(irqVector), nameof(irqVector)),
-                NmiVectorOverride = ParseOptionalHexUShort(parseResult.GetValue(nmiVector), nameof(nmiVector)),
-                Uart1Source = ParseFileOption(parseResult.GetValue(uart1Source), nameof(uart1Source)),
-                Uart2Source = ParseFileOption(parseResult.GetValue(uart2Source), nameof(uart2Source)),
-                FixUartNewlines = parseResult.GetValue(fixNewlines)
+                LoadAddress = CliValueParser.ParseAddress(parseResult.GetValue(loadAddress), loadAddress.Name),
+                ResetVectorOverride = CliValueParser.ParseOptionalAddress(parseResult.GetValue(resetVector), resetVector.Name),
+                IrqVectorOverride = CliValueParser.ParseOptionalAddress(parseResult.GetValue(irqVector), irqVector.Name),
+                NmiVectorOverride = CliValueParser.ParseOptionalAddress(parseResult.GetValue(nmiVector), nmiVector.Name)
             };
 
-            ExecuteRunCommand(setupOptions, loadOptions);
+            ExecuteRunCommand(BuildSetupOptions(parseResult, executionOptions), loadOptions);
             return 0;
         });
 
         return cmd;
-    }
-
-    private static long ParseClock(string? clock)
-    {
-        if (string.IsNullOrWhiteSpace(clock))
-            return 1_000_000;
-
-        var text = clock.Trim().ToLowerInvariant();
-        long multiplier;
-
-        if (text.EndsWith("mhz", StringComparison.Ordinal))
-        {
-            multiplier = 1_000_000;
-            text = text[..^3];
-        }
-        else if (text.EndsWith("khz", StringComparison.Ordinal))
-        {
-            multiplier = 1_000;
-            text = text[..^3];
-        }
-        else if (text.EndsWith("hz", StringComparison.Ordinal))
-        {
-            multiplier = 1;
-            text = text[..^2];
-        }
-        else
-        {
-            multiplier = 1;
-        }
-
-        if (long.TryParse(text, out long value) && value > 0)
-            return value * multiplier;
-
-        throw new ArgumentException($"Invalid clock format: {clock}");
     }
 
     private static void ExecuteRunCommand(CodySetupOptions setupOptions, CodyLoadOptions loadOptions)
@@ -427,51 +364,21 @@ public static class Cli
         cody.RunBinaryFile(loadOptions);
     }
 
-    private static ushort? ParseOptionalHexUShort(string? value, string paramName)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return null;
-
-        return ParseHexUShort(value, paramName);
-    }
-
-    private static ushort ParseHexUShort(string value, string paramName)
-    {
-        var text = value.Trim();
-        if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-            text = text[2..];
-
-        if (ushort.TryParse(text, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out ushort parsed))
-            return parsed;
-
-        throw new ArgumentException($"Invalid 16-bit hex value for {paramName}: '{value}'.");
-    }
-    
-    public static FileInfo? ParseFileOption(string? path, string paramName)
-    {
-        if (string.IsNullOrWhiteSpace(path))
-            return null;
-
-        var fileInfo = new FileInfo(path);
-        if (!fileInfo.Exists)
-            throw new ArgumentException($"File specified in {paramName} does not exist: '{path}'.");
-
-        return fileInfo;
-    }
-
     private static Command BuildAssembleCommand(Option<bool> verboseOption)
     {
         var cmd = new Command("assemble", "Assemble a source file into a binary");
 
         var fileArg = new Argument<FileInfo>("file")
         {
-            Description = "Assembly source file (.s)"
+            Description = "Assembly source file (.s or .asm)"
         }.AcceptExistingOnly();
 
         fileArg.CompletionSources.Add(_ =>
         {
-            return Directory.GetFiles(Directory.GetCurrentDirectory(), "*.s")
-                .Select(f => new CompletionItem(f));
+            return Directory.EnumerateFiles(Directory.GetCurrentDirectory(), "*.*")
+                .Where(file => file.EndsWith(".s", StringComparison.OrdinalIgnoreCase) ||
+                               file.EndsWith(".asm", StringComparison.OrdinalIgnoreCase))
+                .Select(file => new CompletionItem(file));
         });
 
         cmd.Arguments.Add(fileArg);
@@ -481,20 +388,21 @@ public static class Cli
             Description = "Output binary path (default: <input>.bin)"
         }.AcceptLegalFileNamesOnly();
 
-        var format = new Option<string?>("--format")
+        var format = new Option<string>("--format")
         {
-            Description = "Output format: raw | cartridge"
+            Description = "Output format: raw | cartridge",
+            DefaultValueFactory = _ => RawFormat
         };
 
         var loadAddress = new Option<string>("--load-address", ["-l"])
         {
-            Description = "Load address metadata / ORG for raw output (default: 0xE000)",
-            DefaultValueFactory = _ => "0xE000"
+            Description = "Load address used when creating cartridge output",
+            DefaultValueFactory = _ => DefaultLoadAddress
         };
 
         var warnAsError = new Option<bool>("--warn-as-error")
         {
-            Description = "Treat warnings as errors"
+            Description = "Treat assembler warnings as errors when supported by the underlying assembler"
         };
 
         cmd.Options.Add(output);
@@ -504,8 +412,7 @@ public static class Cli
 
         cmd.SetAction(parseResult =>
         {
-            if (parseResult.GetValue(verboseOption))
-                SetVerbose();
+            ApplyLogging(parseResult, verboseOption);
 
             var inputFile = parseResult.GetValue(fileArg)
                 ?? throw new ArgumentException("Missing input file argument.");
@@ -530,13 +437,22 @@ public static class Cli
         string? loadAddress,
         bool warnAsError)
     {
-        _ = inputFile;
-        _ = outputFile;
-        _ = format;
-        _ = loadAddress;
-        _ = warnAsError;
-        // TODO: Implement assembler call
-        Log.Info("Executing assemble command");
+        if (warnAsError)
+            throw new NotSupportedException("--warn-as-error is not supported by the current 64tass integration.");
+
+        var normalizedFormat = NormalizeFormat(format);
+        var program = TassAssembler.AssembleFile(inputFile.FullName);
+        if (program.Length == 0)
+            throw new InvalidOperationException("Assembler produced no output bytes.");
+
+        var targetFile = outputFile ?? new FileInfo(Path.ChangeExtension(inputFile.FullName, ".bin"));
+
+        byte[] outputBytes = normalizedFormat == CartridgeFormat
+            ? CreateCartridgeImage(program, CliValueParser.ParseAddress(loadAddress, "load-address"))
+            : program;
+
+        File.WriteAllBytes(targetFile.FullName, outputBytes);
+        Log.Info("Assembled {InputFile} -> {OutputFile} ({Format})", inputFile.FullName, targetFile.FullName, normalizedFormat);
     }
 
     private static Command BuildDisassembleCommand(Option<bool> verboseOption)
@@ -556,8 +472,8 @@ public static class Cli
 
         var loadAddress = new Option<string>("--load-address", ["-l"])
         {
-            Description = "Base address for raw binaries (default: 0xE000)",
-            DefaultValueFactory = _ => "0xE000"
+            Description = "Base address for raw binaries (accepts decimal, 0x-prefixed hex, or bare hex like E000)",
+            DefaultValueFactory = _ => DefaultLoadAddress
         };
 
         var output = new Option<FileInfo?>("--output", ["-o"])
@@ -571,8 +487,7 @@ public static class Cli
 
         cmd.SetAction(parseResult =>
         {
-            if (parseResult.GetValue(verboseOption))
-                SetVerbose();
+            ApplyLogging(parseResult, verboseOption);
 
             var inputFile = parseResult.GetValue(fileArg)
                 ?? throw new ArgumentException("Missing input file argument.");
@@ -598,7 +513,39 @@ public static class Cli
         _ = asCartridge;
         _ = loadAddress;
         Log.Info("Executing disassemble command");
-        // TODO: Include cartridge header parsing if asCartridge is true (override loadAddress) and load address
-        CodyDisassembler.DisassembleFile(inputFile, outputFile);
+        CodyDisassembler.DisassembleFile(
+            inputFile,
+            outputFile,
+            new CodyDisassemblerOptions
+            {
+                AsCartridge = asCartridge,
+                LoadAddress = CliValueParser.ParseAddress(loadAddress, "load-address")
+            });
+    }
+    
+    private static string NormalizeFormat(string? format)
+    {
+        var normalized = (format ?? RawFormat).Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            RawFormat => RawFormat,
+            CartridgeFormat => CartridgeFormat,
+            _ => throw new ArgumentException($"Invalid format '{format}'. Supported values: {RawFormat}, {CartridgeFormat}.")
+        };
+    }
+
+    private static byte[] CreateCartridgeImage(byte[] program, ushort loadAddress)
+    {
+        var endAddress = loadAddress + program.Length - 1;
+        if (endAddress > ushort.MaxValue)
+            throw new ArgumentOutOfRangeException(nameof(loadAddress), "Program does not fit into a 16-bit cartridge address range.");
+
+        var output = new byte[program.Length + 4];
+        output[0] = (byte)(loadAddress & 0xFF);
+        output[1] = (byte)(loadAddress >> 8);
+        output[2] = (byte)(endAddress & 0xFF);
+        output[3] = (byte)(endAddress >> 8);
+        Buffer.BlockCopy(program, 0, output, 4, program.Length);
+        return output;
     }
 }
