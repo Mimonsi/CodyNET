@@ -149,4 +149,9 @@ public partial class MainWindow : Window
         if (keyboard.KeyUp(e.Key.ToString(), e.KeySymbol))
             e.Handled = true;
     }
+
+    private void OnToggleDebuggerClick(object? sender, RoutedEventArgs e)
+    {
+        throw new NotImplementedException();
+    }
 }

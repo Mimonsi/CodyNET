@@ -1,13 +1,12 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="using:CodyNET.Frontend.Controls"
-        xmlns:controls1="clr-namespace:CodyNET.Frontend.Controls"
         x:Class="CodyNET.Frontend.MainWindow"
         Title="Cody Computer Emulator"
         SizeToContent="WidthAndHeight"
         Background="#1E1E1E">
     
-    <DockPanel>
+    <DockPanel LastChildFill="True"> <!-- Header Bar -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="_Load UART1.." Click="OnLoadUart1Click" />
@@ -21,11 +20,7 @@
                 <MenuItem Header="Scale 600%" Tag="6.0" Click="OnScaleMenuClick" />
                 <MenuItem Header="Scale 800%" Tag="8.0" Click="OnScaleMenuClick" />
             </MenuItem>
-            <MenuItem Header="_Emulation">
-                <MenuItem Header="_Pause" />
-                <MenuItem Header="_Reset" />
-            </MenuItem>
-            <MenuItem Header="_Clock">
+            <MenuItem Header="_Settings">
                 <MenuItem Header="500 _kHz" Tag="500000" Click="OnClockMenuClick" />
                 <MenuItem Header="_1 MHz (Standard)" Tag="1000000" Click="OnClockMenuClick" />
                 <MenuItem Header="_2 MHz" Tag="2000000" Click="OnClockMenuClick" />
@@ -33,15 +28,27 @@
                 <MenuItem Header="_Unthrottled" Tag="-1" Click="OnClockMenuClick" />
             </MenuItem>
             <MenuItem Header="_Debug">
-                <MenuItem Header="Show _Debugger" />
+                <MenuItem x:Name="ShowDebuggerMenuItem"
+                          Header="Show _Debugger"
+                          IsChecked="True"
+                          Click="OnToggleDebuggerClick" />
             </MenuItem>
         </Menu>
+        
+        <Border DockPanel.Dock="Bottom" Background="#0D82D2" Padding="12,8"> <!-- Footer Bar --> 
+            <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
+                <TextBlock x:Name="FooterModeText" Text="8-bit CPU Emulator" Foreground="White" FontWeight="SemiBold" />
+                <TextBlock Grid.Column="1" Text="•" Margin="14,0" Foreground="#B9E7FF" />
+                <TextBlock x:Name="FooterStatusText" Grid.Column="2" Text="Status: Stopped" Foreground="White" FontWeight="SemiBold" />
+                <TextBlock x:Name="FooterRightText" Grid.Column="4" Text="Line 1/1337" Foreground="White" FontWeight="SemiBold" />
+            </Grid>
+        </Border>
         
         <Border Padding="20" DockPanel.Dock="Top">
             <Border BorderBrush="Black" 
                     BorderThickness="20" 
                     Padding="10">
-                <controls1:ScreenControl x:Name="Screen" Focusable="True" />
+                <controls:ScreenControl x:Name="Screen" Focusable="True" />
             </Border>
         </Border>
     </DockPanel>
