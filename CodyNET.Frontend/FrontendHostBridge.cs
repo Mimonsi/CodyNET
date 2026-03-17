@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using CodyNET.Common.Video;
+using CodyNET.Core.Cody;
 using CodyNET.Core.Devices;
 
 namespace CodyNET.Frontend;
@@ -16,6 +17,7 @@ public static class FrontendHostBridge
     // Frontend Bindings
     private static Action<long>? setClockFrequencyAction;
     private static Action<FileInfo>? loadUart1SourceAction;
+    private static Func<CpuRegisterSnapshot>? getRegisterSnapshotFunc;
 
     public static void Reset()
     {
@@ -24,6 +26,7 @@ public static class FrontendHostBridge
 
         setClockFrequencyAction = null;
         loadUart1SourceAction = null;
+        getRegisterSnapshotFunc = null;
     }
 
     public static void SetScreen(IScreenDevice screen)
@@ -66,6 +69,16 @@ public static class FrontendHostBridge
     public static void SetClockFrequency(long frequencyHz)
     {
         setClockFrequencyAction?.Invoke(frequencyHz);
+    }
+
+    public static void RegisterRegisterSnapshotProvider(Func<CpuRegisterSnapshot> provider)
+    {
+        getRegisterSnapshotFunc = provider;
+    }
+
+    public static CpuRegisterSnapshot? GetRegisterSnapshot()
+    {
+        return getRegisterSnapshotFunc?.Invoke();
     }
     
     #endregion

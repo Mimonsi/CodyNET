@@ -17,12 +17,16 @@ namespace CodyNET.Frontend;
 
 public partial class MainWindow : Window
 {
+    private static readonly TimeSpan RegisterRefreshInterval = TimeSpan.FromMilliseconds(100);
+
     private ScreenControl? screen;
+    private DispatcherTimer? registerRefreshTimer;
     
     public MainWindow()
     {
         InitializeComponent();
         InitializeScreen();
+        InitializeRegisterPanel();
         KeyDown += OnKeyDown;
         KeyUp += OnKeyUp;
         Opened += OnOpened;
@@ -33,10 +37,13 @@ public partial class MainWindow : Window
     private void OnOpened(object? sender, EventArgs e)
     {
         screen?.Focus();
+        RefreshRegisterValues();
+        registerRefreshTimer?.Start();
     }
 
     private void OnWindowClosed(object? sender, EventArgs e)
     {
+        registerRefreshTimer?.Stop();
         Log.Info("Main window closed. Exiting application.");
         Environment.Exit(0);
     }
@@ -47,6 +54,59 @@ public partial class MainWindow : Window
         if (screen != null)
         {
             FrontendHostBridge.SetScreen(screen);
+        }
+    }
+
+    private void InitializeRegisterPanel()
+    {
+        registerRefreshTimer = new DispatcherTimer
+        {
+            Interval = RegisterRefreshInterval
+        };
+        registerRefreshTimer.Tick += (_, _) => RefreshRegisterValues();
+    }
+
+    private void RefreshRegisterValues()
+    {
+        var snapshot = FrontendHostBridge.GetRegisterSnapshot();
+        if (snapshot == null)
+        {
+            return;
+        }
+
+        SetText("RegisterAHexText", snapshot.A.ToString("X2"));
+        SetText("RegisterADecText", snapshot.A.ToString(CultureInfo.InvariantCulture));
+        SetText("RegisterXHexText", snapshot.X.ToString("X2"));
+        SetText("RegisterXDecText", snapshot.X.ToString(CultureInfo.InvariantCulture));
+        SetText("RegisterYHexText", snapshot.Y.ToString("X2"));
+        SetText("RegisterYDecText", snapshot.Y.ToString(CultureInfo.InvariantCulture));
+        SetText("RegisterSPHexText", snapshot.S.ToString("X2"));
+        SetText("RegisterSPDecText", snapshot.S.ToString(CultureInfo.InvariantCulture));
+        SetText("RegisterPCHexText", snapshot.PC.ToString("X4"));
+        SetText("RegisterPCDecText", snapshot.PC.ToString(CultureInfo.InvariantCulture));
+        SetText("RegisterPHexText", snapshot.P.ToString("X2"));
+        SetText("RegisterPDecText", snapshot.P.ToString(CultureInfo.InvariantCulture));
+
+        SetFlagText("FlagCarryText", snapshot.Carry);
+        SetFlagText("FlagZeroText", snapshot.Zero);
+        SetFlagText("FlagInterruptDisableText", snapshot.InterruptDisable);
+        SetFlagText("FlagDecimalText", snapshot.Decimal);
+        SetFlagText("FlagBreakText", snapshot.Break);
+        SetFlagText("FlagOverflowText", snapshot.Overflow);
+        SetFlagText("FlagNegativeText", snapshot.Negative);
+    }
+
+    private void SetFlagText(string controlName, bool value)
+    {
+        SetText(controlName, value ? "1" : "0");
+    }
+
+    private void SetText(string controlName, string text)
+    {
+        var textBlock = this.FindControl<TextBlock>(controlName);
+        if (textBlock != null)
+        {
+            textBlock.Text = text;
         }
     }
 

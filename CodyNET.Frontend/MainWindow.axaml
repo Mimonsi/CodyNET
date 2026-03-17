@@ -106,34 +106,65 @@
                                 <TextBlock Classes="panel-header-text" Text="CPU State" />
                             </Border>
                         </TabItem.Header>
-                        <StackPanel Margin="20,18,20,22" Spacing="18"> <!-- Vertical Layout -->
-                            <TextBlock Text="REGISTERS"></TextBlock>
-                            <Grid ColumnDefinitions="*,90,90" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                                      VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="20,18,20,22" Spacing="18"> <!-- Vertical Layout -->
+                            <TextBlock Classes="section-title" Text="REGISTERS" />
+                            <Grid ColumnDefinitions="*,90,90" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
                                 <TextBlock Grid.Row="0" Grid.Column="0" Classes="data-label" Text="Name" />
                                 <TextBlock Grid.Row="0" Grid.Column="1" Classes="data-label" Text="Hex" />
                                 <TextBlock Grid.Row="0" Grid.Column="2" Classes="data-label" Text="Dec" />
                                 
                                 <TextBlock Grid.Row="1" Grid.Column="0" Classes="data-label" Text="A" />
-                                <TextBlock Grid.Row="1" Grid.Column="1" Classes="data-hex" Text="1337" />
-                                <TextBlock Grid.Row="1" Grid.Column="2" Classes="data-dec" Text="4919" />
+                                <TextBlock x:Name="RegisterAHexText" Grid.Row="1" Grid.Column="1" Classes="data-hex" Text="00" />
+                                <TextBlock x:Name="RegisterADecText" Grid.Row="1" Grid.Column="2" Classes="data-dec" Text="0" />
                                 
                                 <TextBlock Grid.Row="2" Grid.Column="0" Classes="data-label" Text="X" />
-                                <TextBlock Grid.Row="2" Grid.Column="1" Classes="data-hex" Text="45" />
-                                <TextBlock Grid.Row="2" Grid.Column="2" Classes="data-dec" Text="69" />
+                                <TextBlock x:Name="RegisterXHexText" Grid.Row="2" Grid.Column="1" Classes="data-hex" Text="00" />
+                                <TextBlock x:Name="RegisterXDecText" Grid.Row="2" Grid.Column="2" Classes="data-dec" Text="0" />
                                 
                                 <TextBlock Grid.Row="3" Grid.Column="0" Classes="data-label" Text="Y" />
-                                <TextBlock Grid.Row="3" Grid.Column="1" Classes="data-hex" Text="69" />
-                                <TextBlock Grid.Row="3" Grid.Column="2" Classes="data-dec" Text="105" />
+                                <TextBlock x:Name="RegisterYHexText" Grid.Row="3" Grid.Column="1" Classes="data-hex" Text="00" />
+                                <TextBlock x:Name="RegisterYDecText" Grid.Row="3" Grid.Column="2" Classes="data-dec" Text="0" />
                                 
                                 <TextBlock Grid.Row="4" Grid.Column="0" Classes="data-label" Text="SP" />
-                                <TextBlock Grid.Row="4" Grid.Column="1" Classes="data-hex" Text="420" />
-                                <TextBlock Grid.Row="4" Grid.Column="2" Classes="data-dec" Text="1056" />
+                                <TextBlock x:Name="RegisterSPHexText" Grid.Row="4" Grid.Column="1" Classes="data-hex" Text="00" />
+                                <TextBlock x:Name="RegisterSPDecText" Grid.Row="4" Grid.Column="2" Classes="data-dec" Text="0" />
                                 
                                 <TextBlock Grid.Row="5" Grid.Column="0" Classes="data-label" Text="PC" />
-                                <TextBlock Grid.Row="5" Grid.Column="1" Classes="data-hex" Text="1E00" />
-                                <TextBlock Grid.Row="5" Grid.Column="2" Classes="data-dec" Text="7680" />
+                                <TextBlock x:Name="RegisterPCHexText" Grid.Row="5" Grid.Column="1" Classes="data-hex" Text="0000" />
+                                <TextBlock x:Name="RegisterPCDecText" Grid.Row="5" Grid.Column="2" Classes="data-dec" Text="0" />
+
+                                <TextBlock Grid.Row="6" Grid.Column="0" Classes="data-label" Text="P" />
+                                <TextBlock x:Name="RegisterPHexText" Grid.Row="6" Grid.Column="1" Classes="data-hex" Text="00" />
+                                <TextBlock x:Name="RegisterPDecText" Grid.Row="6" Grid.Column="2" Classes="data-dec" Text="0" />
                             </Grid>
-                        </StackPanel>
+
+                            <TextBlock Classes="section-title" Text="FLAGS" />
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Classes="data-label" Text="Carry" />
+                                <TextBlock x:Name="FlagCarryText" Grid.Row="0" Grid.Column="1" Classes="data-dec" Text="0" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Classes="data-label" Text="Zero" />
+                                <TextBlock x:Name="FlagZeroText" Grid.Row="1" Grid.Column="1" Classes="data-dec" Text="0" />
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Classes="data-label" Text="Irq Disable" />
+                                <TextBlock x:Name="FlagInterruptDisableText" Grid.Row="2" Grid.Column="1" Classes="data-dec" Text="0" />
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Classes="data-label" Text="Decimal" />
+                                <TextBlock x:Name="FlagDecimalText" Grid.Row="3" Grid.Column="1" Classes="data-dec" Text="0" />
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Classes="data-label" Text="Break" />
+                                <TextBlock x:Name="FlagBreakText" Grid.Row="4" Grid.Column="1" Classes="data-dec" Text="0" />
+
+                                <TextBlock Grid.Row="5" Grid.Column="0" Classes="data-label" Text="Overflow" />
+                                <TextBlock x:Name="FlagOverflowText" Grid.Row="5" Grid.Column="1" Classes="data-dec" Text="0" />
+
+                                <TextBlock Grid.Row="6" Grid.Column="0" Classes="data-label" Text="Negative" />
+                                <TextBlock x:Name="FlagNegativeText" Grid.Row="6" Grid.Column="1" Classes="data-dec" Text="0" />
+                            </Grid>
+                            </StackPanel>
+                        </ScrollViewer>
                     </TabItem>
                     <TabItem>
                         <TabItem.Header>
