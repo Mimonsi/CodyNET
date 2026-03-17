@@ -26,6 +26,30 @@
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Foreground" Value="#F5F5F7" />
         </Style>
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#99B7DE" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+        <Style Selector="TextBlock.data-label">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="Foreground" Value="#F2F2F3" />
+        </Style>
+        <Style Selector="TextBlock.data-hex">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" />
+            <Setter Property="Foreground" Value="#48FF88" />
+        </Style>
+        <Style Selector="TextBlock.data-dec">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" />
+            <Setter Property="Foreground" Value="#FFCC3E" />
+        </Style>
+        <Style Selector="TextBlock.code-text">
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
     </Window.Styles>
     <DockPanel LastChildFill="True"> <!-- Header Bar -->
         <Menu DockPanel.Dock="Top">
@@ -75,9 +99,51 @@
             </Grid.ColumnDefinitions>
             
             <Border x:Name="LeftSidebar" Grid.Column="0" Classes="panel">
-                <Border Classes="panel-header">
-                    <TextBlock Classes="panel-header-text" Text="CPU State / Memory" />
-                </Border>
+                <TabControl Background="#2E2B31" BorderThickness="0">
+                    <TabItem>
+                        <TabItem.Header>
+                            <Border Classes="panel-header">
+                                <TextBlock Classes="panel-header-text" Text="CPU State" />
+                            </Border>
+                        </TabItem.Header>
+                        <StackPanel Margin="20,18,20,22" Spacing="18"> <!-- Vertical Layout -->
+                            <TextBlock Text="REGISTERS"></TextBlock>
+                            <Grid ColumnDefinitions="*,90,90" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Classes="data-label" Text="Name" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Classes="data-label" Text="Hex" />
+                                <TextBlock Grid.Row="0" Grid.Column="2" Classes="data-label" Text="Dec" />
+                                
+                                <TextBlock Grid.Row="1" Grid.Column="0" Classes="data-label" Text="A" />
+                                <TextBlock Grid.Row="1" Grid.Column="1" Classes="data-hex" Text="1337" />
+                                <TextBlock Grid.Row="1" Grid.Column="2" Classes="data-dec" Text="4919" />
+                                
+                                <TextBlock Grid.Row="2" Grid.Column="0" Classes="data-label" Text="X" />
+                                <TextBlock Grid.Row="2" Grid.Column="1" Classes="data-hex" Text="45" />
+                                <TextBlock Grid.Row="2" Grid.Column="2" Classes="data-dec" Text="69" />
+                                
+                                <TextBlock Grid.Row="3" Grid.Column="0" Classes="data-label" Text="Y" />
+                                <TextBlock Grid.Row="3" Grid.Column="1" Classes="data-hex" Text="69" />
+                                <TextBlock Grid.Row="3" Grid.Column="2" Classes="data-dec" Text="105" />
+                                
+                                <TextBlock Grid.Row="4" Grid.Column="0" Classes="data-label" Text="SP" />
+                                <TextBlock Grid.Row="4" Grid.Column="1" Classes="data-hex" Text="420" />
+                                <TextBlock Grid.Row="4" Grid.Column="2" Classes="data-dec" Text="1056" />
+                                
+                                <TextBlock Grid.Row="5" Grid.Column="0" Classes="data-label" Text="PC" />
+                                <TextBlock Grid.Row="5" Grid.Column="1" Classes="data-hex" Text="1E00" />
+                                <TextBlock Grid.Row="5" Grid.Column="2" Classes="data-dec" Text="7680" />
+                            </Grid>
+                        </StackPanel>
+                    </TabItem>
+                    <TabItem>
+                        <TabItem.Header>
+                            <Border Classes="panel-header">
+                                <TextBlock Classes="panel-header-text" Text="Memory" />
+                            </Border>
+                        </TabItem.Header>
+                        <TextBlock>Moin</TextBlock>
+                    </TabItem>
+                </TabControl>
             </Border>
             
             <GridSplitter x:Name="LeftSplitter" Grid.Column="1" Background="#49454E" ResizeDirection="Columns"></GridSplitter>
