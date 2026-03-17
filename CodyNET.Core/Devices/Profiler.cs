@@ -50,7 +50,11 @@ public class Profiler
 
     private void LogSnapshot()
     {
-        Log.Info("CPU frequency avg ({windowSeconds:F1}s): {avgHz:N0} Hz (target: {targetHz:N0} Hz, {utilizationPercent:F1}% of target)",
+        if (LastSnapshot.TargetFrequency <= 0)
+            Log.Info("CPU frequency avg ({windowSeconds:F1}s): {avgHz:N0} Hz (FAST Mode)",
+                LastSnapshot.SecondsElapsed, LastSnapshot.ActualFrequency, LastSnapshot.TargetFrequency, LastSnapshot.FrequencyTargetPercent);
+        else
+            Log.Info("CPU frequency avg ({windowSeconds:F1}s): {avgHz:N0} Hz (target: {targetHz:N0} Hz, {utilizationPercent:F1}% of target)",
             LastSnapshot.SecondsElapsed, LastSnapshot.ActualFrequency, LastSnapshot.TargetFrequency, LastSnapshot.FrequencyTargetPercent);
     }
 

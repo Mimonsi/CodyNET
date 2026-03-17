@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using Avalonia.Controls;
@@ -8,8 +7,6 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CodyNET.Common.Utils;
-using CodyNET.Common.Video;
-using CodyNET.Core.Devices;
 using CodyNET.Frontend.Controls;
 using MsBox.Avalonia;
 using Math = System.Math;
@@ -113,9 +110,14 @@ public partial class MainWindow : Window
         SetText("FooterStatusText", status.RunStatus.ToString());
         if (status.ProfilerSnapshot == null)
             return;
-        var actualFrequencyText = Common.Utils.Unit.FormatSi(status.ProfilerSnapshot.ActualFrequency, "Hz");
-        var targetFrequencyText = Common.Utils.Unit.FormatSi(status.ProfilerSnapshot.TargetFrequency, "Hz");
-        var rightText = $"Speed: {actualFrequencyText} / {targetFrequencyText} ({Math.Round(status.ProfilerSnapshot.FrequencyTargetPercent)}%)";
+        var actualFrequencyText = Unit.FormatSi(status.ProfilerSnapshot.ActualFrequency, "Hz");
+        var targetFrequencyText = Unit.FormatSi(status.ProfilerSnapshot.TargetFrequency, "Hz");
+        var rightText = $"Speed: {actualFrequencyText}";
+        if (status.ProfilerSnapshot.TargetFrequency > 0)
+        {
+            rightText += $" / {targetFrequencyText} ({Math.Round(status.ProfilerSnapshot.FrequencyTargetPercent)}%)";
+        }
+        
         SetText("FooterRightText", rightText);
     }
 
