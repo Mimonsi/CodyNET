@@ -5,7 +5,25 @@
         Title="Cody Computer Emulator"
         SizeToContent="WidthAndHeight"
         Background="#1E1E1E">
-    
+    <Window.Styles>
+        <Style Selector="Border.panel">
+            <Setter Property="Background" Value="#2B292E" />
+            <Setter Property="BorderBrush" Value="#4A474F" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Border.panel-header">
+            <Setter Property="Background" Value="#2E2B31" />
+            <Setter Property="BorderBrush" Value="#4A474F" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="18,14" />
+        </Style>
+
+        <Style Selector="TextBlock.panel-header-text">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#F5F5F7" />
+        </Style>
+    </Window.Styles>
     <DockPanel LastChildFill="True"> <!-- Header Bar -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
@@ -40,16 +58,57 @@
                 <TextBlock x:Name="FooterModeText" Text="8-bit CPU Emulator" Foreground="White" FontWeight="SemiBold" />
                 <TextBlock Grid.Column="1" Text="•" Margin="14,0" Foreground="#B9E7FF" />
                 <TextBlock x:Name="FooterStatusText" Grid.Column="2" Text="Status: Stopped" Foreground="White" FontWeight="SemiBold" />
-                <TextBlock x:Name="FooterRightText" Grid.Column="4" Text="Line 1/1337" Foreground="White" FontWeight="SemiBold" />
+                <TextBlock x:Name="FooterRightText" Grid.Column="4" Text="Line 13/37" Foreground="White" FontWeight="SemiBold" />
             </Grid>
         </Border>
         
-        <Border Padding="20" DockPanel.Dock="Top">
-            <Border BorderBrush="Black" 
-                    BorderThickness="20" 
-                    Padding="10">
-                <controls:ScreenControl x:Name="Screen" Focusable="True" />
+        <Grid x:Name="WorkspaceGrid">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" /> <!-- Left Column: Registers and Memory -->
+                <ColumnDefinition Width="4" /> <!-- Divider -->
+                <ColumnDefinition Width="*" /> <!-- Center Column, Screen and Console -->
+                <ColumnDefinition Width="4" /> <!-- Divider -->
+                <ColumnDefinition Width="300" /> <!-- Right Column: Code Panel -->
+            </Grid.ColumnDefinitions>
+            
+            <Border x:Name="LeftSidebar" Grid.Column="0" Classes="panel"/>
+            
+            <GridSplitter x:Name="LeftSplitter" Grid.Column="1" Background="#49454E" ResizeDirection="Columns"></GridSplitter>
+            
+            <Grid x:Name="MainColumn" Grid.Column="2" Classes="panel" RowDefinitions="*,4,250"> <!-- Center Column, Screen and fixed height Lower panel -->
+                <Border Grid.Row="0" Background="#232123" Padding="16"> <!-- Screen -->
+                    <controls:ScreenControl x:Name="Screen"
+                                            Focusable="True"
+                                            ScaleFactor="2"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch" />
+                </Border>
+                
+                <GridSplitter Grid.Row="1" Background="#49454E" ResizeDirection="Rows" /> <!-- Screen-Lower Divider -->
+                
+                
+                <Border x:Name="LowerPanel" Grid.Row="2" Background="#201F22"> <!-- Lower Panel, Below Screen, not decided yet -->
+                    <Border Classes="panel-header">
+                        <TextBlock Classes="panel-header-text" Text="Lower Panel" />
+                    </Border>
+                </Border>
+            </Grid>
+            
+            <GridSplitter x:Name="RightSplitter" Grid.Column="3" Background="#49454E" ResizeDirection="Columns"></GridSplitter>
+            
+            <Border x:Name="CodePanel" Grid.Column="4"> <!-- Right Colum: Code Panel -->
+                <Grid RowDefinitions="Auto,*">
+                    <Border Classes="panel-header">
+                        <TextBlock Classes="panel-header-text" Text="Code Panel" />
+                    </Border>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="18,16,18,24" Spacing="6"> <!-- TODO: Find out how to embed the whole code with formatting (and add breakpoints)-->
+                            <DockPanel><TextBlock Width="42" Classes="code-text" Text="1" Foreground="#8191B0" /><TextBlock Classes="code-text" Text="PROGRAM START" Foreground="#00FF8E" /></DockPanel>
+                            <DockPanel><TextBlock Width="42" Classes="code-text" Text="2" Foreground="#8191B0" /><TextBlock Classes="code-text" Text="PROGRAM END" Foreground="#00FF8E" /></DockPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
             </Border>
-        </Border>
+        </Grid>
     </DockPanel>
 </Window>
