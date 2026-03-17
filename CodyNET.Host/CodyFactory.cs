@@ -38,7 +38,8 @@ public static class CodyFactory
         {
             cody.LoadUartSource(fileInfo);
         });
-        FrontendHostBridge.RegisterRegisterSnapshotProvider(() => cody.Cpu.GetRegisterSnapshot());
+        FrontendHostBridge.RegisterRegisterSnapshotProvider(cody.Cpu.GetRegisterSnapshot);
+        FrontendHostBridge.RegisterStatusSnapshotProvider(cody.GetStatusSnapshot);
     }
 
     private static IScreenDevice? CreateScreen()

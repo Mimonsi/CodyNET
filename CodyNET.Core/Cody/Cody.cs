@@ -80,7 +80,7 @@ public class Cody
         // 2. Set up devices
         if (options.EnableProfiler)
         {
-            Profiler = new Profiler(TimeSpan.FromSeconds(5)); // 5 second window for averaging
+            Profiler = new Profiler(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5)); // 5 second window for averaging
         }
         if (options.EnableDebugger)
         {
@@ -339,13 +339,15 @@ public class Cody
         Memory.ForceWrite(0xFFFB, (byte)(address >> 8));
     }
 
-    private static string ResolveBasicRomPath()
+    public CodyStatusSnapshot GetStatusSnapshot()
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "roms", "codybasic.bin");
-        if (File.Exists(path))
-            return path;
-
-        throw new FileNotFoundException(
-            $"File not found: {path}");
+        var runStatus = RunStatus.Running;
+        if (!Cpu.Run)
+            runStatus = RunStatus.Paused;
+        return new CodyStatusSnapshot
+        {
+            RunStatus = runStatus,
+            ProfilerSnapshot = Profiler?.LastSnapshot
+        };
     }
 }

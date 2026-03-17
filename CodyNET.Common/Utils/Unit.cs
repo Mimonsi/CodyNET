@@ -1,6 +1,6 @@
 ﻿namespace CodyNET.Common.Utils;
 
-public class Math
+public class Unit
 {
     // Input example: 1536, "Hz" => Output: "1.536 kHz"
     public static string FormatSi(double number, string unit)

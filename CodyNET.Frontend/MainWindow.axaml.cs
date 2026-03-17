@@ -12,21 +12,24 @@ using CodyNET.Common.Video;
 using CodyNET.Core.Devices;
 using CodyNET.Frontend.Controls;
 using MsBox.Avalonia;
+using Math = System.Math;
 
 namespace CodyNET.Frontend;
 
 public partial class MainWindow : Window
 {
     private static readonly TimeSpan RegisterRefreshInterval = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan FooterRefreshInterval = TimeSpan.FromMilliseconds(500);
 
     private ScreenControl? screen;
     private DispatcherTimer? registerRefreshTimer;
+    private DispatcherTimer? footerRefreshTimer;
     
     public MainWindow()
     {
         InitializeComponent();
         InitializeScreen();
-        InitializeRegisterPanel();
+        InitializePanels();
         KeyDown += OnKeyDown;
         KeyUp += OnKeyUp;
         Opened += OnOpened;
@@ -39,6 +42,7 @@ public partial class MainWindow : Window
         screen?.Focus();
         RefreshRegisterValues();
         registerRefreshTimer?.Start();
+        footerRefreshTimer?.Start();
     }
 
     private void OnWindowClosed(object? sender, EventArgs e)
@@ -57,13 +61,18 @@ public partial class MainWindow : Window
         }
     }
 
-    private void InitializeRegisterPanel()
+    private void InitializePanels()
     {
         registerRefreshTimer = new DispatcherTimer
         {
             Interval = RegisterRefreshInterval
         };
+        footerRefreshTimer = new DispatcherTimer
+        {
+            Interval = FooterRefreshInterval
+        };
         registerRefreshTimer.Tick += (_, _) => RefreshRegisterValues();
+        footerRefreshTimer.Tick += (_, _) => RefreshFooter();
     }
 
     private void RefreshRegisterValues()
@@ -94,6 +103,20 @@ public partial class MainWindow : Window
         SetFlagText("FlagBreakText", snapshot.Break);
         SetFlagText("FlagOverflowText", snapshot.Overflow);
         SetFlagText("FlagNegativeText", snapshot.Negative);
+    }
+
+    private void RefreshFooter()
+    {
+        var status = FrontendHostBridge.GetStatusSnapshot();
+        if (status == null)
+            return;
+        SetText("FooterStatusText", status.RunStatus.ToString());
+        if (status.ProfilerSnapshot == null)
+            return;
+        var actualFrequencyText = Common.Utils.Unit.FormatSi(status.ProfilerSnapshot.ActualFrequency, "Hz");
+        var targetFrequencyText = Common.Utils.Unit.FormatSi(status.ProfilerSnapshot.TargetFrequency, "Hz");
+        var rightText = $"Speed: {actualFrequencyText} / {targetFrequencyText} ({Math.Round(status.ProfilerSnapshot.FrequencyTargetPercent)}%)";
+        SetText("FooterRightText", rightText);
     }
 
     private void SetFlagText(string controlName, bool value)
@@ -212,6 +235,6 @@ public partial class MainWindow : Window
 
     private void OnToggleDebuggerClick(object? sender, RoutedEventArgs e)
     {
-        throw new NotImplementedException();
+        
     }
 }

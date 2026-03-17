@@ -18,6 +18,7 @@ public static class FrontendHostBridge
     private static Action<long>? setClockFrequencyAction;
     private static Action<FileInfo>? loadUart1SourceAction;
     private static Func<CpuRegisterSnapshot>? getRegisterSnapshotFunc;
+    private static Func<CodyStatusSnapshot>? getStatusSnapshotFunc;
 
     public static void Reset()
     {
@@ -27,6 +28,7 @@ public static class FrontendHostBridge
         setClockFrequencyAction = null;
         loadUart1SourceAction = null;
         getRegisterSnapshotFunc = null;
+        getStatusSnapshotFunc = null;
     }
 
     public static void SetScreen(IScreenDevice screen)
@@ -75,12 +77,21 @@ public static class FrontendHostBridge
     {
         getRegisterSnapshotFunc = provider;
     }
+    
+    public static void RegisterStatusSnapshotProvider(Func<CodyStatusSnapshot> provider)
+    {
+        getStatusSnapshotFunc = provider;
+    }
 
     public static CpuRegisterSnapshot? GetRegisterSnapshot()
     {
         return getRegisterSnapshotFunc?.Invoke();
     }
     
+    public static CodyStatusSnapshot? GetStatusSnapshot()
+    {
+        return getStatusSnapshotFunc?.Invoke();
+    }
+    
     #endregion
-
 }

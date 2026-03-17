@@ -83,7 +83,7 @@
         
         <Border DockPanel.Dock="Bottom" Background="#0D82D2" Padding="12,8"> <!-- Footer Bar --> 
             <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
-                <TextBlock x:Name="FooterModeText" Text="8-bit CPU Emulator" Foreground="White" FontWeight="SemiBold" />
+                <TextBlock x:Name="FooterModeText" Text="Sample Text" Foreground="White" FontWeight="SemiBold" />
                 <TextBlock Grid.Column="1" Text="•" Margin="14,0" Foreground="#B9E7FF" />
                 <TextBlock x:Name="FooterStatusText" Grid.Column="2" Text="Status: Stopped" Foreground="White" FontWeight="SemiBold" />
                 <TextBlock x:Name="FooterRightText" Grid.Column="4" Text="Line 13/37" Foreground="White" FontWeight="SemiBold" />
