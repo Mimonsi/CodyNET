@@ -3,7 +3,10 @@
         xmlns:controls="using:CodyNET.Frontend.Controls"
         x:Class="CodyNET.Frontend.MainWindow"
         Title="Cody Computer Emulator"
-        SizeToContent="WidthAndHeight"
+        Width="1400"
+        Height="900"
+        MinWidth="1000"
+        MinHeight="700"
         Background="#1E1E1E">
     <Window.Styles>
         <Style Selector="Border.panel">
@@ -64,11 +67,11 @@
         
         <Grid x:Name="WorkspaceGrid">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300" /> <!-- Left Column: Registers and Memory -->
+                <ColumnDefinition Width="300" MinWidth="220" /> <!-- Left Column: Registers and Memory -->
                 <ColumnDefinition Width="4" /> <!-- Divider -->
-                <ColumnDefinition Width="*" /> <!-- Center Column, Screen and Console -->
+                <ColumnDefinition Width="*" MinWidth="420" /> <!-- Center Column, Screen and Console -->
                 <ColumnDefinition Width="4" /> <!-- Divider -->
-                <ColumnDefinition Width="300" /> <!-- Right Column: Code Panel -->
+                <ColumnDefinition Width="300" MinWidth="220" /> <!-- Right Column: Code Panel -->
             </Grid.ColumnDefinitions>
             
             <Border x:Name="LeftSidebar" Grid.Column="0" Classes="panel">
@@ -81,11 +84,14 @@
             
             <Grid x:Name="MainColumn" Grid.Column="2" Classes="panel" RowDefinitions="*,4,250"> <!-- Center Column, Screen and fixed height Lower panel -->
                 <Border Grid.Row="0" Background="#232123" Padding="16"> <!-- Screen -->
-                    <controls:ScreenControl x:Name="Screen"
-                                            Focusable="True"
-                                            ScaleFactor="2"
-                                            HorizontalAlignment="Stretch"
-                                            VerticalAlignment="Stretch" />
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto">
+                        <controls:ScreenControl x:Name="Screen"
+                                                Focusable="True"
+                                                ScaleFactor="2"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center" />
+                    </ScrollViewer>
                 </Border>
                 
                 <GridSplitter Grid.Row="1" Background="#49454E" ResizeDirection="Rows" /> <!-- Screen-Lower Divider -->
