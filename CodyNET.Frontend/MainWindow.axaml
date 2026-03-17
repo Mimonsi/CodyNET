@@ -71,7 +71,11 @@
                 <ColumnDefinition Width="300" /> <!-- Right Column: Code Panel -->
             </Grid.ColumnDefinitions>
             
-            <Border x:Name="LeftSidebar" Grid.Column="0" Classes="panel"/>
+            <Border x:Name="LeftSidebar" Grid.Column="0" Classes="panel">
+                <Border Classes="panel-header">
+                    <TextBlock Classes="panel-header-text" Text="CPU State / Memory" />
+                </Border>
+            </Border>
             
             <GridSplitter x:Name="LeftSplitter" Grid.Column="1" Background="#49454E" ResizeDirection="Columns"></GridSplitter>
             
