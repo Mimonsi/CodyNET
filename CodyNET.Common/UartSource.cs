@@ -1,4 +1,6 @@
-﻿namespace CodyNET.Common;
+﻿using CodyNET.Common.Utils;
+
+namespace CodyNET.Common;
 
 public class UartSource
 {
@@ -29,18 +31,52 @@ public class UartSource
             throw new FileNotFoundException("UART source file not found", file.FullName);
 
         var data = new List<byte>();
-
-        foreach (var line in File.ReadLines(file.FullName))
+        
+        // TEMP TEST
+        var x = File.ReadAllBytes(file.FullName);
+        var text = $"UART1 data length: {x.Length}\n";
+        for (int i = 0; i < x.Length; i++)
         {
-            if (string.IsNullOrEmpty(line))
-                continue;
+            byte b = x[i];
 
-            data.AddRange(System.Text.Encoding.ASCII.GetBytes(line));
-            data.Add((byte)'\n');
+            string display = b switch
+            {
+                (byte)'\n' => "\\n",
+                (byte)'\r' => "\\r",
+                (byte)'\t' => "\\t",
+                >= 0x20 and <= 0x7E => ((char)b).ToString(),
+                _ => $"\\x{b:X2}"
+            };
+
+            text += $"[{i:0000}] 0x{b:X2} {b,3} {display}\n";
         }
 
-        // CodyBASIC LOAD termination line
-        data.Add((byte)'\n');
+        Log.Info(text);
+
+        // Normalize Line Ending only works with text based files, not byte based!
+        if (normalizeLineEndings)
+        {
+            foreach (var line in File.ReadLines(file.FullName))
+            {
+                if (string.IsNullOrEmpty(line))
+                    continue;
+
+                foreach (char c in line)
+                {
+                    // Rust l.bytes() returns exact byte value of character in ASCII.
+                    // For CodyBASIC-Source ASCII/UTF-8 is fitting.
+                    data.Add((byte)c);
+                }
+
+                data.Add((byte)'\n');
+            }
+            // CodyBASIC LOAD termination line
+            data.Add((byte)'\n');
+        }
+        else
+        {
+            data = File.ReadAllBytes(file.FullName).ToList();
+        }
         return new UartSource(data.ToArray());
     }
     
