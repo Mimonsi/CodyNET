@@ -50,7 +50,7 @@ public class UartDevice(ushort startAddress, UartSource? source = null) : IMemor
         set
         {
             _source = value ?? UartSource.Empty;
-            Log.Info("UART source set to {Source}", _source); // TODO: Check if additional steps are required
+            Log.Info("UART source set to {Source}", _source.ToString()); // TODO: Check if additional steps are required
         }
     }
     public Interrupt Update(long cycle)

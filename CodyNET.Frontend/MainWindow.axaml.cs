@@ -168,6 +168,10 @@ public partial class MainWindow : Window
                     {
                         Patterns = new[] { "*.bas" }
                     },
+                    new FilePickerFileType("Binary files")
+                    {
+                        Patterns = new[] { "*.bin" }
+                    },
                     new FilePickerFileType("All files")
                     {
                         Patterns = new[] { "*.*" }
@@ -262,8 +266,6 @@ public partial class MainWindow : Window
             MessageBox("Load Error", $"Could not read source file:\n{fileInfo.FullName}");
             return;
         }
-
-        codeLinesPanel.Children.Clear();
 
         if (lines.Length == 0)
         {

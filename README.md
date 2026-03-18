@@ -12,6 +12,9 @@ Use the command `boot` to start the emulator with default parameters into the Co
 ## Loading BASIC program
 BASIC programs are loaded using UART. The source file can either be set as run command using `--uart1-source <path>` or set over UI during runtime by clicking on "File" -> "Load UART1 Source" and selecting the file. After attaching the source, type `LOAD 1,0` in the BASIC interpreter to load the program. Then type `RUN` to execute the program.
 
+## Loading Binary program
+Binary programs can also be loaded using UART, use `LOAD 1,1` for that
+
 # Random Development Notes
 
 ## Original features
