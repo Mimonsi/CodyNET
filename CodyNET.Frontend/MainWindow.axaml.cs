@@ -4,6 +4,8 @@ using System.IO;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CodyNET.Common.Utils;
@@ -181,6 +183,7 @@ public partial class MainWindow : Window
             return;
 
         var fileInfo = new FileInfo(path);
+        UpdateCodePanel(fileInfo);
         FrontendHostBridge.LoadUartSource(fileInfo);
     }
     
@@ -238,5 +241,76 @@ public partial class MainWindow : Window
     private void OnToggleDebuggerClick(object? sender, RoutedEventArgs e)
     {
         
+    }
+
+    private void UpdateCodePanel(FileInfo fileInfo)
+    {
+        var codeLinesPanel = this.FindControl<StackPanel>("CodeLinesPanel");
+        if (codeLinesPanel == null)
+        {
+            return;
+        }
+
+        string[] lines;
+        try
+        {
+            lines = File.ReadAllLines(fileInfo.FullName);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to read source file {File}", fileInfo.FullName);
+            MessageBox("Load Error", $"Could not read source file:\n{fileInfo.FullName}");
+            return;
+        }
+
+        codeLinesPanel.Children.Clear();
+
+        if (lines.Length == 0)
+        {
+            var emptyText = new TextBlock
+            {
+                Text = "File is empty.",
+                Foreground = Brush.Parse("#8191B0")
+            };
+            emptyText.Classes.Add("code-text");
+            codeLinesPanel.Children.Add(emptyText);
+            return;
+        }
+
+        for (int index = 0; index < lines.Length; index++)
+        {
+            codeLinesPanel.Children.Add(CreateCodeLine(index + 1, lines[index]));
+        }
+    }
+
+    private static DockPanel CreateCodeLine(int lineNumber, string lineText)
+    {
+        var row = new DockPanel
+        {
+            LastChildFill = true
+        };
+
+        var lineNumberBlock = new TextBlock
+        {
+            Width = 42,
+            Text = lineNumber.ToString(CultureInfo.InvariantCulture),
+            Foreground = Brush.Parse("#8191B0"),
+            VerticalAlignment = VerticalAlignment.Top
+        };
+        lineNumberBlock.Classes.Add("code-text");
+
+        var lineTextBlock = new TextBlock
+        {
+            Text = string.IsNullOrEmpty(lineText) ? " " : lineText,
+            Foreground = Brush.Parse("#E7EAF2"),
+            TextWrapping = TextWrapping.NoWrap,
+            VerticalAlignment = VerticalAlignment.Top
+        };
+        lineTextBlock.Classes.Add("code-text");
+
+        row.Children.Add(lineNumberBlock);
+        row.Children.Add(lineTextBlock);
+
+        return row;
     }
 }

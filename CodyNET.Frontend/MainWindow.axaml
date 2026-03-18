@@ -210,7 +210,7 @@
                         <TextBlock Classes="panel-header-text" Text="Code Panel" />
                     </Border>
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <StackPanel Margin="18,16,18,24" Spacing="6"> <!-- TODO: Find out how to embed the whole code with formatting (and add breakpoints)-->
+                        <StackPanel x:Name="CodeLinesPanel" Margin="18,16,18,24" Spacing="6"> <!-- TODO: Find out how to embed the whole code with formatting (and add breakpoints)-->
                             <DockPanel><TextBlock Width="42" Classes="code-text" Text="1" Foreground="#8191B0" /><TextBlock Classes="code-text" Text="PROGRAM START" Foreground="#00FF8E" /></DockPanel>
                             <DockPanel><TextBlock Width="42" Classes="code-text" Text="2" Foreground="#8191B0" /><TextBlock Classes="code-text" Text="PROGRAM END" Foreground="#00FF8E" /></DockPanel>
                         </StackPanel>
