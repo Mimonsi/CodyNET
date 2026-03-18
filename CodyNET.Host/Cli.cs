@@ -504,23 +504,26 @@ public static class Cli
         return cmd;
     }
 
-    private static void ExecuteDisassembleCommand(
-        FileInfo inputFile,
-        FileInfo? outputFile,
-        bool asCartridge,
-        string? loadAddress)
+    private static void ExecuteDisassembleCommand(FileInfo inputFile, FileInfo? outputFile, bool asCartridge, string? loadAddress)
     {
-        _ = asCartridge;
-        _ = loadAddress;
+        outputFile ??= new FileInfo(Path.ChangeExtension(inputFile.FullName, ".s")); // If no output supplied, use same path and name
         Log.Info("Executing disassemble command");
-        CodyDisassembler.DisassembleFile(
-            inputFile,
-            outputFile,
-            new CodyDisassemblerOptions
-            {
-                AsCartridge = asCartridge,
-                LoadAddress = CliValueParser.ParseAddress(loadAddress, "load-address")
-            });
+        try
+        {
+            CodyDisassembler.DisassembleFile(
+                inputFile,
+                outputFile,
+                new CodyDisassemblerOptions
+                {
+                    AsCartridge = asCartridge,
+                    LoadAddress = CliValueParser.ParseAddress(loadAddress, "load-address")
+                });
+            Log.Info("File disassembled successfully, output written to {outputFile}", outputFile.FullName);
+        }
+        catch (Exception x)
+        {
+            Log.Error(x, "Error executing disassemble command");
+        }
     }
     
     private static string NormalizeFormat(string? format)

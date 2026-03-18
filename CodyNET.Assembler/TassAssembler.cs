@@ -1,6 +1,7 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace CodyNET.Assembler;
 
@@ -70,10 +71,14 @@ public static class TassAssembler
                 if (proc == null)
                     throw new InvalidOperationException("Failed to start 64tass process.");
 
-                string stdout = proc.StandardOutput.ReadToEnd();
-                string stderr = proc.StandardError.ReadToEnd();
+                var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+                var stderrTask = proc.StandardError.ReadToEndAsync();
 
                 proc.WaitForExit();
+                Task.WaitAll(stdoutTask, stderrTask);
+
+                string stdout = stdoutTask.Result;
+                string stderr = stderrTask.Result;
 
                 if (proc.ExitCode != 0)
                 {
@@ -155,7 +160,7 @@ public static class TassAssembler
             string osPart = GetOsPart();
             string archPart = GetArchPart();
             string exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "64tass.exe" : "64tass";
-            string bundledPath = Path.Combine(baseDir, "Assembler", "64tass",$"{osPart}-{archPart}", exeName);
+            string bundledPath = Path.Combine(baseDir, "Assembler", "64tass", $"{osPart}-{archPart}", exeName);
 
             if (File.Exists(bundledPath))
                 return bundledPath;

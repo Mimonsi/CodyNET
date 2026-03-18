@@ -510,7 +510,7 @@ public static class OpcodeLookup
             new(0xCB, WAI, AddressingMode.None, 1, 3)
         ];
 
-        AddDebugInstructions();
+        //AddDebugInstructions(); TODO: Currently disabled, recheck
         InitializeLookup();
     }
     

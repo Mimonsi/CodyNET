@@ -54,4 +54,41 @@ public class AssemblerTests
         var expected = "LDA #$01\nSTA $0200\nLDA #$05\nSTA $0201\nLDA #$08\nSTA $0202";
         Assert.AreEqual(expected, result);
     }
+
+    [Test]
+    public void TestDisassemblerRelativeBranchRoundtrip()
+    {
+        byte[] original = [0xD0, 0xFE];
+        string disassembly = CodyDisassembler.Disassemble(original, 0xE000);
+        var reassembled = TassAssembler.Assemble(disassembly);
+
+        Assert.That(reassembled, Is.EqualTo(original), disassembly);
+    }
+
+    [Test]
+    [Explicit("Dev Test")]
+    public void TestAssembleDisassembleRoundtripCodybasic()
+    {
+        var folderPath = "C:\\Users\\Konsi\\Documents\\CodyNETSecond\\CodyNET.Tests\\testdata\\programs\\assembly";
+        var name = "TicTacToe";
+        var asm = File.ReadAllText(Path.Combine(folderPath, $"{name}.asm"));
+        var assembled = TassAssembler.Assemble(asm);
+        // Write to file
+        var assembledPath = FileUtils.GetTestDataPath(Path.Combine(folderPath, $"{name}_assembled.bin"));
+        File.WriteAllBytes(assembledPath, assembled);
+        var disassembled  = CodyDisassembler.Disassemble(assembled);
+        var disassembledPath = Path.Combine(folderPath, $"{name}_disassembled.asm");
+        File.WriteAllText(disassembledPath, disassembled);
+        Console.WriteLine($"Files written to {assembledPath} and {disassembledPath}");
+    }
+
+    [Test]
+    public void TestDisassemblerRoundtrip()
+    {
+        var original = File.ReadAllBytes(FileUtils.GetTestDataPath("programs/binaryTest.bin"));
+        string disassembly = CodyDisassembler.Disassemble(original, 0xE000);
+        var reassembled = TassAssembler.Assemble(disassembly);
+
+        Assert.That(reassembled, Is.EqualTo(original));
+    }
 }
