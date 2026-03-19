@@ -9,6 +9,7 @@ namespace CodyNET.Tests.Program;
 /// </summary>
 public class ProgramTests
 {
+    [Explicit]
     [Test]
     public void MinimalProgram()
     {

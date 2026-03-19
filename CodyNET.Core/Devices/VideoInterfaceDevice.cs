@@ -226,13 +226,14 @@ public class VideoDevice : IVideoDevice
         int hScrollAmount = enableHScroll ? ((scrollReg >> 4) & 0x03) : 0;
 
         int tileW = hiresMode ? TILE_W_HIRES : TILE_W_LORES;
-        Span<int> spriteX = stackalloc int[SPRITE_COUNT];
-        Span<byte> spriteColor = stackalloc byte[SPRITE_COUNT];
+        Span<int> spriteMinX = stackalloc int[SPRITE_COUNT];
+        Span<byte> spriteColorLow = stackalloc byte[SPRITE_COUNT];
+        Span<byte> spriteColorHigh = stackalloc byte[SPRITE_COUNT];
         Span<int> spriteRowData = stackalloc int[SPRITE_COUNT];
         Span<byte> spriteMask = stackalloc byte[SPRITE_COUNT];
 
         if (!hiresMode)
-            PrepareSpritesForLine(y, memory, spriteX, spriteColor, spriteRowData, spriteMask);
+            PrepareSpritesForLine(y, spriteReg, memory, spriteMinX, spriteColorLow, spriteColorHigh, spriteRowData, spriteMask);
 
         for (int x = 0; x < width; x++)
         {
@@ -277,7 +278,7 @@ public class VideoDevice : IVideoDevice
                     _ => 0
                 };
                 
-                paletteIndex = ApplySprites(paletteIndex, x, spriteReg, spriteX, spriteColor, spriteRowData, spriteMask);
+                paletteIndex = ApplySprites(paletteIndex, x, spriteReg, spriteMinX, spriteColorLow, spriteColorHigh, spriteRowData, spriteMask);
 
                 color = outputPalette[paletteIndex & 0x0F];
                 
@@ -293,33 +294,44 @@ public class VideoDevice : IVideoDevice
             // hires: one pixel per x
             int outY2 = y + borderY;
             int outX2 = x + borderX;
-            pixels[outY2 * WIDTH + outX2] = color!;
+            pixels[outY2 * WIDTH + outX2] = color;
         }
     }
 
-    private void PrepareSpritesForLine(int y, Memory memory, Span<int> spriteX, Span<byte> spriteColor, Span<int> spriteRowData, Span<byte> spriteMask)
+    private void PrepareSpritesForLine(
+        int y,
+        byte spriteReg,
+        Memory memory,
+        Span<int> spriteMinX,
+        Span<byte> spriteColorLow,
+        Span<byte> spriteColorHigh,
+        Span<int> spriteRowData,
+        Span<byte> spriteMask)
     {
+        ushort spriteBankStart = (ushort)(VID_SPRITE_BANKS + 0x20 * (spriteReg >> 4));
+
         for (int sprite = 0; sprite < SPRITE_COUNT; sprite++)
         {
-            int descriptorOffset = (VID_SPRITE_BANKS - StartAddress) + sprite * 4;
-            int x = _videoMemory[descriptorOffset];
-            int spriteY = _videoMemory[descriptorOffset + 1];
-            byte color = _videoMemory[descriptorOffset + 2];
-            byte bank = _videoMemory[descriptorOffset + 3];
+            ushort descriptorAddress = (ushort)(spriteBankStart + sprite * 4);
+            int posX = memory.Read(descriptorAddress);
+            int posY = memory.Read((ushort)(descriptorAddress + 1));
+            byte colors = memory.Read((ushort)(descriptorAddress + 2));
+            byte bank = memory.Read((ushort)(descriptorAddress + 3));
 
             spriteMask[sprite] = 0;
-            if ((color & 0x80) == 0)
-                continue;
+            int minX = posX - SPRITE_W;
+            int minY = posY - SPRITE_H;
 
-            int localY = y - spriteY;
+            int localY = y - minY;
             if (localY < 0 || localY >= SPRITE_H)
                 continue;
 
             ushort spriteDataStart = (ushort)(0xA000 + (bank << 6));
             int rowOffset = localY * 3;
 
-            spriteX[sprite] = x;
-            spriteColor[sprite] = (byte)(color & 0x0F);
+            spriteMinX[sprite] = minX;
+            spriteColorLow[sprite] = (byte)(colors & 0x0F);
+            spriteColorHigh[sprite] = (byte)(colors >> 4);
             spriteRowData[sprite] =
                 (memory.Read((ushort)(spriteDataStart + rowOffset)) << 16) |
                 (memory.Read((ushort)(spriteDataStart + rowOffset + 1)) << 8) |
@@ -334,26 +346,31 @@ public class VideoDevice : IVideoDevice
             return;
 
         int row = y / TILE_H;
-        if (row < 0 || row >= 0x20)
-            return;
-
-        byte control = _videoMemory[VID_CONTROL_BANK + row - StartAddress];
-        byte value = _videoMemory[VID_DATA_BANK + row - StartAddress];
-
-        switch (control & 0x07)
+        for (int effectIndex = 0; effectIndex < 0x20; effectIndex++)
         {
-            case 0x01:
-                baseReg = value;
-                break;
-            case 0x02:
-                scrollReg = value;
-                break;
-            case 0x03:
-                screenColors = value;
-                break;
-            case 0x04:
-                spriteReg = value;
-                break;
+            byte control = _videoMemory[VID_CONTROL_BANK + effectIndex - StartAddress];
+            if ((control & 0x80) == 0)
+                continue;
+
+            if ((control & 0x1F) != row)
+                continue;
+
+            byte value = _videoMemory[VID_DATA_BANK + effectIndex - StartAddress];
+            switch ((control >> 5) & 0x03)
+            {
+                case 0x00:
+                    baseReg = value;
+                    break;
+                case 0x01:
+                    scrollReg = value;
+                    break;
+                case 0x02:
+                    screenColors = value;
+                    break;
+                case 0x03:
+                    spriteReg = value;
+                    break;
+            }
         }
     }
 
@@ -373,14 +390,22 @@ public class VideoDevice : IVideoDevice
         }
     }
 
-    private static int ApplySprites(int paletteIndex, int x, byte spriteReg, Span<int> spriteX, Span<byte> spriteColor, Span<int> spriteRowData, Span<byte> spriteMask)
+    private static int ApplySprites(
+        int paletteIndex,
+        int x,
+        byte spriteReg,
+        Span<int> spriteMinX,
+        Span<byte> spriteColorLow,
+        Span<byte> spriteColorHigh,
+        Span<int> spriteRowData,
+        Span<byte> spriteMask)
     {
-        for (int sprite = SPRITE_COUNT - 1; sprite >= 0; sprite--)
+        for (int sprite = 0; sprite < SPRITE_COUNT; sprite++)
         {
             if (spriteMask[sprite] == 0)
                 continue;
 
-            int localX = x - spriteX[sprite];
+            int localX = x - spriteMinX[sprite];
             if (localX < 0 || localX >= SPRITE_W)
                 continue;
 
@@ -389,11 +414,11 @@ public class VideoDevice : IVideoDevice
             if (spriteBits == 0)
                 continue;
 
-            return spriteBits switch
+            paletteIndex = spriteBits switch
             {
-                0x01 => spriteReg & 0x0F,
-                0x02 => spriteColor[sprite],
-                0x03 => (spriteReg >> 4) & 0x0F,
+                0x01 => spriteColorLow[sprite],
+                0x02 => spriteColorHigh[sprite],
+                0x03 => spriteReg & 0x0F,
                 _ => paletteIndex
             };
         }

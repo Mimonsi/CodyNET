@@ -85,7 +85,7 @@ public class AssemblerTests
     [Test]
     public void TestDisassemblerRoundtrip()
     {
-        var original = File.ReadAllBytes(FileUtils.GetTestDataPath("programs/binaryTest.bin"));
+        var original = File.ReadAllBytes(FileUtils.GetTestDataPath("programs/codybasic.bin"));
         string disassembly = CodyDisassembler.Disassemble(original, 0xE000);
         var reassembled = TassAssembler.Assemble(disassembly);
 
