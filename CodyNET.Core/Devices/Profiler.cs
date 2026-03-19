@@ -56,6 +56,8 @@ public class Profiler
         else
             Log.Info("CPU frequency avg ({windowSeconds:F1}s): {avgHz:N0} Hz (target: {targetHz:N0} Hz, {utilizationPercent:F1}% of target)",
             LastSnapshot.SecondsElapsed, LastSnapshot.ActualFrequency, LastSnapshot.TargetFrequency, LastSnapshot.FrequencyTargetPercent);
+        Log.Info("Average frames rendered in window: {actualFrames} (target: {targetFrames}, {frameTargetPercent:F1}% of target)",
+            LastSnapshot.ActualFrames, LastSnapshot.TargetFrames, LastSnapshot.FrameTargetPercent);
     }
 
     public void SampleCpu(long totalCyclesExecuted, long targetFrequencyHz)

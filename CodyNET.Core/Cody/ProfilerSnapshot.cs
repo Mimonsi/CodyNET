@@ -7,7 +7,7 @@ public sealed record ProfilerSnapshot
     public double FrequencyTargetPercent =>  (double)ActualFrequency / TargetFrequency * 100.0;
     public double TargetFrames;
     public double ActualFrames;
-    public double FramesTargetPercent => TargetFrames > 0 ? (ActualFrames / TargetFrames) * 100.0 : 0;
+    public double FrameTargetPercent => TargetFrames > 0 ? (ActualFrames / TargetFrames) * 100.0 : 0;
     public double Fps => ActualFrames / SecondsElapsed;
     public double SecondsElapsed;
 }

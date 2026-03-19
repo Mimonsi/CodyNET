@@ -121,6 +121,7 @@ public class VideoDevice : IVideoDevice
     // Sprite geometry in lores
     private const int SPRITE_W = 12;
     private const int SPRITE_H = 21;
+    private const int SPRITE_COUNT = 8;
 
     // Store video memory locally in the device, for easy access
     private readonly byte[] _videoMemory = new byte[0x100];
@@ -157,9 +158,9 @@ public class VideoDevice : IVideoDevice
         Dirty = true;
     }
     
-    private void ReadControlRegister(Memory memory)
+    private void ReadControlRegister()
     {
-        byte control = memory.Read(REG_CONTROL);
+        byte control = _videoMemory[REG_CONTROL - StartAddress];
         hiresMode = (control & 0x20) != 0;
         disableVideo = (control & 0x01) != 0;
         enableVScroll = (control & 0x02) != 0 && !hiresMode;
@@ -171,12 +172,14 @@ public class VideoDevice : IVideoDevice
     
     public VideoFrame RenderTextFrame(Memory memory)
     {
-        ReadControlRegister(memory);
+        ReadControlRegister();
         
         var pixels = new uint[WIDTH * HEIGHT];
+        Span<uint> outputPalette = stackalloc uint[Color.PALETTE.Length];
+        BuildOutputPalette(outputPalette);
         
         // 1. Fill with border color (0x02 register, low 4 bits as color index)
-        var border = memory.Read(REG_BORDER_COLOR);
+        var border = _videoMemory[REG_BORDER_COLOR - StartAddress];
         var borderColor = Color.PALETTE[border & 0x0F].ToRgba32(); // 0x02 as border color
         var colorMemStart = (ushort)(0xA000 + 0x400 * (border >> 4));
         
@@ -197,22 +200,22 @@ public class VideoDevice : IVideoDevice
         int borderX = BORDER_X + (enableHScroll ? 2 * 2 : 0);
         int borderY = BORDER_Y + (enableVScroll ? 4 : 0);
 
-        byte baseReg        = memory.Read(REG_BASE);         // can be modified by row effects
-        byte scrollReg      = memory.Read(REG_SCROLL);       // can be modified by row effects
-        byte screenColors   = memory.Read(REG_SCREEN_COLORS);// can be modified by row effects
-        byte spriteReg      = memory.Read(REG_SPRITE);       // can be modified by row effects
+        byte baseReg        = _videoMemory[REG_BASE - StartAddress];          // can be modified by row effects
+        byte scrollReg      = _videoMemory[REG_SCROLL - StartAddress];        // can be modified by row effects
+        byte screenColors   = _videoMemory[REG_SCREEN_COLORS - StartAddress]; // can be modified by row effects
+        byte spriteReg      = _videoMemory[REG_SPRITE - StartAddress];        // can be modified by row effects
 
         for (int y = 0; y < height; y++)
         {
-            // TODO: Apply row effects
-            RenderLine(y, width, baseReg, scrollReg, screenColors, spriteReg, colorMemStart, borderX, borderY, memory, pixels);
+            ApplyRowEffects(y, ref baseReg, ref scrollReg, ref screenColors, ref spriteReg);
+            RenderLine(y, width, baseReg, scrollReg, screenColors, spriteReg, colorMemStart, borderX, borderY, memory, pixels, outputPalette);
         }
 
         Dirty = false;
         return new VideoFrame(WIDTH, HEIGHT, pixels);
     }
 
-    private void RenderLine(int y, int width, byte baseReg, byte scrollReg, byte screenColors, byte spriteReg, ushort colorMemStart, int borderX, int borderY, Memory memory, uint[] pixels)
+    private void RenderLine(int y, int width, byte baseReg, byte scrollReg, byte screenColors, byte spriteReg, ushort colorMemStart, int borderX, int borderY, Memory memory, uint[] pixels, Span<uint> outputPalette)
     {
         // screen memory bank: 0xA000 + 0x400*(base>>4)
         ushort screenMemStart = (ushort)(0xA000 + 0x400 * (baseReg >> 4));
@@ -223,6 +226,13 @@ public class VideoDevice : IVideoDevice
         int hScrollAmount = enableHScroll ? ((scrollReg >> 4) & 0x03) : 0;
 
         int tileW = hiresMode ? TILE_W_HIRES : TILE_W_LORES;
+        Span<int> spriteX = stackalloc int[SPRITE_COUNT];
+        Span<byte> spriteColor = stackalloc byte[SPRITE_COUNT];
+        Span<int> spriteRowData = stackalloc int[SPRITE_COUNT];
+        Span<byte> spriteMask = stackalloc byte[SPRITE_COUNT];
+
+        if (!hiresMode)
+            PrepareSpritesForLine(y, memory, spriteX, spriteColor, spriteRowData, spriteMask);
 
         for (int x = 0; x < width; x++)
         {
@@ -248,7 +258,7 @@ public class VideoDevice : IVideoDevice
                 
                 int bit = (rowData >> (7 - inTileX)) & 0x1;
                 int palIndex = bit == 0 ? (localColors & 0x0F) : (localColors >> 4);
-                color = Color.PALETTE[palIndex].ToRgba32();
+                color = outputPalette[palIndex & 0x0F];
             }
             else
             {
@@ -267,10 +277,9 @@ public class VideoDevice : IVideoDevice
                     _ => 0
                 };
                 
-                // TODO: Sprites
-                paletteIndex = ApplySprites(paletteIndex, x, y, spriteReg, memory);
+                paletteIndex = ApplySprites(paletteIndex, x, spriteReg, spriteX, spriteColor, spriteRowData, spriteMask);
 
-                color = Color.PALETTE[paletteIndex].ToRgba32();
+                color = outputPalette[paletteIndex & 0x0F];
                 
                 // lores doubles horizontal pixels
                 int outY = y + borderY;
@@ -288,10 +297,107 @@ public class VideoDevice : IVideoDevice
         }
     }
 
-    private int ApplySprites(int paletteIndex, int i, int i1, byte spriteReg, Memory memory)
+    private void PrepareSpritesForLine(int y, Memory memory, Span<int> spriteX, Span<byte> spriteColor, Span<int> spriteRowData, Span<byte> spriteMask)
     {
-        //throw new NotImplementedException();
-        // TODO:
+        for (int sprite = 0; sprite < SPRITE_COUNT; sprite++)
+        {
+            int descriptorOffset = (VID_SPRITE_BANKS - StartAddress) + sprite * 4;
+            int x = _videoMemory[descriptorOffset];
+            int spriteY = _videoMemory[descriptorOffset + 1];
+            byte color = _videoMemory[descriptorOffset + 2];
+            byte bank = _videoMemory[descriptorOffset + 3];
+
+            spriteMask[sprite] = 0;
+            if ((color & 0x80) == 0)
+                continue;
+
+            int localY = y - spriteY;
+            if (localY < 0 || localY >= SPRITE_H)
+                continue;
+
+            ushort spriteDataStart = (ushort)(0xA000 + (bank << 6));
+            int rowOffset = localY * 3;
+
+            spriteX[sprite] = x;
+            spriteColor[sprite] = (byte)(color & 0x0F);
+            spriteRowData[sprite] =
+                (memory.Read((ushort)(spriteDataStart + rowOffset)) << 16) |
+                (memory.Read((ushort)(spriteDataStart + rowOffset + 1)) << 8) |
+                memory.Read((ushort)(spriteDataStart + rowOffset + 2));
+            spriteMask[sprite] = 1;
+        }
+    }
+
+    private void ApplyRowEffects(int y, ref byte baseReg, ref byte scrollReg, ref byte screenColors, ref byte spriteReg)
+    {
+        if (!enableRowEffects || y % TILE_H != 0)
+            return;
+
+        int row = y / TILE_H;
+        if (row < 0 || row >= 0x20)
+            return;
+
+        byte control = _videoMemory[VID_CONTROL_BANK + row - StartAddress];
+        byte value = _videoMemory[VID_DATA_BANK + row - StartAddress];
+
+        switch (control & 0x07)
+        {
+            case 0x01:
+                baseReg = value;
+                break;
+            case 0x02:
+                scrollReg = value;
+                break;
+            case 0x03:
+                screenColors = value;
+                break;
+            case 0x04:
+                spriteReg = value;
+                break;
+        }
+    }
+
+    private void BuildOutputPalette(Span<uint> outputPalette)
+    {
+        for (int i = 0; i < Color.PALETTE.Length; i++)
+        {
+            var color = Color.PALETTE[i];
+            if (!blackAndWhite)
+            {
+                outputPalette[i] = color.ToRgba32();
+                continue;
+            }
+
+            int luminance = 299 * color.R + 587 * color.G + 114 * color.B;
+            outputPalette[i] = (luminance >= 128000 ? Color.WHITE : Color.BLACK).ToRgba32();
+        }
+    }
+
+    private static int ApplySprites(int paletteIndex, int x, byte spriteReg, Span<int> spriteX, Span<byte> spriteColor, Span<int> spriteRowData, Span<byte> spriteMask)
+    {
+        for (int sprite = SPRITE_COUNT - 1; sprite >= 0; sprite--)
+        {
+            if (spriteMask[sprite] == 0)
+                continue;
+
+            int localX = x - spriteX[sprite];
+            if (localX < 0 || localX >= SPRITE_W)
+                continue;
+
+            int shift = 2 * (SPRITE_W - 1 - localX);
+            int spriteBits = (spriteRowData[sprite] >> shift) & 0x03;
+            if (spriteBits == 0)
+                continue;
+
+            return spriteBits switch
+            {
+                0x01 => spriteReg & 0x0F,
+                0x02 => spriteColor[sprite],
+                0x03 => (spriteReg >> 4) & 0x0F,
+                _ => paletteIndex
+            };
+        }
+
         return paletteIndex;
     }
 
