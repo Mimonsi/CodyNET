@@ -1,6 +1,8 @@
 using System.CommandLine;
 using System.CommandLine.Completions;
 using System.Globalization;
+using System.Runtime.ExceptionServices;
+using Avalonia;
 using CodyNET.Assembler;
 using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
@@ -31,7 +33,7 @@ public static class Cli
             Log.Level = LogLevel.Verbose;
     }
     
-    public static RootCommand BuildRootCommand()
+    public static RootCommand BuildRootCommand(bool forceMacMainThread = false)
     {
         var root = new RootCommand("CodyNET");
 
@@ -42,8 +44,8 @@ public static class Cli
         root.Options.Add(verboseOption);
 
         root.Subcommands.Add(BuildListCommand());
-        root.Subcommands.Add(BuildBootCommand(verboseOption));
-        root.Subcommands.Add(BuildRunCommand(verboseOption));
+        root.Subcommands.Add(BuildBootCommand(verboseOption, forceMacMainThread));
+        root.Subcommands.Add(BuildRunCommand(verboseOption, forceMacMainThread));
         root.Subcommands.Add(BuildAssembleCommand(verboseOption));
         root.Subcommands.Add(BuildDisassembleCommand(verboseOption));
         root.Subcommands.Add(BuildLogTestCommand());
@@ -55,6 +57,26 @@ public static class Cli
         });
 
         return root;
+    }
+
+    public static bool SupportsMacMainThreadExecution(string[] commandArgs)
+    {
+        if (!OperatingSystem.IsMacOS() || commandArgs.Length == 0)
+            return false;
+
+        if (commandArgs.Any(arg => arg.Equals("--headless", StringComparison.OrdinalIgnoreCase)))
+            return false;
+
+        var commandIndex = Array.FindIndex(commandArgs, arg => !arg.StartsWith("-", StringComparison.Ordinal));
+        if (commandIndex < 0)
+            return false;
+
+        return commandArgs[commandIndex] is "boot" or "run";
+    }
+
+    public static int ExecuteOnMacMainThread(string[] commandArgs, InvocationConfiguration invocationConfig)
+    {
+        return BuildRootCommand(forceMacMainThread: true).Parse(commandArgs).Invoke(invocationConfig);
     }
 
     private static Command BuildListCommand()
@@ -240,7 +262,8 @@ public static class Cli
             Description = "Run without video output"
         };
 
-        cmd.Add(debug);
+        if (debug is not null)
+            cmd.Add(debug);
         cmd.Add(uart1Source);
         cmd.Add(uart2Source);
         cmd.Add(fixNewlines);
@@ -275,7 +298,7 @@ public static class Cli
         };
     }
 
-    private static Command BuildBootCommand(Option<bool> verboseOption)
+    private static Command BuildBootCommand(Option<bool> verboseOption, bool forceMacMainThread = false)
     {
         var cmd = new Command("boot", "Boot the emulator with the built-in CodyBASIC");
         var executionOptions = AddExecutionOptions(cmd, includeDebug: true);
@@ -283,9 +306,13 @@ public static class Cli
         cmd.SetAction(parseResult =>
         {
             ApplyLogging(parseResult, verboseOption);
-            ExecuteBootCommand(
-                BuildSetupOptions(parseResult, executionOptions),
-                BuildSharedLoadOptions(parseResult, executionOptions));
+            var setupOptions = BuildSetupOptions(parseResult, executionOptions);
+            var loadOptions = BuildSharedLoadOptions(parseResult, executionOptions);
+
+            if (forceMacMainThread)
+                ExecuteBootCommandOnMacMainThread(setupOptions, loadOptions);
+            else
+                ExecuteBootCommand(setupOptions, loadOptions);
 
             return 0;
         });
@@ -300,7 +327,17 @@ public static class Cli
         cody.Boot(loadOptions);
     }
 
-    private static Command BuildRunCommand(Option<bool> verboseOption)
+    private static void ExecuteBootCommandOnMacMainThread(CodySetupOptions setupOptions, CodyLoadOptions loadOptions)
+    {
+        Log.Info("Executing boot command with macOS main-thread screen host");
+        RunWithMacMainThreadScreenHost(() =>
+        {
+            var cody = CodyFactory.CreateCodyForHostedScreen(setupOptions);
+            cody.Boot(loadOptions);
+        });
+    }
+
+    private static Command BuildRunCommand(Option<bool> verboseOption, bool forceMacMainThread = false)
     {
         var cmd = new Command("run", "Run a binary file with the emulator");
 
@@ -349,7 +386,13 @@ public static class Cli
                 NmiVectorOverride = CliValueParser.ParseOptionalAddress(parseResult.GetValue(nmiVector), nmiVector.Name)
             };
 
-            ExecuteRunCommand(BuildSetupOptions(parseResult, executionOptions), loadOptions);
+            var setupOptions = BuildSetupOptions(parseResult, executionOptions);
+
+            if (forceMacMainThread)
+                ExecuteRunCommandOnMacMainThread(setupOptions, loadOptions);
+            else
+                ExecuteRunCommand(setupOptions, loadOptions);
+
             return 0;
         });
 
@@ -362,6 +405,45 @@ public static class Cli
 
         Cody cody = CodyFactory.CreateCody(setupOptions);
         cody.RunBinaryFile(loadOptions);
+    }
+
+    private static void ExecuteRunCommandOnMacMainThread(CodySetupOptions setupOptions, CodyLoadOptions loadOptions)
+    {
+        Log.Info("Executing run command with macOS main-thread screen host");
+        RunWithMacMainThreadScreenHost(() =>
+        {
+            var cody = CodyFactory.CreateCodyForHostedScreen(setupOptions);
+            cody.RunBinaryFile(loadOptions);
+        });
+    }
+
+    private static void RunWithMacMainThreadScreenHost(Action commandAction)
+    {
+        CodyFactory.PrepareScreenHost();
+
+        ExceptionDispatchInfo? commandException = null;
+
+        CodyNET.Frontend.Program.BuildAvaloniaApp().StartWithClassicDesktopLifetime([], desktop =>
+        {
+            desktop.Startup += (_, _) =>
+            {
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        commandAction();
+                    }
+                    catch (Exception ex)
+                    {
+                        commandException = ExceptionDispatchInfo.Capture(ex);
+                        Log.Error(ex, "Emulator command failed while running with the macOS main-thread screen host.");
+                        desktop.TryShutdown(-1);
+                    }
+                });
+            };
+        });
+
+        commandException?.Throw();
     }
 
     private static Command BuildAssembleCommand(Option<bool> verboseOption)

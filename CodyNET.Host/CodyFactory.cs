@@ -14,11 +14,26 @@ public static class CodyFactory
 
     public static Cody CreateCody(CodySetupOptions options)
     {
+        return CreateCody(options, launchScreenHost: true);
+    }
+
+    public static void PrepareScreenHost()
+    {
+        FrontendHostBridge.Reset();
+    }
+
+    public static Cody CreateCodyForHostedScreen(CodySetupOptions options)
+    {
+        return CreateCody(options, launchScreenHost: false);
+    }
+
+    private static Cody CreateCody(CodySetupOptions options, bool launchScreenHost)
+    {
         IScreenDevice? screen = null;
         IVideoDevice? video = null;
         if (options.EnableScreen)
         {
-            screen = CreateScreen();
+            screen = launchScreenHost ? CreateScreen() : WaitForScreen();
             video = new VideoDevice();
         }
 
@@ -46,7 +61,6 @@ public static class CodyFactory
     {
         Log.Debug("Creating Avalonia screen device...");
         FrontendHostBridge.Reset();
-        
 
         var uiThread = new Thread(() =>
         {
@@ -63,9 +77,14 @@ public static class CodyFactory
             Name = "CodyNET - Cody Computer Emulator",
             IsBackground = true,
         };
-        
+
         uiThread.Start();
 
+        return WaitForScreen();
+    }
+
+    private static IScreenDevice WaitForScreen()
+    {
         if (!FrontendHostBridge.ScreenTask.Wait(ScreenStartupTimeout))
         {
             throw new TimeoutException($"Avalonia screen was not initialized within {ScreenStartupTimeout.TotalSeconds:0} seconds.");
