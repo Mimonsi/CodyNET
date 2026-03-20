@@ -1,6 +1,9 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -44,18 +47,13 @@ public partial class MainWindow : Window
     {
         // TODO: Get version
         FooterModeText.Text = $"CodyNET - Version 1";
-        
-        // Create dummy breakpoints
-        FrontendHostBridge.Debugger?.AddBreakpoint(0xC000, true, "LDA #1337");
-        FrontendHostBridge.Debugger?.AddBreakpoint(0xE000, false, "LDA #1234567");
-        FrontendHostBridge.Debugger?.AddBreakpoint(0xCAFE, false, "LDA #1337");
-        FrontendHostBridge.Debugger?.AddBreakpoint(0xC000, true, "STA #1337");
     }
     
     private void OnOpened(object? sender, EventArgs e)
     {
         screen?.Focus();
         RefreshRegisterValues();
+        RefreshBreakpointsPanel();
         registerRefreshTimer?.Start();
         footerRefreshTimer?.Start();
     }
@@ -122,7 +120,47 @@ public partial class MainWindow : Window
 
     private void RefreshBreakpointsPanel()
     {
-        // TODO: 
+        // TEMP DUMMY
+        if (FrontendHostBridge.Debugger != null && FrontendHostBridge.Debugger.Breakpoints.Count == 0)
+        {
+            FrontendHostBridge.Debugger?.AddBreakpoint(0xC000, true, "LDA #1337");
+            FrontendHostBridge.Debugger?.AddBreakpoint(0xE000, false, "LDA #1234567");
+            FrontendHostBridge.Debugger?.AddBreakpoint(0xCAFE, false, "LDA #1357");
+            FrontendHostBridge.Debugger?.AddBreakpoint(0xC002, true, "STA #1337");
+            FrontendHostBridge.Debugger?.AddBreakpoint(0xC003, true, "STA #1337");
+            FrontendHostBridge.Debugger?.AddBreakpoint(0xC004, true, "STA #1337");
+            FrontendHostBridge.Debugger?.AddBreakpoint(0xC005, true, "STA #1337");
+            FrontendHostBridge.Debugger?.AddBreakpoint(0xC006, true, "STA #1337");
+        }
+        
+        var breakpointsGrid = BreakpointsGrid;
+        breakpointsGrid.Children.Clear();
+        breakpointsGrid.RowDefinitions.Clear();
+        breakpointsGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+
+        AddBreakpointHeader();
+
+        var debugger = FrontendHostBridge.Debugger;
+        if (debugger == null)
+        {
+            AddBreakpointPlaceholder(1, "Debugger not available.");
+            return;
+        }
+
+        var breakpoints = debugger.Breakpoints
+            .OrderBy(bp => bp.Address)
+            .ToList();
+
+        if (breakpoints.Count == 0)
+        {
+            AddBreakpointPlaceholder(1, "No breakpoints configured.");
+            return;
+        }
+
+        for (var i = 0; i < breakpoints.Count; i++)
+        {
+            AddBreakpointRow(i + 1, breakpoints[i]);
+        }
     }
 
     private void RefreshFooter()
@@ -317,6 +355,121 @@ public partial class MainWindow : Window
     private void OnToggleDebuggerClick(object? sender, RoutedEventArgs e)
     {
         
+    }
+
+    private void AddBreakpointHeader()
+    {
+        AddBreakpointCell(new TextBlock
+        {
+            Text = "Enabled",
+            VerticalAlignment = VerticalAlignment.Center,
+        }, 0, 0, "data-label");
+
+        AddBreakpointCell(new TextBlock
+        {
+            Text = "Condition",
+            VerticalAlignment = VerticalAlignment.Center,
+        }, 0, 1, "data-label");
+
+        AddBreakpointCell(new TextBlock
+        {
+            Text = "Instruction",
+            VerticalAlignment = VerticalAlignment.Center,
+        }, 0, 2, "data-label");
+    }
+
+    private void AddBreakpointPlaceholder(int row, string text)
+    {
+        BreakpointsGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+
+        var placeholder = new TextBlock
+        {
+            Text = text,
+            Foreground = Brush.Parse("#8191B0"),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 6, 0, 0),
+        };
+        placeholder.Classes.Add("code-text");
+
+        Grid.SetRow(placeholder, row);
+        Grid.SetColumn(placeholder, 0);
+        Grid.SetColumnSpan(placeholder, 4);
+        BreakpointsGrid.Children.Add(placeholder);
+    }
+
+    private void AddBreakpointRow(int row, Breakpoint breakpoint)
+    {
+        BreakpointsGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+
+        var enabledToggle = new CheckBox
+        {
+            IsChecked = breakpoint.Enabled,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Tag = breakpoint.Address,
+        };
+        enabledToggle.IsCheckedChanged += OnBreakpointCheckedChanged;
+        AddBreakpointCell(enabledToggle, row, 0);
+
+        AddBreakpointCell(new TextBlock
+        {
+            Text = $"PC == ${breakpoint.Address:X4}",
+            Foreground = Brush.Parse(breakpoint.Enabled ? "#00FF8E" : "#8191B0"),
+            VerticalAlignment = VerticalAlignment.Center,
+        }, row, 1, "code-text");
+
+        AddBreakpointCell(new TextBlock
+        {
+            Text = string.IsNullOrWhiteSpace(breakpoint.Text) ? "-" : breakpoint.Text,
+            Foreground = Brush.Parse(breakpoint.Enabled ? "#00FF8E" : "#8191B0"),
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        }, row, 2, "code-text");
+
+        var deleteButton = new Button
+        {
+            Content = "X",
+            Tag = breakpoint.Address,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+        };
+        deleteButton.Classes.Add("breakpoint-delete");
+        deleteButton.Click += OnBreakpointDeleteClick;
+        AddBreakpointCell(deleteButton, row, 3);
+    }
+
+    private void AddBreakpointCell(Control control, int row, int column, params string[] classes)
+    {
+        Grid.SetRow(control, row);
+        Grid.SetColumn(control, column);
+        foreach (var className in classes)
+        {
+            control.Classes.Add(className);
+        }
+
+        BreakpointsGrid.Children.Add(control);
+    }
+
+    private void OnBreakpointCheckedChanged(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not CheckBox checkBox || checkBox.Tag is not ushort address)
+            return;
+
+        var breakpoint = FrontendHostBridge.Debugger?.Breakpoints.FirstOrDefault(bp => bp.Address == address);
+        if (breakpoint == null)
+            return;
+
+        breakpoint.Enabled = checkBox.IsChecked == true;
+        RefreshBreakpointsPanel();
+    }
+
+    private void OnBreakpointDeleteClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not ushort address)
+            return;
+
+        FrontendHostBridge.Debugger?.RemoveBreakpoint(address);
+        RefreshBreakpointsPanel();
     }
 
     private void UpdateCodePanel(FileInfo fileInfo)

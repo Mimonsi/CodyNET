@@ -38,7 +38,7 @@ public class Profiler
             ActualFrequency = averageFrequencyHz,
             TargetFrequency = _targetFrequencyHz,
             ActualFrames = _lastFrameCount,
-            TargetFrames = 60, // TODO: Find Target Frames
+            TargetFrames = 60 * elapsedSeconds, // TODO: Find Target Frames
             SecondsElapsed = elapsedSeconds
         };
         

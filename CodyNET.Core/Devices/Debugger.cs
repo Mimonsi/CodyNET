@@ -67,7 +67,7 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
         if (Breakpoints.All(bp => bp.Address != address))
         {
             Breakpoints.Add(new Breakpoint { Address = address, Enabled = enabled, Text = text });
-            Log.Debug("[Debugger] Added breakpoint at address {{address:X4}}. {text}", address, text ?? "");
+            Log.Debug("[Debugger] Added breakpoint at address {address:X4}. {text}", address, text ?? "");
             return;
         }
         Log.Warn($"[Debugger] Attempted to add duplicate breakpoint at address {address:X4}");
@@ -82,7 +82,7 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
         }
         
         Breakpoints.RemoveAll(bp => bp.Address == address);
-        Log.Debug("[Debugger] Removed breakpoint at address {{address:X4}}", address);
+        Log.Debug("[Debugger] Removed breakpoint at address {address:X4}", address);
     }
     
     public void AddWatch(ushort address, bool enabled=true, bool watchRead=true, bool watchWrite=true)
@@ -141,11 +141,18 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
     {
         if (Breakpoints.Count == 0)
             return false;
-        
-        if (Breakpoints.Any(bp => bp.Enabled && bp.Address == cpu.PC))
+
+        try
         {
-            Log.Info("[Debugger] Breakpoint hit at PC={PC:X4}", cpu.PC);
-            return true;
+            if (Breakpoints.Any(bp => bp.Enabled && bp.Address == cpu.PC))
+            {
+                Log.Info("[Debugger] Breakpoint hit at PC={PC:X4}", cpu.PC);
+                return true;
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Breakpoint error:");
         }
 
         return false;

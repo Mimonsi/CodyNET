@@ -50,6 +50,14 @@
             <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" />
             <Setter Property="FontSize" Value="14" />
         </Style>
+        <Style Selector="Button.breakpoint-delete">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Background" Value="#FF4A4A" />
+            <Setter Property="Foreground" Value="#F5F5F7" />
+        </Style>
     </Window.Styles>
     <DockPanel LastChildFill="True"> <!-- Header Bar -->
         <Menu DockPanel.Dock="Top">
@@ -197,82 +205,84 @@
                 
                 <GridSplitter x:Name="LowerPanelSplitter" Grid.Row="1" Background="#49454E" ResizeDirection="Rows" /> <!-- Screen-Lower Divider -->
                 
-                
-<Border x:Name="LowerPanel" Grid.Row="2" Background="#201F22">
-    <Grid RowDefinitions="Auto,*">
-        <Border Grid.Row="0" Classes="panel-header">
-            <TextBlock Classes="panel-header-text" Text="Breakpoints" />
-        </Border>
+                <Border x:Name="LowerPanel" Grid.Row="2" Background="#201F22">
+                    <Grid RowDefinitions="Auto,*">
+                        <Border Grid.Row="0" Classes="panel-header">
+                            <TextBlock Classes="panel-header-text" Text="Breakpoints" />
+                        </Border>
+                        
+                        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
 
-        <Grid Grid.Row="1"
-              x:Name="BreakpointsGrid"
-              ColumnDefinitions="60,*,*,32"
-              RowDefinitions="Auto,Auto,Auto,Auto,Auto"
-              Margin="18,16,18,24"
-              RowSpacing="4"
-              ColumnSpacing="18">
+                            <Grid
+                                  x:Name="BreakpointsGrid"
+                                  ColumnDefinitions="60,*,*,32"
+                                  RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                                  Margin="18,16,18,24"
+                                  RowSpacing="10"
+                                  ColumnSpacing="18">
 
-            <TextBlock Grid.Row="0" Grid.Column="0"
-                       Classes="data-label"
-                       Text="Enabled"
-                       VerticalAlignment="Center" />
-            <TextBlock Grid.Row="0" Grid.Column="1"
-                       Classes="data-label"
-                       Text="Condition"
-                       VerticalAlignment="Center" />
-            <TextBlock Grid.Row="0" Grid.Column="2"
-                       Classes="data-label"
-                       Text="Instruction"
-                       VerticalAlignment="Center" />
+                                <!--<TextBlock Grid.Row="0" Grid.Column="0" SAMPLE DATA
+                                           Classes="data-label"
+                                           Text="Enabled"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="0" Grid.Column="1"
+                                           Classes="data-label"
+                                           Text="Condition"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="0" Grid.Column="2"
+                                           Classes="data-label"
+                                           Text="Instruction"
+                                           VerticalAlignment="Center" />
 
-            <CheckBox Grid.Row="1" Grid.Column="0"
-                      IsChecked="True"
-                      VerticalAlignment="Center"
-                      HorizontalAlignment="Left" />
-            <TextBlock Grid.Row="1" Grid.Column="1"
-                       Classes="code-text"
-                       Text="PC == $C000"
-                       Foreground="#00FF8E"
-                       VerticalAlignment="Center" />
-            <TextBlock Grid.Row="1" Grid.Column="2"
-                       Classes="code-text"
-                       Text="STA #0"
-                       Foreground="#00FF8E"
-                       VerticalAlignment="Center" />
-            <Button Grid.Row="1" Grid.Column="3"
-                    Content="X"
-                    Width="32"
-                    Height="32"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Background="#FF4A4A"
-                    Foreground="#F5F5F7"/>
+                                <CheckBox Grid.Row="1" Grid.Column="0"
+                                          IsChecked="True"
+                                          VerticalAlignment="Center"
+                                          HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="1" Grid.Column="1"
+                                           Classes="code-text"
+                                           Text="PC == $C000"
+                                           Foreground="#00FF8E"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="1" Grid.Column="2"
+                                           Classes="code-text"
+                                           Text="STA #0"
+                                           Foreground="#00FF8E"
+                                           VerticalAlignment="Center" />
+                                <Button Grid.Row="1" Grid.Column="3"
+                                        Content="X"
+                                        Width="32"
+                                        Height="32"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Background="#FF4A4A"
+                                        Foreground="#F5F5F7"/>
 
-            <CheckBox Grid.Row="2" Grid.Column="0"
-                      IsChecked="True"
-                      VerticalAlignment="Center"
-                      HorizontalAlignment="Left" />
-            <TextBlock Grid.Row="2" Grid.Column="1"
-                       Classes="code-text"
-                       Text="PC == $C000"
-                       Foreground="#00FF8E"
-                       VerticalAlignment="Center" />
-            <TextBlock Grid.Row="2" Grid.Column="2"
-                       Classes="code-text"
-                       Text="STA #0"
-                       Foreground="#00FF8E"
-                       VerticalAlignment="Center" />
-            <Button Grid.Row="2" Grid.Column="3"
-                    Content="X"
-                    Width="32"
-                    Height="32"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Background="#FF4A4A"
-                    Foreground="#F5F5F7"/>
-        </Grid>
-    </Grid>
-</Border>
+                                <CheckBox Grid.Row="2" Grid.Column="0"
+                                          IsChecked="True"
+                                          VerticalAlignment="Center"
+                                          HorizontalAlignment="Left" />
+                                <TextBlock Grid.Row="2" Grid.Column="1"
+                                           Classes="code-text"
+                                           Text="PC == $C000"
+                                           Foreground="#00FF8E"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Grid.Row="2" Grid.Column="2"
+                                           Classes="code-text"
+                                           Text="STA #0"
+                                           Foreground="#00FF8E"
+                                           VerticalAlignment="Center" />
+                                <Button Grid.Row="2" Grid.Column="3"
+                                        Content="X"
+                                        Width="32"
+                                        Height="32"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Background="#FF4A4A"
+                                        Foreground="#F5F5F7"/>-->
+                            </Grid>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
 
             </Grid>
             

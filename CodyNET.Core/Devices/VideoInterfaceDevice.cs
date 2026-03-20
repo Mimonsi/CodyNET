@@ -143,7 +143,6 @@ public class VideoDevice : IVideoDevice
     {
         if (address < StartAddress || address > EndAddress)
             throw new ArgumentOutOfRangeException(nameof(address), $"Address {address:X4} is out of range for VID device.");
-        Log.Verbose($"VID Write: Address={address:X4} Value={value:X2}");
         _videoMemory[address - StartAddress] = value;
         Dirty = true;
     }
