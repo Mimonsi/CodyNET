@@ -186,6 +186,11 @@ public class Cody
     /// <param name="fixNewlines"></param>
     public void LoadUartSource(FileInfo file, int uartNumber = 1, bool fixNewlines = false)
     {
+        if (file.Extension == ".bas")
+        {
+            fixNewlines = true; // Automatically set to true when reading basic file. TODO: Find better solution
+            Log.Info("BASIC file being set as UART source, enabling fix-newlines parameter");
+        }
         var source = UartSource.FromFile(file, fixNewlines);
 
         if (uartNumber == 1)
