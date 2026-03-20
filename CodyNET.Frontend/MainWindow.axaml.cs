@@ -428,7 +428,7 @@ public partial class MainWindow : Window
 
         var deleteButton = new Button
         {
-            Content = "X",
+            Content = "×",
             Tag = breakpoint.Address,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center,

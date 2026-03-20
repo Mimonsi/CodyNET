@@ -57,6 +57,12 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Background" Value="#FF4A4A" />
             <Setter Property="Foreground" Value="#F5F5F7" />
+            <Setter Property="FontFamily" Value="Segoe UI, sans-serif" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
     </Window.Styles>
     <DockPanel LastChildFill="True"> <!-- Header Bar -->
