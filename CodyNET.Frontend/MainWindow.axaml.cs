@@ -360,23 +360,27 @@ public partial class MainWindow : Window
         var headerRow = CreateBreakpointRowGrid();
         headerRow.Children.Add(CreateBreakpointCell(new TextBlock
         {
-            Text = "Enabled",
+            Text = string.Empty,
             VerticalAlignment = VerticalAlignment.Center,
-        }, 0, "data-label"));
+        }, 0));
 
         headerRow.Children.Add(CreateBreakpointCell(new TextBlock
         {
-            Text = "Condition",
+            Text = "Adresse",
             VerticalAlignment = VerticalAlignment.Center,
-        }, 1, "data-label"));
+        }, 1, "breakpoint-column-header"));
 
         headerRow.Children.Add(CreateBreakpointCell(new TextBlock
         {
-            Text = "Instruction",
+            Text = "Code",
             VerticalAlignment = VerticalAlignment.Center,
-        }, 2, "data-label"));
+        }, 2, "breakpoint-column-header"));
 
-        BreakpointsPanel.Children.Add(headerRow);
+        BreakpointsPanel.Children.Add(new Border
+        {
+            Child = headerRow,
+            Classes = { "breakpoint-header-row" }
+        });
     }
 
     private void AddBreakpointPlaceholder(string text)
@@ -386,10 +390,13 @@ public partial class MainWindow : Window
             Text = text,
             Foreground = Brush.Parse("#8191B0"),
             VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 6, 0, 0),
         };
         placeholder.Classes.Add("code-text");
-        BreakpointsPanel.Children.Add(placeholder);
+        BreakpointsPanel.Children.Add(new Border
+        {
+            Child = placeholder,
+            Classes = { "breakpoint-row" }
+        });
     }
 
     private void AddBreakpointRow(Breakpoint breakpoint)
@@ -431,7 +438,11 @@ public partial class MainWindow : Window
         deleteButton.Classes.Add("breakpoint-delete");
         deleteButton.Click += OnBreakpointDeleteClick;
         row.Children.Add(CreateBreakpointCell(deleteButton, 3));
-        BreakpointsPanel.Children.Add(row);
+        BreakpointsPanel.Children.Add(new Border
+        {
+            Child = row,
+            Classes = { "breakpoint-row" }
+        });
     }
 
     private Grid CreateBreakpointRowGrid()

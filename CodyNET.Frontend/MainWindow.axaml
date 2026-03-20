@@ -64,6 +64,21 @@
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
+        <Style Selector="Border.breakpoint-row">
+            <Setter Property="BorderBrush" Value="#4A474F" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="18,2" />
+        </Style>
+        <Style Selector="Border.breakpoint-header-row">
+            <Setter Property="BorderBrush" Value="#4A474F" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="18,10" />
+        </Style>
+        <Style Selector="TextBlock.breakpoint-column-header">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#99B7DE" />
+        </Style>
     </Window.Styles>
     <DockPanel LastChildFill="True"> <!-- Header Bar -->
         <Menu DockPanel.Dock="Top">
@@ -220,8 +235,8 @@
                         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
                             <StackPanel
                                 x:Name="BreakpointsPanel"
-                                Margin="18,16,18,24"
-                                Spacing="10">
+                                Margin="0,0,0,24"
+                                Spacing="0">
 
                                 <!--<TextBlock Grid.Row="0" Grid.Column="0" SAMPLE DATA
                                            Classes="data-label"
