@@ -218,14 +218,10 @@
                         </Border>
                         
                         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
-
-                            <Grid
-                                  x:Name="BreakpointsGrid"
-                                  ColumnDefinitions="60,*,*,32"
-                                  RowDefinitions="Auto,Auto,Auto,Auto,Auto"
-                                  Margin="18,16,18,24"
-                                  RowSpacing="10"
-                                  ColumnSpacing="18">
+                            <StackPanel
+                                x:Name="BreakpointsPanel"
+                                Margin="18,16,18,24"
+                                Spacing="10">
 
                                 <!--<TextBlock Grid.Row="0" Grid.Column="0" SAMPLE DATA
                                            Classes="data-label"
@@ -285,7 +281,7 @@
                                         VerticalAlignment="Center"
                                         Background="#FF4A4A"
                                         Foreground="#F5F5F7"/>-->
-                            </Grid>
+                                </StackPanel>
                         </ScrollViewer>
                     </Grid>
                 </Border>

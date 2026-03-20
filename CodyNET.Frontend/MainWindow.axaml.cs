@@ -133,17 +133,15 @@ public partial class MainWindow : Window
             FrontendHostBridge.Debugger?.AddBreakpoint(0xC006, true, "STA #1337");
         }
         
-        var breakpointsGrid = BreakpointsGrid;
-        breakpointsGrid.Children.Clear();
-        breakpointsGrid.RowDefinitions.Clear();
-        breakpointsGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        var breakpointsPanel = BreakpointsPanel;
+        breakpointsPanel.Children.Clear();
 
         AddBreakpointHeader();
 
         var debugger = FrontendHostBridge.Debugger;
         if (debugger == null)
         {
-            AddBreakpointPlaceholder(1, "Debugger not available.");
+            AddBreakpointPlaceholder("Debugger not available.");
             return;
         }
 
@@ -153,13 +151,13 @@ public partial class MainWindow : Window
 
         if (breakpoints.Count == 0)
         {
-            AddBreakpointPlaceholder(1, "No breakpoints configured.");
+            AddBreakpointPlaceholder("No breakpoints configured.");
             return;
         }
 
         for (var i = 0; i < breakpoints.Count; i++)
         {
-            AddBreakpointRow(i + 1, breakpoints[i]);
+            AddBreakpointRow(breakpoints[i]);
         }
     }
 
@@ -359,29 +357,30 @@ public partial class MainWindow : Window
 
     private void AddBreakpointHeader()
     {
-        AddBreakpointCell(new TextBlock
+        var headerRow = CreateBreakpointRowGrid();
+        headerRow.Children.Add(CreateBreakpointCell(new TextBlock
         {
             Text = "Enabled",
             VerticalAlignment = VerticalAlignment.Center,
-        }, 0, 0, "data-label");
+        }, 0, "data-label"));
 
-        AddBreakpointCell(new TextBlock
+        headerRow.Children.Add(CreateBreakpointCell(new TextBlock
         {
             Text = "Condition",
             VerticalAlignment = VerticalAlignment.Center,
-        }, 0, 1, "data-label");
+        }, 1, "data-label"));
 
-        AddBreakpointCell(new TextBlock
+        headerRow.Children.Add(CreateBreakpointCell(new TextBlock
         {
             Text = "Instruction",
             VerticalAlignment = VerticalAlignment.Center,
-        }, 0, 2, "data-label");
+        }, 2, "data-label"));
+
+        BreakpointsPanel.Children.Add(headerRow);
     }
 
-    private void AddBreakpointPlaceholder(int row, string text)
+    private void AddBreakpointPlaceholder(string text)
     {
-        BreakpointsGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-
         var placeholder = new TextBlock
         {
             Text = text,
@@ -390,16 +389,12 @@ public partial class MainWindow : Window
             Margin = new Thickness(0, 6, 0, 0),
         };
         placeholder.Classes.Add("code-text");
-
-        Grid.SetRow(placeholder, row);
-        Grid.SetColumn(placeholder, 0);
-        Grid.SetColumnSpan(placeholder, 4);
-        BreakpointsGrid.Children.Add(placeholder);
+        BreakpointsPanel.Children.Add(placeholder);
     }
 
-    private void AddBreakpointRow(int row, Breakpoint breakpoint)
+    private void AddBreakpointRow(Breakpoint breakpoint)
     {
-        BreakpointsGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        var row = CreateBreakpointRowGrid();
 
         var enabledToggle = new CheckBox
         {
@@ -409,22 +404,22 @@ public partial class MainWindow : Window
             Tag = breakpoint.Address,
         };
         enabledToggle.IsCheckedChanged += OnBreakpointCheckedChanged;
-        AddBreakpointCell(enabledToggle, row, 0);
+        row.Children.Add(CreateBreakpointCell(enabledToggle, 0));
 
-        AddBreakpointCell(new TextBlock
+        row.Children.Add(CreateBreakpointCell(new TextBlock
         {
             Text = $"PC == ${breakpoint.Address:X4}",
             Foreground = Brush.Parse(breakpoint.Enabled ? "#00FF8E" : "#8191B0"),
             VerticalAlignment = VerticalAlignment.Center,
-        }, row, 1, "code-text");
+        }, 1, "code-text"));
 
-        AddBreakpointCell(new TextBlock
+        row.Children.Add(CreateBreakpointCell(new TextBlock
         {
             Text = string.IsNullOrWhiteSpace(breakpoint.Text) ? "-" : breakpoint.Text,
             Foreground = Brush.Parse(breakpoint.Enabled ? "#00FF8E" : "#8191B0"),
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
-        }, row, 2, "code-text");
+        }, 2, "code-text"));
 
         var deleteButton = new Button
         {
@@ -435,19 +430,28 @@ public partial class MainWindow : Window
         };
         deleteButton.Classes.Add("breakpoint-delete");
         deleteButton.Click += OnBreakpointDeleteClick;
-        AddBreakpointCell(deleteButton, row, 3);
+        row.Children.Add(CreateBreakpointCell(deleteButton, 3));
+        BreakpointsPanel.Children.Add(row);
     }
 
-    private void AddBreakpointCell(Control control, int row, int column, params string[] classes)
+    private Grid CreateBreakpointRowGrid()
     {
-        Grid.SetRow(control, row);
+        return new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("60,*,*,32"),
+            ColumnSpacing = 18,
+        };
+    }
+
+    private Control CreateBreakpointCell(Control control, int column, params string[] classes)
+    {
         Grid.SetColumn(control, column);
         foreach (var className in classes)
         {
             control.Classes.Add(className);
         }
 
-        BreakpointsGrid.Children.Add(control);
+        return control;
     }
 
     private void OnBreakpointCheckedChanged(object? sender, RoutedEventArgs e)
