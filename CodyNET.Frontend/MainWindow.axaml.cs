@@ -121,7 +121,7 @@ public partial class MainWindow : Window
     private void RefreshBreakpointsPanel()
     {
         // TEMP DUMMY
-        if (FrontendHostBridge.Debugger != null && FrontendHostBridge.Debugger.Breakpoints.Count == 0)
+        if (FrontendHostBridge.Debugger != null && !FrontendHostBridge.Debugger.HasBreakpoints())
         {
             FrontendHostBridge.Debugger?.AddBreakpoint(0xC000, true, "LDA #1337");
             FrontendHostBridge.Debugger?.AddBreakpoint(0xE000, false, "LDA #1234567");
@@ -147,7 +147,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var breakpoints = debugger.Breakpoints
+        var breakpoints = debugger.GetBreakpointsSnapshot()
             .OrderBy(bp => bp.Address)
             .ToList();
 
@@ -455,11 +455,8 @@ public partial class MainWindow : Window
         if (sender is not CheckBox checkBox || checkBox.Tag is not ushort address)
             return;
 
-        var breakpoint = FrontendHostBridge.Debugger?.Breakpoints.FirstOrDefault(bp => bp.Address == address);
-        if (breakpoint == null)
+        if (FrontendHostBridge.Debugger?.SetBreakpointEnabled(address, checkBox.IsChecked == true) != true)
             return;
-
-        breakpoint.Enabled = checkBox.IsChecked == true;
         RefreshBreakpointsPanel();
     }
 

@@ -211,7 +211,7 @@
                 
                 <GridSplitter x:Name="LowerPanelSplitter" Grid.Row="1" Background="#49454E" ResizeDirection="Rows" /> <!-- Screen-Lower Divider -->
                 
-                <Border x:Name="LowerPanel" Grid.Row="2" Background="#201F22">
+                <Border x:Name="LowerPanel" Grid.Row="2" Background="#201F22" Padding="0,0,0,8">
                     <Grid RowDefinitions="Auto,*">
                         <Border Grid.Row="0" Classes="panel-header">
                             <TextBlock Classes="panel-header-text" Text="Breakpoints" />
