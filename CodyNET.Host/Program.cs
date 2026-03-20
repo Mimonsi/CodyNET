@@ -32,9 +32,6 @@ public class Program
         Log.ConsoleLevel = LogLevel.Debug;
         Log.Info("Starting logger. Log File Path: {LogFilePath}", Log.LogFilePath!);
 
-        if (Cli.SupportsMacMainThreadExecution(startupOptions.CommandArgs))
-            return Cli.ExecuteOnMacMainThread(startupOptions.CommandArgs, invocationConfig);
-
         return root.Parse(startupOptions.CommandArgs).Invoke(invocationConfig);
     }
 

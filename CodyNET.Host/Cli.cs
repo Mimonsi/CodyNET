@@ -33,7 +33,7 @@ public static class Cli
             Log.Level = LogLevel.Verbose;
     }
     
-    public static RootCommand BuildRootCommand(bool forceMacMainThread = false)
+    public static RootCommand BuildRootCommand(bool useMainThreadScreenHost = true)
     {
         var root = new RootCommand("CodyNET");
 
@@ -44,8 +44,8 @@ public static class Cli
         root.Options.Add(verboseOption);
 
         root.Subcommands.Add(BuildListCommand());
-        root.Subcommands.Add(BuildBootCommand(verboseOption, forceMacMainThread));
-        root.Subcommands.Add(BuildRunCommand(verboseOption, forceMacMainThread));
+        root.Subcommands.Add(BuildBootCommand(verboseOption, useMainThreadScreenHost));
+        root.Subcommands.Add(BuildRunCommand(verboseOption, useMainThreadScreenHost));
         root.Subcommands.Add(BuildAssembleCommand(verboseOption));
         root.Subcommands.Add(BuildDisassembleCommand(verboseOption));
         root.Subcommands.Add(BuildLogTestCommand());
@@ -58,27 +58,6 @@ public static class Cli
 
         return root;
     }
-
-    public static bool SupportsMacMainThreadExecution(string[] commandArgs)
-    {
-        if (!OperatingSystem.IsMacOS() || commandArgs.Length == 0)
-            return false;
-
-        if (commandArgs.Any(arg => arg.Equals("--headless", StringComparison.OrdinalIgnoreCase)))
-            return false;
-
-        var commandIndex = Array.FindIndex(commandArgs, arg => !arg.StartsWith("-", StringComparison.Ordinal));
-        if (commandIndex < 0)
-            return false;
-
-        return commandArgs[commandIndex] is "boot" or "run";
-    }
-
-    public static int ExecuteOnMacMainThread(string[] commandArgs, InvocationConfiguration invocationConfig)
-    {
-        return BuildRootCommand(forceMacMainThread: true).Parse(commandArgs).Invoke(invocationConfig);
-    }
-
     private static Command BuildListCommand()
     {
         var cmd = new Command("list", "Lists .s source files and .bin binaries in the current directory")
@@ -298,7 +277,7 @@ public static class Cli
         };
     }
 
-    private static Command BuildBootCommand(Option<bool> verboseOption, bool forceMacMainThread = false)
+    private static Command BuildBootCommand(Option<bool> verboseOption, bool useMainThreadScreenHost)
     {
         var cmd = new Command("boot", "Boot the emulator with the built-in CodyBASIC");
         var executionOptions = AddExecutionOptions(cmd, includeDebug: true);
@@ -309,8 +288,8 @@ public static class Cli
             var setupOptions = BuildSetupOptions(parseResult, executionOptions);
             var loadOptions = BuildSharedLoadOptions(parseResult, executionOptions);
 
-            if (forceMacMainThread)
-                ExecuteBootCommandOnMacMainThread(setupOptions, loadOptions);
+            if (useMainThreadScreenHost && setupOptions.EnableScreen)
+                ExecuteBootCommandWithScreenHost(setupOptions, loadOptions);
             else
                 ExecuteBootCommand(setupOptions, loadOptions);
 
@@ -327,17 +306,17 @@ public static class Cli
         cody.Boot(loadOptions);
     }
 
-    private static void ExecuteBootCommandOnMacMainThread(CodySetupOptions setupOptions, CodyLoadOptions loadOptions)
+    private static void ExecuteBootCommandWithScreenHost(CodySetupOptions setupOptions, CodyLoadOptions loadOptions)
     {
-        Log.Info("Executing boot command with macOS main-thread screen host");
-        RunWithMacMainThreadScreenHost(() =>
+        Log.Info("Executing boot command with main-thread screen host");
+        RunWithMainThreadScreenHost(() =>
         {
             var cody = CodyFactory.CreateCodyForHostedScreen(setupOptions);
             cody.Boot(loadOptions);
         });
     }
 
-    private static Command BuildRunCommand(Option<bool> verboseOption, bool forceMacMainThread = false)
+    private static Command BuildRunCommand(Option<bool> verboseOption, bool useMainThreadScreenHost)
     {
         var cmd = new Command("run", "Run a binary file with the emulator");
 
@@ -388,8 +367,8 @@ public static class Cli
 
             var setupOptions = BuildSetupOptions(parseResult, executionOptions);
 
-            if (forceMacMainThread)
-                ExecuteRunCommandOnMacMainThread(setupOptions, loadOptions);
+            if (useMainThreadScreenHost && setupOptions.EnableScreen)
+                ExecuteRunCommandWithScreenHost(setupOptions, loadOptions);
             else
                 ExecuteRunCommand(setupOptions, loadOptions);
 
@@ -407,17 +386,17 @@ public static class Cli
         cody.RunBinaryFile(loadOptions);
     }
 
-    private static void ExecuteRunCommandOnMacMainThread(CodySetupOptions setupOptions, CodyLoadOptions loadOptions)
+    private static void ExecuteRunCommandWithScreenHost(CodySetupOptions setupOptions, CodyLoadOptions loadOptions)
     {
-        Log.Info("Executing run command with macOS main-thread screen host");
-        RunWithMacMainThreadScreenHost(() =>
+        Log.Info("Executing run command with main-thread screen host");
+        RunWithMainThreadScreenHost(() =>
         {
             var cody = CodyFactory.CreateCodyForHostedScreen(setupOptions);
             cody.RunBinaryFile(loadOptions);
         });
     }
 
-    private static void RunWithMacMainThreadScreenHost(Action commandAction)
+    private static void RunWithMainThreadScreenHost(Action commandAction)
     {
         CodyFactory.PrepareScreenHost();
 
@@ -436,7 +415,7 @@ public static class Cli
                     catch (Exception ex)
                     {
                         commandException = ExceptionDispatchInfo.Capture(ex);
-                        Log.Error(ex, "Emulator command failed while running with the macOS main-thread screen host.");
+                        Log.Error(ex, "Emulator command failed while running with the main-thread screen host.");
                         desktop.TryShutdown(-1);
                     }
                 });
