@@ -9,6 +9,7 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CodyNET.Common.Utils;
+using CodyNET.Core.Cody;
 using CodyNET.Frontend.Controls;
 using MsBox.Avalonia;
 using Math = System.Math;
@@ -34,6 +35,14 @@ public partial class MainWindow : Window
         Opened += OnOpened;
         
         Closed += OnWindowClosed; // Close whole application on window close
+
+        InitUi();
+    }
+
+    private void InitUi()
+    {
+        // TODO: Get version
+        FooterModeText.Text = $"CodyNET - Version 1";
     }
     
     private void OnOpened(object? sender, EventArgs e)
@@ -109,7 +118,20 @@ public partial class MainWindow : Window
         var status = FrontendHostBridge.GetStatusSnapshot();
         if (status == null)
             return;
-        SetText("FooterStatusText", status.RunStatus.ToString());
+
+
+        switch (status.RunStatus)
+        {
+            case RunStatus.Running:
+                FooterStatusText.Text = "Running";
+                FooterStatusText.Foreground = Brush.Parse("#31c436");
+                break;
+            case RunStatus.Paused:
+                FooterStatusText.Text = "Paused";
+                FooterStatusText.Foreground = Brush.Parse("#ff2414");
+                break;
+        }
+        
         if (status.ProfilerSnapshot == null)
             return;
         var actualFrequencyText = Unit.FormatSi(status.ProfilerSnapshot.ActualFrequency, "Hz");
@@ -207,16 +229,54 @@ public partial class MainWindow : Window
         if (menuItem.Tag is not string tagValue)
             return;
 
-        if (!long.TryParse(tagValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out long frequencyHz))
+        if (!long.TryParse(tagValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var frequencyHz))
             return;
 
         FrontendHostBridge.SetClockFrequency(frequencyHz);
+    }    
+    
+    private void OnPauseResumeButtonClick(object? sender, RoutedEventArgs e)
+    {
+        // If text is "_Pause [F9]", change it to "_Resume [F9]"
+        if (MenuPauseResumeButton.Header is not string headerText) return;
+        if (headerText.StartsWith("_Pause")) // Clicked on Pause
+        {
+            MenuPauseResumeButton.Header = headerText.Replace("_Pause", "_Resume");
+            MenuStepButton.IsEnabled = true;
+            FrontendHostBridge.SetRunState(0);
+        }
+        else if (headerText.StartsWith("_Resume")) // Clicked on Resume
+        {
+            MenuPauseResumeButton.Header = headerText.Replace("_Resume", "_Pause");
+            MenuStepButton.IsEnabled = false;
+            FrontendHostBridge.SetRunState(-1);
+        }
+    }
+    
+    private void OnStepButtonClick(object? sender, RoutedEventArgs e)
+    {
+        if (!MenuStepButton.IsEnabled)
+            return;
+        FrontendHostBridge.SetRunState(1);
     }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
         try
         {
+            switch (e.Key) // Handle special debugger buttons (F8, F9)
+            {
+                // Pause/Resume
+                case Key.F9:
+                    OnPauseResumeButtonClick(sender, e);
+                    return;
+                // Step
+                case Key.F8:
+                    OnStepButtonClick(sender, e);
+                    break;
+            }
+
+
             var keyboard = FrontendHostBridge.Keyboard;
             if (keyboard == null)
                 return;

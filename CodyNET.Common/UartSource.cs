@@ -51,7 +51,7 @@ public class UartSource
             text += $"[{i:0000}] 0x{b:X2} {b,3} {display}\n";
         }
 
-        Log.Info(text);
+        Log.Verbose(text);
 
         // Normalize Line Ending only works with text based files, not byte based!
         if (normalizeLineEndings)

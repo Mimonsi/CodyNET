@@ -128,6 +128,13 @@ public class Cody
         return Cpu.Step();
     }
 
+    private int _allowedSteps = -1; // -1 = Normal running, 0 = Paused, 1 = Single Step Mode
+    public void SetPaused() => _allowedSteps = 0;
+    
+    public void SetRunning() => _allowedSteps = -1;
+    
+    public void SetAllowedSteps(int steps) => _allowedSteps = steps;
+
     private Stopwatch screenStopwatch = new();
     public void RunUntilFinish()
     {
@@ -136,14 +143,21 @@ public class Cody
         //Log.Level = LogLevel.Trace;
         do
         {
-            result = Cpu.Step();
-            Profiler?.SampleCpu(Cpu.TotalCyclesExecuted, Cpu.CyclesPerSecond);
-            // TEMP
             if (Debugger is not null && Debugger.IsAtBreakpoint())
             {
                 Log.Info("Execution paused by debugger on PC={PC:X4}", Cpu.PC);
                 //break;
             }
+            while (_allowedSteps == 0)
+            {
+                // Busy polling
+                Thread.Sleep(100);
+            }
+            result = Cpu.Step();
+            if (_allowedSteps > 0) // After step, reduce allowed steps, if limited
+                _allowedSteps--;
+            Profiler?.SampleCpu(Cpu.TotalCyclesExecuted, Cpu.CyclesPerSecond);
+            // TEMP
 
             // 60 times per second
             if (screenStopwatch.Elapsed >= TimeSpan.FromSeconds(1.0 / 60))
@@ -346,8 +360,11 @@ public class Cody
 
     public CodyStatusSnapshot GetStatusSnapshot()
     {
-        var runStatus = RunStatus.Running;
+        /*var runStatus = RunStatus.Running;
         if (!Cpu.Run)
+            runStatus = RunStatus.Paused;*/
+        var runStatus = RunStatus.Running;
+        if (_allowedSteps == 0)
             runStatus = RunStatus.Paused;
         return new CodyStatusSnapshot
         {

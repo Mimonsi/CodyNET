@@ -15,10 +15,11 @@ public static class FrontendHostBridge
     public static Keyboard? Keyboard { get; private set; }
     
     // Frontend Bindings
-    private static Action<long>? setClockFrequencyAction;
-    private static Action<FileInfo>? loadUart1SourceAction;
-    private static Func<CpuRegisterSnapshot>? getRegisterSnapshotFunc;
-    private static Func<CodyStatusSnapshot>? getStatusSnapshotFunc;
+    private static Action<long>? setClockFrequencyAction; // Buttons to set frequency
+    private static Action<FileInfo>? loadUart1SourceAction; // Button for loading UART1 source data from file
+    private static Func<CpuRegisterSnapshot>? getRegisterSnapshotFunc; // Display for Register and CPU Flags
+    private static Func<CodyStatusSnapshot>? getStatusSnapshotFunc; // Display for Frequency and FPS
+    private static Action<int>? setRunStateAction; // Buttons for Pause, Resume and Single Step
 
     public static void Reset()
     {
@@ -29,6 +30,7 @@ public static class FrontendHostBridge
         loadUart1SourceAction = null;
         getRegisterSnapshotFunc = null;
         getStatusSnapshotFunc = null;
+        setRunStateAction = null; 
     }
 
     public static void SetScreen(IScreenDevice screen)
@@ -71,6 +73,16 @@ public static class FrontendHostBridge
     public static void SetClockFrequency(long frequencyHz)
     {
         setClockFrequencyAction?.Invoke(frequencyHz);
+    }
+    
+    public static void RegisterRunStateAction(Action<int> setter)
+    {
+        setRunStateAction = setter;
+    }
+    
+    public static void SetRunState(int runState)
+    {
+        setRunStateAction?.Invoke(runState);
     }
 
     public static void RegisterRegisterSnapshotProvider(Func<CpuRegisterSnapshot> provider)

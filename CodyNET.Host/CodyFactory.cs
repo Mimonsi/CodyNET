@@ -55,6 +55,7 @@ public static class CodyFactory
         });
         FrontendHostBridge.RegisterRegisterSnapshotProvider(cody.Cpu.GetRegisterSnapshot);
         FrontendHostBridge.RegisterStatusSnapshotProvider(cody.GetStatusSnapshot);
+        FrontendHostBridge.RegisterRunStateAction(cody.SetAllowedSteps);
     }
 
     private static IScreenDevice? CreateScreen()
