@@ -85,13 +85,13 @@ public class Cody
         if (options.EnableDebugger)
         {
             // watch addresses 0xA000 - 0xA3E7 (text screen)
-            var addresses = new List<ushort>();
+            /*var addresses = new List<ushort>();
             for (ushort addr = 0xA000; addr <= 0xA3E7; addr++)
-                addresses.Add(addr);
+                addresses.Add(addr);*/
             Debugger = new Debugger(Cpu)
             {
-                WatchAddresses = addresses,
-                Breakpoints = [0xFD93]
+                WatchAddresses = [],
+                Breakpoints = [] //[0xFD93]
             };
             Memory.RegisterDevice(Debugger);
             Memory.RegisterTap(Debugger);
@@ -186,6 +186,11 @@ public class Cody
     /// <param name="fixNewlines"></param>
     public void LoadUartSource(FileInfo file, int uartNumber = 1, bool fixNewlines = false)
     {
+        if (file.Extension == ".bas")
+        {
+            fixNewlines = true; // Automatically set to true when reading basic file. TODO: Find better solution
+            Log.Info("BASIC file being set as UART source, enabling fix-newlines parameter");
+        }
         var source = UartSource.FromFile(file, fixNewlines);
 
         if (uartNumber == 1)

@@ -86,6 +86,7 @@ public class VideoDevice : IVideoDevice
     private const ushort REG_SCROLL = 0xD004;
     private const ushort REG_SCREEN_COLORS = 0xD005;
     private const ushort REG_SPRITE = 0xD006;
+    private const ushort REG_BLANKING = 0xD000;
     
     // === State flags ===
     private bool disableVideo; // If set, disables display output and only show border color
@@ -117,6 +118,8 @@ public class VideoDevice : IVideoDevice
     private const int TILE_W_HIRES = 8;
     private const int TILE_H       = 8;
     private const int TILES_X      = 40; // fixed in reference (tile_index = tile_y * 40 + tile_x)
+    private const int FRAME_CYCLES = 16_667; // Calculated from FPS
+    private const int BLANKING_CYCLES = 1_280;
 
     // Sprite geometry in lores
     private const int SPRITE_W = 12;
@@ -147,7 +150,12 @@ public class VideoDevice : IVideoDevice
     
     public Interrupt Update(long cycle)
     {
-        // TODO: Check
+        // CodyBASIC polls D000 to wait for the vertical blanking interval before
+        // updating sprite registers. Keep a simple frame-based blanking signal here
+        // so the BASIC demos behave like the Rust reference emulator.
+        int frameCycle = (int)(cycle % FRAME_CYCLES);
+        byte blanking = (byte)(frameCycle >= FRAME_CYCLES - BLANKING_CYCLES ? 1 : 0);
+        _videoMemory[REG_BLANKING - StartAddress] = blanking;
         return Interrupt.None;
     }
     
