@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using CodyNET.Common.Video;
 using CodyNET.Core.Cody;
 using CodyNET.Core.Devices;
+using Debugger = CodyNET.Core.Devices.Debugger;
 
 namespace CodyNET.Frontend;
 
@@ -13,6 +15,7 @@ public static class FrontendHostBridge
 
     public static Task<IScreenDevice> ScreenTask => screenSource.Task;
     public static Keyboard? Keyboard { get; private set; }
+    public static Debugger? Debugger { get; private set; }
     
     // Frontend Bindings
     private static Action<long>? setClockFrequencyAction; // Buttons to set frequency
@@ -30,7 +33,7 @@ public static class FrontendHostBridge
         loadUart1SourceAction = null;
         getRegisterSnapshotFunc = null;
         getStatusSnapshotFunc = null;
-        setRunStateAction = null; 
+        setRunStateAction = null;
     }
 
     public static void SetScreen(IScreenDevice screen)
@@ -41,6 +44,11 @@ public static class FrontendHostBridge
     public static void SetKeyboard(Keyboard keyboard)
     {
         Keyboard = keyboard;
+    }
+    
+    public static void SetDebugger(Debugger debugger)
+    {
+        Debugger = debugger;
     }
 
     public static void SetInitializationError(Exception exception)

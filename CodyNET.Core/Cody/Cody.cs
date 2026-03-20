@@ -88,11 +88,7 @@ public class Cody
             /*var addresses = new List<ushort>();
             for (ushort addr = 0xA000; addr <= 0xA3E7; addr++)
                 addresses.Add(addr);*/
-            Debugger = new Debugger(Cpu)
-            {
-                WatchAddresses = [],
-                Breakpoints = [] //[0xFD93]
-            };
+            Debugger = new Debugger(Cpu);
             Memory.RegisterDevice(Debugger);
             Memory.RegisterTap(Debugger);
         }

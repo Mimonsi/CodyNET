@@ -10,6 +10,7 @@ using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
+using CodyNET.Core.Devices;
 using CodyNET.Frontend.Controls;
 using MsBox.Avalonia;
 using Math = System.Math;
@@ -43,6 +44,12 @@ public partial class MainWindow : Window
     {
         // TODO: Get version
         FooterModeText.Text = $"CodyNET - Version 1";
+        
+        // Create dummy breakpoints
+        FrontendHostBridge.Debugger?.AddBreakpoint(0xC000, true, "LDA #1337");
+        FrontendHostBridge.Debugger?.AddBreakpoint(0xE000, false, "LDA #1234567");
+        FrontendHostBridge.Debugger?.AddBreakpoint(0xCAFE, false, "LDA #1337");
+        FrontendHostBridge.Debugger?.AddBreakpoint(0xC000, true, "STA #1337");
     }
     
     private void OnOpened(object? sender, EventArgs e)
@@ -111,6 +118,11 @@ public partial class MainWindow : Window
         SetFlagText("FlagBreakText", snapshot.Break);
         SetFlagText("FlagOverflowText", snapshot.Overflow);
         SetFlagText("FlagNegativeText", snapshot.Negative);
+    }
+
+    private void RefreshBreakpointsPanel()
+    {
+        // TODO: 
     }
 
     private void RefreshFooter()

@@ -43,6 +43,10 @@ public static class CodyFactory
         {
             FrontendHostBridge.SetKeyboard(cody.Keyboard);
         }
+        if (options.EnableDebugger && cody.Debugger != null)
+        {
+            FrontendHostBridge.SetDebugger(cody.Debugger);
+        }
         return cody;
     }
 

@@ -209,7 +209,7 @@
               ColumnDefinitions="60,*,*,32"
               RowDefinitions="Auto,Auto,Auto,Auto,Auto"
               Margin="18,16,18,24"
-              RowSpacing="10"
+              RowSpacing="4"
               ColumnSpacing="18">
 
             <TextBlock Grid.Row="0" Grid.Column="0"
