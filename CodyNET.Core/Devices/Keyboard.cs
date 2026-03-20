@@ -87,9 +87,20 @@ public class Keyboard
             { ".", (CodyKeyCode.KeyB, CodyModifier.Meta) }, // . => B + Meta
             { "?", (CodyKeyCode.KeyN, CodyModifier.Meta) }, // ? => N + Meta
             { "/", (CodyKeyCode.KeyM, CodyModifier.Meta) }, // / => M + Meta
-            { "Up", (CodyKeyCode.Joystick1Up, CodyModifier.None) }, 
             
-            // TODO: Joystick mappings can be added here as needed    
+            // Joysticks:
+            // Joystick 1: Arrow keys + Right Shift
+            // Joystick 2: Numpad 8/5/4/6 + Numpad 0
+            { "Up", (CodyKeyCode.Joystick1Up, CodyModifier.None) },
+            { "Down", (CodyKeyCode.Joystick1Down, CodyModifier.None) },
+            { "Left", (CodyKeyCode.Joystick1Left, CodyModifier.None) },
+            { "Right", (CodyKeyCode.Joystick1Right, CodyModifier.None) },
+            { "RightShift", (CodyKeyCode.Joystick1Fire, CodyModifier.None) },
+            { "NumPad8", (CodyKeyCode.Joystick2Up, CodyModifier.None) },
+            { "NumPad5", (CodyKeyCode.Joystick2Down, CodyModifier.None) },
+            { "NumPad4", (CodyKeyCode.Joystick2Left, CodyModifier.None) },
+            { "NumPad6", (CodyKeyCode.Joystick2Right, CodyModifier.None) },
+            { "NumPad0", (CodyKeyCode.Joystick2Fire, CodyModifier.None) },
         };
     
     private Dictionary<string, (CodyKeyCode, CodyModifier)> physicalMap =
