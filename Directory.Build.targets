@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <UsingTask
+    TaskName="SetAvaloniaTelemetryOptOutTask"
+    TaskFactory="RoslynCodeTaskFactory"
+    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup />
+    <Task>
+      <Using Namespace="System" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        Environment.SetEnvironmentVariable("AVALONIA_TELEMETRY_OPTOUT", "1");
+      ]]></Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="SetAvaloniaTelemetryOptOut" BeforeTargets="AvaloniaStats">
+    <SetAvaloniaTelemetryOptOutTask />
+  </Target>
+</Project>

@@ -31,6 +31,26 @@ public class ScreenTests
     }
 
     [Test]
+    public void Vid_BlankingRegister_TogglesAcrossFrameCycles()
+    {
+        var memory = new Memory();
+        var vid = CreateVideoDevice(memory);
+
+        vid.Update(0);
+        byte blankingAtFrameStart = vid.Read(0xD000);
+
+        vid.Update(16_000);
+        byte blankingNearFrameEnd = vid.Read(0xD000);
+
+        vid.Update(16_667);
+        byte blankingAtNextFrameStart = vid.Read(0xD000);
+
+        Assert.That(blankingAtFrameStart, Is.EqualTo(0));
+        Assert.That(blankingNearFrameEnd, Is.EqualTo(1));
+        Assert.That(blankingAtNextFrameStart, Is.EqualTo(0));
+    }
+
+    [Test]
     public void RenderTextFrame_WhenVideoDisabled_FillsOnlyBorderColor()
     {
         var memory = new Memory();
