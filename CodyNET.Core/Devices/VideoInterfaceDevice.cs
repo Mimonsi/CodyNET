@@ -118,7 +118,7 @@ public class VideoDevice : IVideoDevice
     private const int TILE_W_HIRES = 8;
     private const int TILE_H       = 8;
     private const int TILES_X      = 40; // fixed in reference (tile_index = tile_y * 40 + tile_x)
-    private const int FRAME_CYCLES = 16_667;
+    private const int FRAME_CYCLES = 16_667; // Calculated from FPS
     private const int BLANKING_CYCLES = 1_280;
 
     // Sprite geometry in lores
