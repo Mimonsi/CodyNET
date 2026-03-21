@@ -14,6 +14,7 @@ using Avalonia.Threading;
 using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
 using CodyNET.Core.Devices;
+using CodyNET.Disassembler;
 using CodyNET.Frontend.Controls;
 using MsBox.Avalonia;
 using Math = System.Math;
@@ -232,22 +233,26 @@ public partial class MainWindow : Window
             {
                 Title = "Load UART1 Source",
                 AllowMultiple = false,
-                FileTypeFilter = new[]
-                {
+                FileTypeFilter =
+                [
+                    new FilePickerFileType("Binary and BASIC files")
+                    {
+                        Patterns = ["*.bin", "*.bas"]
+                    },
                     new FilePickerFileType("BASIC files")
                     {
-                        Patterns = new[] { "*.bas" }
+                        Patterns = ["*.bas"]
                     },
                     new FilePickerFileType("Binary files")
                     {
-                        Patterns = new[] { "*.bin" }
+                        Patterns = ["*.bin"]
                     },
                     new FilePickerFileType("All files")
                     {
-                        Patterns = new[] { "*.*" }
-                    }
-                }
-        });
+                        Patterns = ["*.*"]
+                    },
+                ]
+            });
         
         if (files.Count == 0)
             return;
@@ -491,11 +496,15 @@ public partial class MainWindow : Window
         {
             return;
         }
+        codeLinesPanel.Children.Clear();
 
         string[] lines;
+        string disassembled;
         try
         {
             lines = File.ReadAllLines(fileInfo.FullName);
+            disassembled = CodyDisassembler.Disassemble(File.ReadAllBytes(fileInfo.FullName));
+            lines = disassembled.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
         }
         catch (Exception ex)
         {
