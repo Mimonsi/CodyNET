@@ -101,11 +101,11 @@
             <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
         </Style>
         <Style Selector="StackPanel.code-editor-gutter-panel">
-            <Setter Property="Margin" Value="10,16,8,24" />
+            <Setter Property="Margin" Value="4,4,4,8" />
             <Setter Property="Spacing" Value="0" />
         </Style>
         <Style Selector="Button.code-line-number">
-            <Setter Property="Height" Value="22" />
+            <Setter Property="Height" Value="19.87" />
             <Setter Property="MinWidth" Value="42" />
             <Setter Property="Padding" Value="0,0,8,0" />
             <Setter Property="Background" Value="Transparent" />
@@ -121,9 +121,10 @@
             <Setter Property="Background" Value="#1A191D" />
             <Setter Property="Foreground" Value="#E7EAF2" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="4,4,0,8" />
+            <Setter Property="Padding" Value="4,4,16,8" />
             <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" />
             <Setter Property="FontSize" Value="14" />
+            <Setter Property="LineHeight" Value="20" />
             <Setter Property="CaretBrush" Value="#E7EAF2" />
             <Setter Property="SelectionBrush" Value="#A97A14" />
         </Style>
