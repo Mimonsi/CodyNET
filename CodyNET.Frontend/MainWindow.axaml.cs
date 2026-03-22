@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -11,10 +12,10 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
 using CodyNET.Core.Devices;
-using CodyNET.Disassembler;
 using CodyNET.Frontend.Controls;
 using MsBox.Avalonia;
 using Math = System.Math;
@@ -29,6 +30,12 @@ public partial class MainWindow : Window
     private ScreenControl? screen;
     private DispatcherTimer? registerRefreshTimer;
     private DispatcherTimer? footerRefreshTimer;
+    private string? _loadedAssemblyPath;
+    private bool _isAssemblyDirty;
+    private bool _suppressCodeEditorEvents;
+    private readonly HashSet<int> _codeEditorBreakpointLines = [];
+    private ScrollViewer? _codeEditorInnerScrollViewer;
+    private bool _isSyncingCodeEditorScroll;
     
     public MainWindow()
     {
@@ -48,6 +55,8 @@ public partial class MainWindow : Window
     {
         // TODO: Get version
         FooterModeText.Text = $"CodyNET - Version 1";
+        SetCodePanelState(null, null);
+        RefreshCodeEditorLineNumbers(1);
     }
     
     private void OnOpened(object? sender, EventArgs e)
@@ -55,6 +64,7 @@ public partial class MainWindow : Window
         screen?.Focus();
         RefreshRegisterValues();
         RefreshBreakpointsPanel();
+        AttachCodeEditorScrollSync();
         registerRefreshTimer?.Start();
         footerRefreshTimer?.Start();
     }
@@ -489,86 +499,6 @@ public partial class MainWindow : Window
         RefreshBreakpointsPanel();
     }
     
-    private static bool IsAssemblySourceFile(FileInfo fileInfo)
-    {
-        var extension = fileInfo.Extension;
-        return extension.Equals(".asm", StringComparison.OrdinalIgnoreCase)
-               || extension.Equals(".s", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private void UpdateCodePanel(FileInfo fileInfo)
-    {
-        var codeLinesPanel = this.FindControl<StackPanel>("CodeLinesPanel");
-        if (codeLinesPanel == null)
-        {
-            return;
-        }
-        codeLinesPanel.Children.Clear();
-
-        string[] lines;
-        string disassembled;
-        try
-        {
-            lines = File.ReadAllLines(fileInfo.FullName);
-            disassembled = CodyDisassembler.Disassemble(File.ReadAllBytes(fileInfo.FullName));
-            lines = disassembled.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Failed to read source file {File}", fileInfo.FullName);
-            MessageBox("Load Error", $"Could not read source file:\n{fileInfo.FullName}");
-            return;
-        }
-
-        if (lines.Length == 0)
-        {
-            var emptyText = new TextBlock
-            {
-                Text = "File is empty.",
-                Foreground = Brush.Parse("#8191B0")
-            };
-            emptyText.Classes.Add("code-text");
-            codeLinesPanel.Children.Add(emptyText);
-            return;
-        }
-
-        for (int index = 0; index < lines.Length; index++)
-        {
-            codeLinesPanel.Children.Add(CreateCodeLine(index + 1, lines[index]));
-        }
-    }
-
-    private static DockPanel CreateCodeLine(int lineNumber, string lineText)
-    {
-        var row = new DockPanel
-        {
-            LastChildFill = true
-        };
-
-        var lineNumberBlock = new TextBlock
-        {
-            Width = 42,
-            Text = lineNumber.ToString(CultureInfo.InvariantCulture),
-            Foreground = Brush.Parse("#8191B0"),
-            VerticalAlignment = VerticalAlignment.Top
-        };
-        lineNumberBlock.Classes.Add("code-text");
-
-        var lineTextBlock = new TextBlock
-        {
-            Text = string.IsNullOrEmpty(lineText) ? " " : lineText,
-            Foreground = Brush.Parse("#E7EAF2"),
-            TextWrapping = TextWrapping.NoWrap,
-            VerticalAlignment = VerticalAlignment.Top
-        };
-        lineTextBlock.Classes.Add("code-text");
-
-        row.Children.Add(lineNumberBlock);
-        row.Children.Add(lineTextBlock);
-
-        return row;
-    }
-
     private async void OnLoadAssemblyClick(object? sender, RoutedEventArgs e)
     {
         var files = await StorageProvider.OpenFilePickerAsync(
@@ -598,10 +528,7 @@ public partial class MainWindow : Window
 
         LoadAssemblyIntoEditor(new FileInfo(path));
     }
-
-    private string? _loadedAssemblyPath;
-    private bool _isAssemblyDirty;
-    private bool _suppressCodeEditorEvents;
+    
     private void LoadAssemblyIntoEditor(FileInfo fileInfo)
     {
         if (!IsAssemblySourceFile(fileInfo))
@@ -630,6 +557,8 @@ public partial class MainWindow : Window
         _suppressCodeEditorEvents = false;
         
         SetCodePanelState(fileInfo.Name, sourceText);
+        RefreshCodeEditorLineNumbers(CountLines(sourceText));
+        Dispatcher.UIThread.Post(AttachCodeEditorScrollSync, DispatcherPriority.Loaded);
         CompileAssemblyButton.IsEnabled = false;
         SendAssemblyOverUartButton.IsEnabled = false;
     }
@@ -637,6 +566,8 @@ public partial class MainWindow : Window
     private void SetCodePanelState(string? fileName, string? sourceText)
     {
         var hasFile = !string.IsNullOrWhiteSpace(fileName);
+        CodeEditor.IsVisible = hasFile;
+        CodeEditorGutterScrollViewer.IsVisible = hasFile;
 
         CodeFileNameText.Text = hasFile
             ? BuildCodePanelFileLabel(fileName!, sourceText)
@@ -645,10 +576,9 @@ public partial class MainWindow : Window
     
     private string BuildCodePanelFileLabel(string fileName, string? sourceText)
     {
-        _isAssemblyDirty = true;
         var dirtySuffix = _isAssemblyDirty ? " *" : string.Empty;
         var lineCount = CountLines(sourceText);
-        return $"{fileName}{dirtySuffix}";
+        return $"{fileName}{dirtySuffix}  •  {lineCount} lines";
     }
     
     private static int CountLines(string? text)
@@ -684,6 +614,8 @@ public partial class MainWindow : Window
         _isAssemblyDirty = true;
         var sourceText = CodeEditorTextBox.Text ?? string.Empty;
         SetCodePanelState(GetLoadedAssemblyFileName(), sourceText);
+        RefreshCodeEditorLineNumbers(CountLines(sourceText));
+        Dispatcher.UIThread.Post(AttachCodeEditorScrollSync, DispatcherPriority.Loaded);
     }
     
     private string GetLoadedAssemblyFileName()
@@ -692,5 +624,80 @@ public partial class MainWindow : Window
             return "Unnamed assembly";
 
         return Path.GetFileName(_loadedAssemblyPath);
+    }
+
+    private static bool IsAssemblySourceFile(FileInfo fileInfo)
+    {
+        var extension = fileInfo.Extension;
+        return extension.Equals(".asm", StringComparison.OrdinalIgnoreCase)
+               || extension.Equals(".s", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void RefreshCodeEditorLineNumbers(int lineCount)
+    {
+        CodeEditorLineNumberPanel.Children.Clear();
+
+        for (var lineNumber = 1; lineNumber <= Math.Max(1, lineCount); lineNumber++)
+        {
+            CodeEditorLineNumberPanel.Children.Add(CreateCodeEditorLineNumberButton(lineNumber));
+        }
+    }
+
+    private Button CreateCodeEditorLineNumberButton(int lineNumber)
+    {
+        var hasBreakpoint = _codeEditorBreakpointLines.Contains(lineNumber);
+        var button = new Button
+        {
+            Content = lineNumber.ToString(CultureInfo.InvariantCulture),
+            Tag = lineNumber,
+            Background = hasBreakpoint ? Brush.Parse("#7D2020") : Brushes.Transparent,
+            Foreground = hasBreakpoint ? Brush.Parse("#FF6B6B") : Brush.Parse("#8191B0"),
+        };
+        button.Classes.Add("code-line-number");
+        button.Click += OnCodeEditorLineNumberClick;
+        return button;
+    }
+
+    private void OnCodeEditorLineNumberClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not int lineNumber)
+            return;
+
+        if (!_codeEditorBreakpointLines.Add(lineNumber))
+            _codeEditorBreakpointLines.Remove(lineNumber);
+
+        RefreshCodeEditorLineNumbers(CountLines(CodeEditorTextBox.Text));
+    }
+
+    private void AttachCodeEditorScrollSync()
+    {
+        var scrollViewer = CodeEditorTextBox.GetVisualDescendants()
+            .OfType<ScrollViewer>()
+            .FirstOrDefault();
+
+        if (scrollViewer == null || ReferenceEquals(_codeEditorInnerScrollViewer, scrollViewer))
+            return;
+
+        if (_codeEditorInnerScrollViewer != null)
+            _codeEditorInnerScrollViewer.ScrollChanged -= OnCodeEditorScrollChanged;
+
+        _codeEditorInnerScrollViewer = scrollViewer;
+        _codeEditorInnerScrollViewer.ScrollChanged += OnCodeEditorScrollChanged;
+        SyncCodeEditorGutterOffset(scrollViewer.Offset.Y);
+    }
+
+    private void OnCodeEditorScrollChanged(object? sender, ScrollChangedEventArgs e)
+    {
+        SyncCodeEditorGutterOffset(((ScrollViewer?)sender)?.Offset.Y ?? 0);
+    }
+
+    private void SyncCodeEditorGutterOffset(double verticalOffset)
+    {
+        if (_isSyncingCodeEditorScroll)
+            return;
+
+        _isSyncingCodeEditorScroll = true;
+        CodeEditorGutterScrollViewer.Offset = new Vector(CodeEditorGutterScrollViewer.Offset.X, verticalOffset);
+        _isSyncingCodeEditorScroll = false;
     }
 }

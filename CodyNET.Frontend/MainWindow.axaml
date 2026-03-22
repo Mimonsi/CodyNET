@@ -79,26 +79,59 @@
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="#99B7DE" />
         </Style>
+        <Style Selector="TextBlock.code-file-name">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="#B8C8E6" />
+        </Style>
         
         <Style Selector="Border.code-editor-shell">
             <Setter Property="Background" Value="#1A191D" />
             <Setter Property="BorderBrush" Value="#34313A" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Margin" Value="18,16,18,24" />
+            <Setter Property="Margin" Value="0,0,4,0" />
             <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style Selector="Border.code-editor-gutter">
+            <Setter Property="Background" Value="#201F24" />
+            <Setter Property="BorderBrush" Value="#34313A" />
+            <Setter Property="BorderThickness" Value="0,0,1,0" />
+        </Style>
+        <Style Selector="ScrollViewer.code-editor-gutter-scroll">
+            <Setter Property="VerticalScrollBarVisibility" Value="Hidden" />
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+        </Style>
+        <Style Selector="StackPanel.code-editor-gutter-panel">
+            <Setter Property="Margin" Value="10,16,8,24" />
+            <Setter Property="Spacing" Value="0" />
+        </Style>
+        <Style Selector="Button.code-line-number">
+            <Setter Property="Height" Value="22" />
+            <Setter Property="MinWidth" Value="42" />
+            <Setter Property="Padding" Value="0,0,8,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="HorizontalContentAlignment" Value="Right" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="#8191B0" />
         </Style>
         <Style Selector="TextBox.code-editor">
             <Setter Property="Background" Value="#1A191D" />
             <Setter Property="Foreground" Value="#E7EAF2" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="16" />
+            <Setter Property="Padding" Value="4,4,0,8" />
             <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" />
             <Setter Property="FontSize" Value="14" />
+            <Setter Property="CaretBrush" Value="#E7EAF2" />
+            <Setter Property="SelectionBrush" Value="#A97A14" />
         </Style>
     </Window.Styles>
     <DockPanel LastChildFill="True"> <!-- Header Bar -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
+                <MenuItem Header="Load _Assembly into Editor.." Click="OnLoadAssemblyClick" />
                 <MenuItem Header="_Load UART1.." Click="OnLoadUart1Click" />
                 <MenuItem Header="_Exit" />
             </MenuItem>
@@ -321,7 +354,7 @@
             
             <GridSplitter x:Name="RightSplitter" Grid.Column="3" Background="#49454E" ResizeDirection="Columns"></GridSplitter>
             
-            <Border x:Name="CodePanel" Grid.Column="4"> <!-- Right Colum: Code Panel -->
+            <Border x:Name="CodePanel" Grid.Column="4" Classes="panel"> <!-- Right Colum: Code Panel -->
                 <Grid RowDefinitions="Auto,*">
                     <Border Grid.Row="0" Classes="panel-header">
                         <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
@@ -350,19 +383,23 @@
                                     Click="OnSendAssemblyOverUartClick" />
                         </Grid>
                     </Border>
-                    <!--<ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">-->
-                        <!--<StackPanel x:Name="CodeLinesPanel" Margin="18,16,18,24" Spacing="6"> TODO: Find out how to embed the whole code with formatting (and add breakpoints)-->
-                        <!--    <DockPanel><TextBlock Width="42" Classes="code-text" Text="1" Foreground="#8191B0" /><TextBlock Classes="code-text" Text="PROGRAM START" Foreground="#00FF8E" /></DockPanel>-->
-                        <!--    <DockPanel><TextBlock Width="42" Classes="code-text" Text="2" Foreground="#8191B0" /><TextBlock Classes="code-text" Text="PROGRAM END" Foreground="#00FF8E" /></DockPanel>-->
-                        <!--</StackPanel>-->
-                    <!--</ScrollViewer>-->
                     <Border Grid.Row="1" x:Name="CodeEditor" Classes="code-editor-shell">
-                        <TextBox x:Name="CodeEditorTextBox"
-                                 Classes="code-editor"
-                                 AcceptsReturn="True"
-                                 AcceptsTab="True"
-                                 TextWrapping="NoWrap"
-                                 TextChanged="OnCodeEditorTextChanged" />
+                        <Grid ColumnDefinitions="60,*">
+                            <Border Grid.Column="0" Classes="code-editor-gutter">
+                                <ScrollViewer x:Name="CodeEditorGutterScrollViewer"
+                                              Classes="code-editor-gutter-scroll">
+                                    <StackPanel x:Name="CodeEditorLineNumberPanel"
+                                                Classes="code-editor-gutter-panel" />
+                                </ScrollViewer>
+                            </Border>
+                            <TextBox Grid.Column="1"
+                                     x:Name="CodeEditorTextBox"
+                                     Classes="code-editor"
+                                     AcceptsReturn="True"
+                                     AcceptsTab="True"
+                                     TextWrapping="NoWrap"
+                                     TextChanged="OnCodeEditorTextChanged" />
+                        </Grid>
                     </Border>
                 </Grid>
             </Border>
