@@ -79,6 +79,22 @@
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="#99B7DE" />
         </Style>
+        
+        <Style Selector="Border.code-editor-shell">
+            <Setter Property="Background" Value="#1A191D" />
+            <Setter Property="BorderBrush" Value="#34313A" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Margin" Value="18,16,18,24" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style Selector="TextBox.code-editor">
+            <Setter Property="Background" Value="#1A191D" />
+            <Setter Property="Foreground" Value="#E7EAF2" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="16" />
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
     </Window.Styles>
     <DockPanel LastChildFill="True"> <!-- Header Bar -->
         <Menu DockPanel.Dock="Top">
@@ -307,7 +323,7 @@
             
             <Border x:Name="CodePanel" Grid.Column="4"> <!-- Right Colum: Code Panel -->
                 <Grid RowDefinitions="Auto,*">
-                    <Border Classes="panel-header">
+                    <Border Grid.Row="0" Classes="panel-header">
                         <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
                             <StackPanel Spacing="3">
                                 <TextBlock Classes="panel-header-text" Text="Assembly Editor" />
@@ -340,7 +356,7 @@
                         <!--    <DockPanel><TextBlock Width="42" Classes="code-text" Text="2" Foreground="#8191B0" /><TextBlock Classes="code-text" Text="PROGRAM END" Foreground="#00FF8E" /></DockPanel>-->
                         <!--</StackPanel>-->
                     <!--</ScrollViewer>-->
-                    <Border x:Name="CodeEditor" Classes="code-editor-shell" IsVisible="False">
+                    <Border Grid.Row="1" x:Name="CodeEditor" Classes="code-editor-shell">
                         <TextBox x:Name="CodeEditorTextBox"
                                  Classes="code-editor"
                                  AcceptsReturn="True"
