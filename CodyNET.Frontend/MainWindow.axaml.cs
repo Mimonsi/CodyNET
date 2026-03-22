@@ -257,7 +257,7 @@ public partial class MainWindow : Window
             return;
 
         var fileInfo = new FileInfo(path);
-        UpdateCodePanel(fileInfo);
+        //UpdateCodePanel(fileInfo);
         FrontendHostBridge.LoadUartSource(fileInfo);
     }
     
@@ -483,6 +483,13 @@ public partial class MainWindow : Window
         FrontendHostBridge.Debugger?.RemoveBreakpoint(address);
         RefreshBreakpointsPanel();
     }
+    
+    private static bool IsAssemblySourceFile(FileInfo fileInfo)
+    {
+        var extension = fileInfo.Extension;
+        return extension.Equals(".asm", StringComparison.OrdinalIgnoreCase)
+               || extension.Equals(".s", StringComparison.OrdinalIgnoreCase);
+    }
 
     private void UpdateCodePanel(FileInfo fileInfo)
     {
@@ -491,6 +498,7 @@ public partial class MainWindow : Window
         {
             return;
         }
+        codeLinesPanel.Children.Clear();
 
         string[] lines;
         try
@@ -551,5 +559,130 @@ public partial class MainWindow : Window
         row.Children.Add(lineTextBlock);
 
         return row;
+    }
+
+    private async void OnLoadAssemblyClick(object? sender, RoutedEventArgs e)
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(
+            new FilePickerOpenOptions
+            {
+                Title = "Load Assembly Source",
+                AllowMultiple = false,
+                FileTypeFilter =
+                [
+                    new FilePickerFileType("Assembly files")
+                    {
+                        Patterns = ["*.asm", "*.s"]
+                    },
+                    new FilePickerFileType("All files")
+                    {
+                        Patterns = ["*.*"]
+                    }
+                ]
+            });
+
+        if (files.Count == 0)
+            return;
+
+        var path = files[0].TryGetLocalPath();
+        if (path == null)
+            return;
+
+        LoadAssemblyIntoEditor(new FileInfo(path));
+    }
+
+    private string? _loadedAssemblyPath;
+    private bool _isAssemblyDirty;
+    private bool _suppressCodeEditorEvents;
+    private void LoadAssemblyIntoEditor(FileInfo fileInfo)
+    {
+        if (!IsAssemblySourceFile(fileInfo))
+        {
+            MessageBox("Unsupported File", "Please choose a .asm or .s file.");
+            return;
+        }
+
+        string sourceText;
+        try
+        {
+            sourceText = File.ReadAllText(fileInfo.FullName);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to read source file {File}", fileInfo.FullName);
+            MessageBox("Load Error", $"Could not read source file:\n{fileInfo.FullName}");
+            return;
+        }
+
+        _loadedAssemblyPath = fileInfo.FullName;
+        _isAssemblyDirty = false;
+
+        _suppressCodeEditorEvents = true;
+        CodeEditorTextBox.Text = sourceText;
+        _suppressCodeEditorEvents = false;
+        
+        SetCodePanelState(fileInfo.Name, sourceText);
+        CompileAssemblyButton.IsEnabled = false;
+        SendAssemblyOverUartButton.IsEnabled = false;
+    }
+    
+    private void SetCodePanelState(string? fileName, string? sourceText)
+    {
+        var hasFile = !string.IsNullOrWhiteSpace(fileName);
+
+        CodeFileNameText.Text = hasFile
+            ? BuildCodePanelFileLabel(fileName!, sourceText)
+            : "No .asm or .s file loaded";
+    }
+    
+    private string BuildCodePanelFileLabel(string fileName, string? sourceText)
+    {
+        _isAssemblyDirty = true;
+        var dirtySuffix = _isAssemblyDirty ? " *" : string.Empty;
+        var lineCount = CountLines(sourceText);
+        return $"{fileName}{dirtySuffix}";
+    }
+    
+    private static int CountLines(string? text)
+    {
+        if (string.IsNullOrEmpty(text))
+            return 1;
+
+        var count = 1;
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (text[i] == '\n')
+                count++;
+        }
+
+        return count;
+    }
+
+    private void OnCompileAssemblyClick(object? sender, RoutedEventArgs e)
+    {
+        
+    }
+
+    private void OnSendAssemblyOverUartClick(object? sender, RoutedEventArgs e)
+    {
+        
+    }
+
+    private void OnCodeEditorTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (_suppressCodeEditorEvents)
+            return;
+
+        _isAssemblyDirty = true;
+        var sourceText = CodeEditorTextBox.Text ?? string.Empty;
+        SetCodePanelState(GetLoadedAssemblyFileName(), sourceText);
+    }
+    
+    private string GetLoadedAssemblyFileName()
+    {
+        if (string.IsNullOrWhiteSpace(_loadedAssemblyPath))
+            return "Unnamed assembly";
+
+        return Path.GetFileName(_loadedAssemblyPath);
     }
 }

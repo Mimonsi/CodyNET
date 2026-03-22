@@ -128,7 +128,7 @@
                 <ColumnDefinition Width="4" /> <!-- Divider -->
                 <ColumnDefinition Width="*" MinWidth="420" /> <!-- Center Column, Screen and Console -->
                 <ColumnDefinition Width="4" /> <!-- Divider -->
-                <ColumnDefinition Width="300" MinWidth="220" /> <!-- Right Column: Code Panel -->
+                <ColumnDefinition Width="400" MinWidth="220" /> <!-- Right Column: Code Panel -->
             </Grid.ColumnDefinitions>
             
             <Border x:Name="LeftSidebar" Grid.Column="0" Classes="panel">
@@ -308,14 +308,46 @@
             <Border x:Name="CodePanel" Grid.Column="4"> <!-- Right Colum: Code Panel -->
                 <Grid RowDefinitions="Auto,*">
                     <Border Classes="panel-header">
-                        <TextBlock Classes="panel-header-text" Text="Code Panel" />
+                        <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
+                            <StackPanel Spacing="3">
+                                <TextBlock Classes="panel-header-text" Text="Assembly Editor" />
+                                <TextBlock x:Name="CodeFileNameText"
+                                           Classes="code-file-name"
+                                           Text="No .asm or .s file loaded" />
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    x:Name="LoadAssemblyButton"
+                                    Classes="code-toolbar-button"
+                                    Content="Load"
+                                    Click="OnLoadAssemblyClick" />
+                            <Button Grid.Column="2"
+                                    x:Name="CompileAssemblyButton"
+                                    Classes="code-toolbar-button"
+                                    Content="Compile"
+                                    IsEnabled="False"
+                                    Click="OnCompileAssemblyClick" />
+                            <Button Grid.Column="3"
+                                    x:Name="SendAssemblyOverUartButton"
+                                    Classes="code-toolbar-button"
+                                    Content="UART"
+                                    IsEnabled="False"
+                                    Click="OnSendAssemblyOverUartClick" />
+                        </Grid>
                     </Border>
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <StackPanel x:Name="CodeLinesPanel" Margin="18,16,18,24" Spacing="6"> <!-- TODO: Find out how to embed the whole code with formatting (and add breakpoints)-->
-                            <DockPanel><TextBlock Width="42" Classes="code-text" Text="1" Foreground="#8191B0" /><TextBlock Classes="code-text" Text="PROGRAM START" Foreground="#00FF8E" /></DockPanel>
-                            <DockPanel><TextBlock Width="42" Classes="code-text" Text="2" Foreground="#8191B0" /><TextBlock Classes="code-text" Text="PROGRAM END" Foreground="#00FF8E" /></DockPanel>
-                        </StackPanel>
-                    </ScrollViewer>
+                    <!--<ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">-->
+                        <!--<StackPanel x:Name="CodeLinesPanel" Margin="18,16,18,24" Spacing="6"> TODO: Find out how to embed the whole code with formatting (and add breakpoints)-->
+                        <!--    <DockPanel><TextBlock Width="42" Classes="code-text" Text="1" Foreground="#8191B0" /><TextBlock Classes="code-text" Text="PROGRAM START" Foreground="#00FF8E" /></DockPanel>-->
+                        <!--    <DockPanel><TextBlock Width="42" Classes="code-text" Text="2" Foreground="#8191B0" /><TextBlock Classes="code-text" Text="PROGRAM END" Foreground="#00FF8E" /></DockPanel>-->
+                        <!--</StackPanel>-->
+                    <!--</ScrollViewer>-->
+                    <Border x:Name="CodeEditor" Classes="code-editor-shell" IsVisible="False">
+                        <TextBox x:Name="CodeEditorTextBox"
+                                 Classes="code-editor"
+                                 AcceptsReturn="True"
+                                 AcceptsTab="True"
+                                 TextWrapping="NoWrap"
+                                 TextChanged="OnCodeEditorTextChanged" />
+                    </Border>
                 </Grid>
             </Border>
         </Grid>
