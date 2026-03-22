@@ -567,7 +567,7 @@ public partial class MainWindow : Window
     {
         var hasFile = !string.IsNullOrWhiteSpace(fileName);
         CodeEditor.IsVisible = hasFile;
-        CodeEditorGutterScrollViewer.IsVisible = hasFile;
+        //CodeEditorGutterScrollViewer.IsVisible = hasFile;
 
         CodeFileNameText.Text = hasFile
             ? BuildCodePanelFileLabel(fileName!, sourceText)
@@ -697,7 +697,7 @@ public partial class MainWindow : Window
             return;
 
         _isSyncingCodeEditorScroll = true;
-        CodeEditorGutterScrollViewer.Offset = new Vector(CodeEditorGutterScrollViewer.Offset.X, verticalOffset);
+        //CodeEditorGutterScrollViewer.Offset = new Vector(CodeEditorGutterScrollViewer.Offset.X, verticalOffset);
         _isSyncingCodeEditorScroll = false;
     }
 }
