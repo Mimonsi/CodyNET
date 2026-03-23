@@ -600,7 +600,9 @@ public partial class MainWindow : Window
         File.WriteAllText(inputFile.FullName, string.Join("\n", finalCode));
         var preprocessedFile = new FileInfo("editor_preprocessed.s");
         CodyPreprocessor.PreprocessFile(inputFile, preprocessedFile);
-        TassAssembler.AssembleFile(preprocessedFile.FullName);
+        var bytes = TassAssembler.AssembleFile(preprocessedFile.FullName);
+        var binaryFile = new FileInfo("editor.bin");
+        File.WriteAllBytes(binaryFile.FullName, bytes);
     }
 
     private void OnSendAssemblyOverUartClick(object? sender, RoutedEventArgs e)
