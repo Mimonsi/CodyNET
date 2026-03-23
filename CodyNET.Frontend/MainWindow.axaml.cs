@@ -13,6 +13,7 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using CodyNET.Assembler;
 using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
 using CodyNET.Core.Devices;
@@ -35,8 +36,6 @@ public partial class MainWindow : Window
     private bool _suppressCodeEditorEvents;
     private readonly Dictionary<int, bool> _codeEditorBreakpointLines = new();
     private List<string> _codeLines = [];
-    private ScrollViewer? _codeEditorInnerScrollViewer;
-    private bool _isSyncingCodeEditorScroll;
     
     public MainWindow()
     {
@@ -65,7 +64,6 @@ public partial class MainWindow : Window
         screen?.Focus();
         RefreshRegisterValues();
         RefreshBreakpointsPanel();
-        AttachCodeEditorScrollSync();
         registerRefreshTimer?.Start();
         footerRefreshTimer?.Start();
     }
@@ -544,8 +542,7 @@ public partial class MainWindow : Window
         
         SetCodePanelState(fileInfo.Name, sourceText);
         RefreshCodeEditorLineNumbers(CountLines(sourceText));
-        Dispatcher.UIThread.Post(AttachCodeEditorScrollSync, DispatcherPriority.Loaded);
-        CompileAssemblyButton.IsEnabled = false;
+        CompileAssemblyButton.IsEnabled = true;
         SendAssemblyOverUartButton.IsEnabled = false;
     }
     
@@ -584,7 +581,26 @@ public partial class MainWindow : Window
 
     private void OnCompileAssemblyClick(object? sender, RoutedEventArgs e)
     {
-        
+        var finalCode = new List<string>();
+        for(int i = 0; i < _codeLines.Count; i++)
+        {
+            var lineNumber = i + 1;
+            var lineText = _codeLines[i];
+            if (_codeEditorBreakpointLines.ContainsKey(lineNumber))
+            {
+                if (_codeEditorBreakpointLines[lineNumber])
+                {
+                    finalCode.Add($"DBP ; BREAKPOINT LINE {lineNumber}"); // Add Breakpoint command for preprocessor
+                }
+            }
+            finalCode.Add(lineText);
+        }
+
+        var inputFile = new FileInfo("editor.s");
+        File.WriteAllText(inputFile.FullName, string.Join("\n", finalCode));
+        var preprocessedFile = new FileInfo("editor_preprocessed.s");
+        CodyPreprocessor.PreprocessFile(inputFile, preprocessedFile);
+        TassAssembler.AssembleFile(preprocessedFile.FullName);
     }
 
     private void OnSendAssemblyOverUartClick(object? sender, RoutedEventArgs e)
@@ -601,7 +617,6 @@ public partial class MainWindow : Window
         var sourceText = CodeEditorTextBox.Text ?? string.Empty;
         SetCodePanelState(GetLoadedAssemblyFileName(), sourceText);
         RefreshCodeEditorLineNumbers(CountLines(sourceText));
-        Dispatcher.UIThread.Post(AttachCodeEditorScrollSync, DispatcherPriority.Loaded);
     }
     
     private string GetLoadedAssemblyFileName()
@@ -654,37 +669,5 @@ public partial class MainWindow : Window
             _codeEditorBreakpointLines.Remove(lineNumber, out _);
         }
         RefreshBreakpointsPanel();
-    }
-
-    private void AttachCodeEditorScrollSync()
-    {
-        var scrollViewer = CodeEditorTextBox.GetVisualDescendants()
-            .OfType<ScrollViewer>()
-            .FirstOrDefault();
-
-        if (scrollViewer == null || ReferenceEquals(_codeEditorInnerScrollViewer, scrollViewer))
-            return;
-
-        if (_codeEditorInnerScrollViewer != null)
-            _codeEditorInnerScrollViewer.ScrollChanged -= OnCodeEditorScrollChanged;
-
-        _codeEditorInnerScrollViewer = scrollViewer;
-        _codeEditorInnerScrollViewer.ScrollChanged += OnCodeEditorScrollChanged;
-        SyncCodeEditorGutterOffset(scrollViewer.Offset.Y);
-    }
-
-    private void OnCodeEditorScrollChanged(object? sender, ScrollChangedEventArgs e)
-    {
-        SyncCodeEditorGutterOffset(((ScrollViewer?)sender)?.Offset.Y ?? 0);
-    }
-
-    private void SyncCodeEditorGutterOffset(double verticalOffset)
-    {
-        if (_isSyncingCodeEditorScroll)
-            return;
-
-        _isSyncingCodeEditorScroll = true;
-        //CodeEditorGutterScrollViewer.Offset = new Vector(CodeEditorGutterScrollViewer.Offset.X, verticalOffset);
-        _isSyncingCodeEditorScroll = false;
     }
 }

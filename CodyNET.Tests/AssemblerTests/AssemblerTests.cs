@@ -91,4 +91,16 @@ public class AssemblerTests
 
         Assert.That(reassembled, Is.EqualTo(original));
     }
+
+    [Test]
+    public void TestPreprocessor()
+    {
+        var code = "LDA #1\nSTA #1\n\n";
+        var x = CodyPreprocessor.Preprocess(code);
+        
+        List<string> lines = code.Split('\n').ToList();
+        var y = CodyPreprocessor.Preprocess(lines);
+        
+        Assert.That(x , Is.EqualTo(y));
+    }
 }

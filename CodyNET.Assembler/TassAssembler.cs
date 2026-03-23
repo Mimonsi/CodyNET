@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using CodyNET.Common.Utils;
 
 namespace CodyNET.Assembler;
 
@@ -80,6 +81,9 @@ public static class TassAssembler
                 string stdout = stdoutTask.Result;
                 string stderr = stderrTask.Result;
 
+                if (!string.IsNullOrEmpty(stderr))
+                    Log.Error(stderr);
+                Log.Info("64tass output: {output}", stdout);
                 if (proc.ExitCode != 0)
                 {
                     throw new InvalidOperationException(
