@@ -105,7 +105,7 @@
             <Setter Property="Spacing" Value="0" />
         </Style>
         <Style Selector="Button.code-line-number">
-            <Setter Property="Height" Value="20" />
+            <Setter Property="Height" Value="19.25" />
             <Setter Property="MinWidth" Value="42" />
             <Setter Property="Padding" Value="0,0,8,0" />
             <Setter Property="Background" Value="Transparent" />

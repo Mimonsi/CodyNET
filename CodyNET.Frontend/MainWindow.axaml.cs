@@ -33,7 +33,8 @@ public partial class MainWindow : Window
     private string? _loadedAssemblyPath;
     private bool _isAssemblyDirty;
     private bool _suppressCodeEditorEvents;
-    private readonly HashSet<int> _codeEditorBreakpointLines = [];
+    private readonly Dictionary<int, bool> _codeEditorBreakpointLines = new();
+    private List<string> _codeLines = [];
     private ScrollViewer? _codeEditorInnerScrollViewer;
     private bool _isSyncingCodeEditorScroll;
     
@@ -131,44 +132,21 @@ public partial class MainWindow : Window
 
     private void RefreshBreakpointsPanel()
     {
-        // TEMP DUMMY
-        if (FrontendHostBridge.Debugger != null && !FrontendHostBridge.Debugger.HasBreakpoints())
-        {
-            FrontendHostBridge.Debugger?.AddBreakpoint(0xC000, true, "LDA #1337");
-            FrontendHostBridge.Debugger?.AddBreakpoint(0xE000, false, "LDA #1234567");
-            FrontendHostBridge.Debugger?.AddBreakpoint(0xCAFE, false, "LDA #1357");
-            FrontendHostBridge.Debugger?.AddBreakpoint(0xC002, true, "STA #1337");
-            FrontendHostBridge.Debugger?.AddBreakpoint(0xC003, true, "STA #1337");
-            FrontendHostBridge.Debugger?.AddBreakpoint(0xC004, true, "STA #1337");
-            FrontendHostBridge.Debugger?.AddBreakpoint(0xC005, true, "STA #1337");
-            FrontendHostBridge.Debugger?.AddBreakpoint(0xC006, true, "STA #1337");
-        }
-        
         var breakpointsPanel = BreakpointsPanel;
         breakpointsPanel.Children.Clear();
 
         AddBreakpointHeader();
-
-        var debugger = FrontendHostBridge.Debugger;
-        if (debugger == null)
-        {
-            AddBreakpointPlaceholder("Debugger not available.");
-            return;
-        }
-
-        var breakpoints = debugger.GetBreakpointsSnapshot()
-            .OrderBy(bp => bp.Address)
-            .ToList();
-
-        if (breakpoints.Count == 0)
+        
+        RefreshCodeEditorLineNumbers(CountLines(CodeEditorTextBox.Text));
+        if (_codeEditorBreakpointLines.Count == 0)
         {
             AddBreakpointPlaceholder("No breakpoints configured.");
             return;
         }
 
-        for (var i = 0; i < breakpoints.Count; i++)
+        foreach (int i in _codeEditorBreakpointLines.Keys.OrderBy(x => x))
         {
-            AddBreakpointRow(breakpoints[i]);
+            AddBreakpointRow(i);
         }
     }
 
@@ -381,7 +359,7 @@ public partial class MainWindow : Window
 
         headerRow.Children.Add(CreateBreakpointCell(new TextBlock
         {
-            Text = "Adresse",
+            Text = "Line",
             VerticalAlignment = VerticalAlignment.Center,
         }, 1, "breakpoint-column-header"));
 
@@ -414,31 +392,39 @@ public partial class MainWindow : Window
         });
     }
 
-    private void AddBreakpointRow(Breakpoint breakpoint)
+    private string GetLineText(int line)
+    {
+        if (line - 1 >= _codeLines.Count)
+            return "ERROR";
+        return _codeLines[line-1];
+    }
+
+    private void AddBreakpointRow(int line)
     {
         var row = CreateBreakpointRowGrid();
+        var enabled = _codeEditorBreakpointLines[line];
 
         var enabledToggle = new CheckBox
         {
-            IsChecked = breakpoint.Enabled,
+            IsChecked = enabled,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Left,
-            Tag = breakpoint.Address,
+            Tag = line,
         };
         enabledToggle.IsCheckedChanged += OnBreakpointCheckedChanged;
         row.Children.Add(CreateBreakpointCell(enabledToggle, 0));
 
         row.Children.Add(CreateBreakpointCell(new TextBlock
         {
-            Text = $"PC == ${breakpoint.Address:X4}",
-            Foreground = Brush.Parse(breakpoint.Enabled ? "#00FF8E" : "#8191B0"),
+            Text = $"{line}",
+            Foreground = Brush.Parse(enabled ? "#00FF8E" : "#8191B0"),
             VerticalAlignment = VerticalAlignment.Center,
         }, 1, "code-text"));
 
         row.Children.Add(CreateBreakpointCell(new TextBlock
         {
-            Text = string.IsNullOrWhiteSpace(breakpoint.Text) ? "-" : breakpoint.Text,
-            Foreground = Brush.Parse(breakpoint.Enabled ? "#00FF8E" : "#8191B0"),
+            Text = GetLineText(line),
+            Foreground = Brush.Parse(enabled ? "#00FF8E" : "#8191B0"),
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
         }, 2, "code-text"));
@@ -446,7 +432,7 @@ public partial class MainWindow : Window
         var deleteButton = new Button
         {
             Content = "×",
-            Tag = breakpoint.Address,
+            Tag = line,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center,
         };
@@ -482,20 +468,19 @@ public partial class MainWindow : Window
 
     private void OnBreakpointCheckedChanged(object? sender, RoutedEventArgs e)
     {
-        if (sender is not CheckBox checkBox || checkBox.Tag is not ushort address)
+        if (sender is not CheckBox { Tag: int line } checkBox)
             return;
 
-        if (FrontendHostBridge.Debugger?.SetBreakpointEnabled(address, checkBox.IsChecked == true) != true)
-            return;
+        _codeEditorBreakpointLines[line] = checkBox.IsChecked ?? false;
         RefreshBreakpointsPanel();
     }
 
     private void OnBreakpointDeleteClick(object? sender, RoutedEventArgs e)
     {
-        if (sender is not Button button || button.Tag is not ushort address)
+        if (sender is not Button button || button.Tag is not int line)
             return;
 
-        FrontendHostBridge.Debugger?.RemoveBreakpoint(address);
+        _codeEditorBreakpointLines.Remove(line);
         RefreshBreakpointsPanel();
     }
     
@@ -541,6 +526,7 @@ public partial class MainWindow : Window
         try
         {
             sourceText = File.ReadAllText(fileInfo.FullName);
+            _codeLines = File.ReadAllLines(fileInfo.FullName).ToList();
         }
         catch (Exception ex)
         {
@@ -645,7 +631,7 @@ public partial class MainWindow : Window
 
     private Button CreateCodeEditorLineNumberButton(int lineNumber)
     {
-        var hasBreakpoint = _codeEditorBreakpointLines.Contains(lineNumber);
+        var hasBreakpoint = _codeEditorBreakpointLines.ContainsKey(lineNumber);
         var button = new Button
         {
             Content = lineNumber.ToString(CultureInfo.InvariantCulture),
@@ -663,10 +649,11 @@ public partial class MainWindow : Window
         if (sender is not Button button || button.Tag is not int lineNumber)
             return;
 
-        if (!_codeEditorBreakpointLines.Add(lineNumber))
-            _codeEditorBreakpointLines.Remove(lineNumber);
-
-        RefreshCodeEditorLineNumbers(CountLines(CodeEditorTextBox.Text));
+        if (!_codeEditorBreakpointLines.TryAdd(lineNumber, true))
+        {
+            _codeEditorBreakpointLines.Remove(lineNumber, out _);
+        }
+        RefreshBreakpointsPanel();
     }
 
     private void AttachCodeEditorScrollSync()
