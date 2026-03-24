@@ -603,11 +603,16 @@ public partial class MainWindow : Window
         var bytes = TassAssembler.AssembleFile(preprocessedFile.FullName);
         var binaryFile = new FileInfo("editor.bin");
         File.WriteAllBytes(binaryFile.FullName, bytes);
+
+        SendAssemblyOverUartButton.IsEnabled = true;
     }
 
     private void OnSendAssemblyOverUartClick(object? sender, RoutedEventArgs e)
     {
-        
+        var file = new FileInfo("editor.bin");
+        FrontendHostBridge.LoadUartSource(file);
+        Log.Info("Sent {path} to Uart", file.FullName);
+        SendAssemblyOverUartButton.IsEnabled = false;
     }
 
     private void OnCodeEditorTextChanged(object? sender, TextChangedEventArgs e)

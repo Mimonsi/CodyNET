@@ -125,9 +125,9 @@ public class Cody
     }
 
     private int _allowedSteps = -1; // -1 = Normal running, 0 = Paused, 1 = Single Step Mode
-    public void SetPaused() => _allowedSteps = 0;
+    public void Pause() => _allowedSteps = 0;
     
-    public void SetRunning() => _allowedSteps = -1;
+    public void Resume() => _allowedSteps = -1;
     
     public void SetAllowedSteps(int steps) => _allowedSteps = steps;
 
@@ -142,6 +142,7 @@ public class Cody
             if (Debugger is not null && Debugger.IsAtBreakpoint())
             {
                 Log.Info("Execution paused by debugger on PC={PC:X4}", Cpu.PC);
+                Pause();
                 //break;
             }
             while (_allowedSteps == 0)
