@@ -92,6 +92,7 @@ public class AssemblerTests
         Assert.That(reassembled, Is.EqualTo(original));
     }
 
+    [Explicit("Dev Test")]
     [Test]
     public void TestPreprocessor()
     {
@@ -102,5 +103,15 @@ public class AssemblerTests
         var y = CodyPreprocessor.Preprocess(lines);
         
         Assert.That(x , Is.EqualTo(y));
+    }
+    
+    [Explicit("Dev Test")]
+    [Test]
+    public void TestDisassembler()
+    {
+        var file1 = "C:\\Users\\Konsi\\Documents\\CodyNET\\CodyNET.Tests\\testdata\\programs\\assembly\\TicTacToe_assembled.bin";
+        var file2 = "C:\\Users\\Konsi\\Documents\\CodyNET\\CodyNET.Tests\\testdata\\programs\\assembly\\TicTacToe_breakpoint.bin";
+        CodyDisassembler.DisassembleFile(new FileInfo(file1), new FileInfo(file1.Replace(".bin", ".asm")));
+        CodyDisassembler.DisassembleFile(new FileInfo(file2), new FileInfo(file2.Replace(".bin", ".asm")));
     }
 }

@@ -41,10 +41,11 @@ public static class CodyPreprocessor
 
             if (!string.IsNullOrEmpty(codeLine))
             {
+                var dbpText = "LDA #$$01\nSTA $$FF00";
                 codeLine = Regex.Replace(
                     codeLine,
                     @"^(\s*)DBP\b",
-                    "$1STA $FF00",
+                    "$1" + dbpText,
                     RegexOptions.IgnoreCase);
             }
 
