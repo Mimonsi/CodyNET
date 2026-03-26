@@ -125,11 +125,28 @@ public class Cody
     }
 
     private int _allowedSteps = -1; // -1 = Normal running, 0 = Paused, 1 = Single Step Mode
-    public void Pause() => _allowedSteps = 0;
-    
-    public void Resume() => _allowedSteps = -1;
-    
-    public void SetAllowedSteps(int steps) => _allowedSteps = steps;
+    private readonly ManualResetEventSlim _resumeEvent = new(initialState: true); // true = open (running)
+
+    public void Pause()
+    {
+        _allowedSteps = 0;
+        _resumeEvent.Reset();
+    }
+
+    public void Resume()
+    {
+        _allowedSteps = -1;
+        _resumeEvent.Set();
+    }
+
+    public void SetAllowedSteps(int steps)
+    {
+        _allowedSteps = steps;
+        if (steps != 0)
+            _resumeEvent.Set();
+        else
+            _resumeEvent.Reset();
+    }
 
     private Stopwatch screenStopwatch = new();
     public void RunUntilFinish()
@@ -145,14 +162,14 @@ public class Cody
                 Pause();
                 //break;
             }
-            while (_allowedSteps == 0)
-            {
-                // Busy polling
-                Thread.Sleep(100);
-            }
+            _resumeEvent.Wait(); // Block here when paused — zero latency on resume
             result = Cpu.Step();
             if (_allowedSteps > 0) // After step, reduce allowed steps, if limited
+            {
                 _allowedSteps--;
+                if (_allowedSteps == 0)
+                    _resumeEvent.Reset(); // Single-step done → pause again
+            }
             Profiler?.SampleCpu(Cpu.TotalCyclesExecuted, Cpu.CyclesPerSecond);
             // TEMP
 

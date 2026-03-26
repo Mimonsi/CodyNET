@@ -33,8 +33,8 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
     // Breakpoints (Essentially watch PC)
     private List<Breakpoint> Breakpoints { get; } = [];
 
-    // Set to true when breakpoint is hit
-    public bool RequestPause;
+    // Set to true when breakpoint is hit; volatile ensures visibility across threads
+    private volatile bool _requestPause;
 
     public Interrupt Update(long cycle)
     {
@@ -160,7 +160,7 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
     private void DBP(byte value)
     {
         Log.Info("[Debugger] DBP: {value}", value);
-        RequestPause = true;
+        _requestPause = true;
     }
     
     private void DRS(byte index)
@@ -192,9 +192,9 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
         {
             lock (_breakpointsLock)
             {
-                if (RequestPause)
+                if (_requestPause)
                 {
-                    RequestPause = false;
+                    _requestPause = false;
                     return true;
                 }
                 if (Breakpoints.Count == 0)

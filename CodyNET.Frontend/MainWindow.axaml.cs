@@ -26,7 +26,7 @@ namespace CodyNET.Frontend;
 public partial class MainWindow : Window
 {
     private static readonly TimeSpan RegisterRefreshInterval = TimeSpan.FromMilliseconds(100);
-    private static readonly TimeSpan FooterRefreshInterval = TimeSpan.FromMilliseconds(500);
+    private static readonly TimeSpan FooterRefreshInterval = TimeSpan.FromMilliseconds(250);
 
     private ScreenControl? screen;
     private DispatcherTimer? registerRefreshTimer;
@@ -298,6 +298,8 @@ public partial class MainWindow : Window
             return;
         FrontendHostBridge.SetRunState(1);
     }
+    
+    private List<Key> DebuggerControlKeys = new() { Key.F8, Key.F9 };
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
@@ -333,6 +335,11 @@ public partial class MainWindow : Window
     
     private void OnKeyUp(object? sender, KeyEventArgs e)
     {
+        if (DebuggerControlKeys.Contains(e.Key))
+        {
+            // Do not send key up events for debugger control keys to avoid issues with key repeat and lost key up events
+            return;
+        }
         var keyboard = FrontendHostBridge.Keyboard;
         if (keyboard == null)
             return;
