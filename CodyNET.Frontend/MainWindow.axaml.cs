@@ -539,7 +539,6 @@ public partial class MainWindow : Window
         string sourceText;
         try
         {
-            sourceText = File.ReadAllText(fileInfo.FullName);
             _codeLines = File.ReadAllLines(fileInfo.FullName).ToList();
         }
         catch (Exception ex)
@@ -548,6 +547,25 @@ public partial class MainWindow : Window
             MessageBox("Load Error", $"Could not read source file:\n{fileInfo.FullName}");
             return;
         }
+        
+        var codeLinesProcessed = new List<string>();
+        var breakpointLines = new List<int>();
+        for(int i = 0; i < _codeLines.Count; i++)
+        {
+            var line = _codeLines[i];
+            if (line.Contains("DBP", StringComparison.OrdinalIgnoreCase))
+            {
+                breakpointLines.Add(i + 1);
+            }
+            else
+            {
+                codeLinesProcessed.Add(line);
+            }
+        }
+        AddMultipleBreakpoints(breakpointLines.ToArray());
+
+        _codeLines = codeLinesProcessed;
+        sourceText =  string.Join(Environment.NewLine, _codeLines);
 
         _loadedAssemblyPath = fileInfo.FullName;
         _isAssemblyDirty = false;
@@ -700,6 +718,35 @@ public partial class MainWindow : Window
         }
     }
 
+    private void AddMultipleBreakpoints(int[] lineNumbers)
+    {
+        foreach (int number in lineNumbers)
+        {
+            _codeEditorBreakpointLines.TryAdd(number, true);
+        }
+        RefreshBreakpointsPanel(); // Only refresh panel once
+    }
+
+    private void RemoveBreakpoint(int lineNumber)
+    {
+        try
+        {
+            _codeEditorBreakpointLines.Remove(lineNumber);
+            RefreshBreakpointsPanel();
+        }
+        catch (Exception _)
+        {
+            // ignored
+        }
+    }
+
+    private void ToggleBreakpoint(int lineNumber)
+    {
+        if (!_codeEditorBreakpointLines.TryAdd(lineNumber, true))
+            _codeEditorBreakpointLines.Remove(lineNumber, out _);
+        RefreshBreakpointsPanel();
+    }
+
     private void OnLineNumberCanvasPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         var pos = e.GetPosition(CodeEditorLineNumberPanel);
@@ -707,9 +754,6 @@ public partial class MainWindow : Window
         var lineNumber = lineIndex + 1;
         if (lineNumber < 1) return;
 
-        if (!_codeEditorBreakpointLines.TryAdd(lineNumber, true))
-            _codeEditorBreakpointLines.Remove(lineNumber, out _);
-
-        RefreshBreakpointsPanel();
+        ToggleBreakpoint(lineNumber);
     }
 }
