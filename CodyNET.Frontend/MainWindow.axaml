@@ -100,22 +100,8 @@
             <Setter Property="VerticalScrollBarVisibility" Value="Hidden" />
             <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
         </Style>
-        <Style Selector="StackPanel.code-editor-gutter-panel">
-            <Setter Property="Margin" Value="4,4,4,8" />
-            <Setter Property="Spacing" Value="0" />
-        </Style>
-        <Style Selector="Button.code-line-number">
-            <Setter Property="Height" Value="19.25" />
-            <Setter Property="MinWidth" Value="42" />
-            <Setter Property="Padding" Value="0,0,8,0" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="CornerRadius" Value="0" />
-            <Setter Property="HorizontalContentAlignment" Value="Right" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Foreground" Value="#8191B0" />
+        <Style Selector="Canvas.code-editor-gutter-panel">
+            <Setter Property="Width" Value="60" />
         </Style>
         <Style Selector="TextBox.code-editor">
             <Setter Property="Background" Value="#1A191D" />
@@ -390,8 +376,9 @@
                                 <Border Grid.Column="0" Classes="code-editor-gutter">
                                     <!-- <ScrollViewer x:Name="CodeEditorGutterScrollViewer" -->
                                               <!-- Classes="code-editor-gutter-scroll"> -->
-                                    <StackPanel x:Name="CodeEditorLineNumberPanel"
-                                                Classes="code-editor-gutter-panel" />
+                                    <Canvas x:Name="CodeEditorLineNumberPanel"
+                                            Classes="code-editor-gutter-panel"
+                                            PointerPressed="OnLineNumberCanvasPointerPressed" />
                                     <!-- </ScrollViewer> -->
                                     
                                 </Border>

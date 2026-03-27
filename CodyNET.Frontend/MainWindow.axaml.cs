@@ -6,7 +6,9 @@ using System.Linq;
 using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Input;
+using Path = System.IO.Path;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -26,6 +28,13 @@ namespace CodyNET.Frontend;
 public partial class MainWindow : Window
 {
     private static readonly TimeSpan RegisterRefreshInterval = TimeSpan.FromMilliseconds(100);
+
+    // These must match the TextBox.code-editor style: Padding top=4, bottom=8, LineHeight=20
+    private const double CodeLineHeight = 20.0;
+    private const double GutterTopPadding = 4.0;
+    private const double GutterBottomPadding = 8.0;
+    private const double GutterWidth = 60.0;
+    private const double GutterRightPadding = 8.0;
     private static readonly TimeSpan FooterRefreshInterval = TimeSpan.FromMilliseconds(250);
 
     private ScreenControl? screen;
@@ -650,38 +659,57 @@ public partial class MainWindow : Window
 
     private void RefreshCodeEditorLineNumbers(int lineCount)
     {
+        lineCount = Math.Max(1, lineCount);
         CodeEditorLineNumberPanel.Children.Clear();
+        // Canvas height must be explicit so the outer ScrollViewer knows the scrollable area
+        CodeEditorLineNumberPanel.Height = GutterTopPadding + lineCount * CodeLineHeight + GutterBottomPadding;
 
-        for (var lineNumber = 1; lineNumber <= Math.Max(1, lineCount); lineNumber++)
+        for (var i = 0; i < lineCount; i++)
         {
-            CodeEditorLineNumberPanel.Children.Add(CreateCodeEditorLineNumberButton(lineNumber));
+            var lineNumber = i + 1;
+            var hasBreakpoint = _codeEditorBreakpointLines.ContainsKey(lineNumber);
+            var y = GutterTopPadding + i * CodeLineHeight;
+
+            if (hasBreakpoint)
+            {
+                var bg = new Rectangle
+                {
+                    Width = GutterWidth,
+                    Height = CodeLineHeight,
+                    Fill = Brush.Parse("#7D2020"),
+                };
+                Canvas.SetTop(bg, y);
+                Canvas.SetLeft(bg, 0);
+                CodeEditorLineNumberPanel.Children.Add(bg);
+            }
+
+            var label = new TextBlock
+            {
+                Text = lineNumber.ToString(CultureInfo.InvariantCulture),
+                FontFamily = new FontFamily("Cascadia Mono, Consolas, monospace"),
+                FontSize = 14,
+                Height = CodeLineHeight,
+                Width = GutterWidth - GutterRightPadding,
+                Foreground = hasBreakpoint ? Brush.Parse("#FF6B6B") : Brush.Parse("#8191B0"),
+                TextAlignment = TextAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            Canvas.SetTop(label, y);
+            Canvas.SetLeft(label, 0);
+            CodeEditorLineNumberPanel.Children.Add(label);
         }
     }
 
-    private Button CreateCodeEditorLineNumberButton(int lineNumber)
+    private void OnLineNumberCanvasPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        var hasBreakpoint = _codeEditorBreakpointLines.ContainsKey(lineNumber);
-        var button = new Button
-        {
-            Content = lineNumber.ToString(CultureInfo.InvariantCulture),
-            Tag = lineNumber,
-            Background = hasBreakpoint ? Brush.Parse("#7D2020") : Brushes.Transparent,
-            Foreground = hasBreakpoint ? Brush.Parse("#FF6B6B") : Brush.Parse("#8191B0"),
-        };
-        button.Classes.Add("code-line-number");
-        button.Click += OnCodeEditorLineNumberClick;
-        return button;
-    }
-
-    private void OnCodeEditorLineNumberClick(object? sender, RoutedEventArgs e)
-    {
-        if (sender is not Button button || button.Tag is not int lineNumber)
-            return;
+        var pos = e.GetPosition(CodeEditorLineNumberPanel);
+        var lineIndex = (int)Math.Floor((pos.Y - GutterTopPadding) / CodeLineHeight);
+        var lineNumber = lineIndex + 1;
+        if (lineNumber < 1) return;
 
         if (!_codeEditorBreakpointLines.TryAdd(lineNumber, true))
-        {
             _codeEditorBreakpointLines.Remove(lineNumber, out _);
-        }
+
         RefreshBreakpointsPanel();
     }
 }
