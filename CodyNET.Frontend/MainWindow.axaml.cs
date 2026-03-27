@@ -167,7 +167,12 @@ public partial class MainWindow : Window
 
         _lastRenderedLineCount = -1; // Force gutter redraw to reflect breakpoint changes
         RefreshCodeEditorLineNumbers(CountLines(CodeEditorTextBox.Text));
-        if (_codeEditorBreakpointLines.Count == 0)
+
+        var count = _codeEditorBreakpointLines.Count;
+        BreakpointBadge.IsVisible = count > 0;
+        BreakpointBadgeText.Text = count.ToString();
+
+        if (count == 0)
         {
             AddBreakpointPlaceholder("No breakpoints configured.");
             return;
@@ -191,6 +196,7 @@ public partial class MainWindow : Window
             case RunStatus.Running:
                 FooterStatusText.Text = "Running";
                 FooterStatusText.Foreground = Brush.Parse("#31c436");
+                ClockActualLabel.Foreground = Brush.Parse("#31c436");
                 MenuPauseResumeButton.Header = "_Pause [F9]";
                 MenuStepButton.IsEnabled = false;
                 EmulatorPauseResumeButton.Content = "Pause [F9]";
@@ -199,6 +205,7 @@ public partial class MainWindow : Window
             case RunStatus.Paused:
                 FooterStatusText.Text = "Paused";
                 FooterStatusText.Foreground = Brush.Parse("#ff2414");
+                ClockActualLabel.Foreground = Brush.Parse("#ff2414");
                 MenuPauseResumeButton.Header = "_Resume [F9]";
                 MenuStepButton.IsEnabled = true;
                 EmulatorPauseResumeButton.Content = "Resume [F9]";

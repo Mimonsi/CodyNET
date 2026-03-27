@@ -309,7 +309,19 @@
                 <Border x:Name="LowerPanel" Grid.Row="3" Background="#201F22" Padding="0,0,0,8">
                     <Grid RowDefinitions="Auto,*">
                         <Border Grid.Row="0" Classes="panel-header">
-                            <TextBlock Classes="panel-header-text" Text="Breakpoints" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Classes="panel-header-text" Text="Breakpoints" />
+                                <Border x:Name="BreakpointBadge"
+                                        IsVisible="False"
+                                        Background="#4A474F"
+                                        CornerRadius="8"
+                                        Padding="6,1">
+                                    <TextBlock x:Name="BreakpointBadgeText"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               Foreground="#F5F5F7" />
+                                </Border>
+                            </StackPanel>
                         </Border>
                         
                         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
@@ -317,65 +329,6 @@
                                 x:Name="BreakpointsPanel"
                                 Margin="0,0,0,24"
                                 Spacing="0">
-
-                                <!--<TextBlock Grid.Row="0" Grid.Column="0" SAMPLE DATA
-                                           Classes="data-label"
-                                           Text="Enabled"
-                                           VerticalAlignment="Center" />
-                                <TextBlock Grid.Row="0" Grid.Column="1"
-                                           Classes="data-label"
-                                           Text="Condition"
-                                           VerticalAlignment="Center" />
-                                <TextBlock Grid.Row="0" Grid.Column="2"
-                                           Classes="data-label"
-                                           Text="Instruction"
-                                           VerticalAlignment="Center" />
-
-                                <CheckBox Grid.Row="1" Grid.Column="0"
-                                          IsChecked="True"
-                                          VerticalAlignment="Center"
-                                          HorizontalAlignment="Left" />
-                                <TextBlock Grid.Row="1" Grid.Column="1"
-                                           Classes="code-text"
-                                           Text="PC == $C000"
-                                           Foreground="#00FF8E"
-                                           VerticalAlignment="Center" />
-                                <TextBlock Grid.Row="1" Grid.Column="2"
-                                           Classes="code-text"
-                                           Text="STA #0"
-                                           Foreground="#00FF8E"
-                                           VerticalAlignment="Center" />
-                                <Button Grid.Row="1" Grid.Column="3"
-                                        Content="X"
-                                        Width="32"
-                                        Height="32"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center"
-                                        Background="#FF4A4A"
-                                        Foreground="#F5F5F7"/>
-
-                                <CheckBox Grid.Row="2" Grid.Column="0"
-                                          IsChecked="True"
-                                          VerticalAlignment="Center"
-                                          HorizontalAlignment="Left" />
-                                <TextBlock Grid.Row="2" Grid.Column="1"
-                                           Classes="code-text"
-                                           Text="PC == $C000"
-                                           Foreground="#00FF8E"
-                                           VerticalAlignment="Center" />
-                                <TextBlock Grid.Row="2" Grid.Column="2"
-                                           Classes="code-text"
-                                           Text="STA #0"
-                                           Foreground="#00FF8E"
-                                           VerticalAlignment="Center" />
-                                <Button Grid.Row="2" Grid.Column="3"
-                                        Content="X"
-                                        Width="32"
-                                        Height="32"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center"
-                                        Background="#FF4A4A"
-                                        Foreground="#F5F5F7"/>-->
                                 </StackPanel>
                         </ScrollViewer>
                     </Grid>
