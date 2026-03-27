@@ -25,7 +25,8 @@ public static class Cli
         Option<bool> PhysicalKeyboard,
         Option<string?> Clock,
         Option<bool> Fast,
-        Option<bool> Headless);
+        Option<bool> Headless,
+        Option<bool> StartPaused);
     
     private static void ApplyLogging(ParseResult parseResult, Option<bool> verboseOption)
     {
@@ -241,6 +242,11 @@ public static class Cli
             Description = "Run without video output"
         };
 
+        var startPaused = new Option<bool>("--start-paused")
+        {
+            Description = "Start emulator in paused state"
+        };
+
         if (debug is not null)
             cmd.Add(debug);
         cmd.Add(uart1Source);
@@ -250,8 +256,9 @@ public static class Cli
         cmd.Add(clock);
         cmd.Add(fast);
         cmd.Add(headless);
+        cmd.Add(startPaused);
         
-        return new ExecutionOptions(debug, uart1Source, uart2Source, fixNewlines, physicalKeyboard, clock, fast, headless);
+        return new ExecutionOptions(debug, uart1Source, uart2Source, fixNewlines, physicalKeyboard, clock, fast, headless, startPaused);
     }
 
     private static CodySetupOptions BuildSetupOptions(ParseResult parseResult, ExecutionOptions options)
@@ -263,7 +270,8 @@ public static class Cli
             FrequencyHz = parseResult.GetValue(options.Fast)
                 ? -1
                 : CliValueParser.ParseClock(parseResult.GetValue(options.Clock)),
-            EnableScreen = !parseResult.GetValue(options.Headless)
+            EnableScreen = !parseResult.GetValue(options.Headless),
+            StartPaused = parseResult.GetValue(options.StartPaused)
         };
     }
 

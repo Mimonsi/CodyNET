@@ -14,12 +14,13 @@ namespace CodyNET.Core.Cody;
 public sealed record CodySetupOptions
 {
     public static CodySetupOptions Default => new();
-    
+
     public long FrequencyHz { get; init; } = 1_000_000; // 1 MHz, -1 = as fast as possible
     public bool EnableDebugger { get; init; } = true;
     public bool PhysicalKeyboard { get; init; } = true; // Use physical keyboard input (instead of logical)
     public bool EnableScreen { get; init; } = true;
     public bool EnableProfiler { get; init; } = true;
+    public bool StartPaused { get; init; } = false;
 }
 
 public sealed record CodyLoadOptions
@@ -48,6 +49,9 @@ public class Cody
     public UartDevice Uart2 { get; private set; }
     public IScreenDevice? Screen { get; init; }
     public Profiler? Profiler;
+    
+    private int _allowedSteps = -1; // -1 = Normal running, 0 = Paused, 1 = Single Step Mode
+    private readonly ManualResetEventSlim _resumeEvent = new(initialState: true); // true = open (running)
 
     public long FrequencyHz
     {
@@ -67,6 +71,10 @@ public class Cody
     // TODO: Cody shouldn't need setup options, as Factory create devices based on options and passes them in. Refactor to remove this dependency.
     public Cody(CodySetupOptions options, IVideoDevice? videoDevice = null, IScreenDevice? screen = null)
     {
+        if (options.StartPaused)
+        {
+            Pause();
+        }
         VID = videoDevice;
         Screen = screen;
         
@@ -123,10 +131,7 @@ public class Cody
     {
         return Cpu.Step();
     }
-
-    private int _allowedSteps = -1; // -1 = Normal running, 0 = Paused, 1 = Single Step Mode
-    private readonly ManualResetEventSlim _resumeEvent = new(initialState: true); // true = open (running)
-
+    
     public void Pause()
     {
         _allowedSteps = 0;
