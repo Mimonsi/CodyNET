@@ -482,7 +482,7 @@ public static class Cli
         if (outputFile.Length == 0)
             throw new InvalidOperationException("Assembler produced no output bytes.");
         
-        Log.Info("Assembled {InputFile} -> {OutputFile} ({Format})", inputFile.FullName, outputFile.FullName);
+        Log.Info("Assembled {InputFile} -> {OutputFile}", inputFile.FullName, outputFile.FullName);
     }
 
     private static Command BuildDisassembleCommand(Option<bool> verboseOption)

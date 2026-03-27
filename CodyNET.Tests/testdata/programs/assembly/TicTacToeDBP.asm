@@ -58,7 +58,8 @@ PLAYER_TURN = $E0 ; 0 = Player 1 (X), 1 = Player 2 (O)
 ;            BRA _LOOP
 
 MAIN        
-            DBP ; Breakpoint line 61
+            LDA #$01
+STA $FF00 ; Breakpoint line 61
             JSR SHOWSCRN
             
 _LOOP       JSR KEYSCAN         ; Scan the keyboard
@@ -232,7 +233,8 @@ _9          LDX #BOARD_X + 9
 
 
 _PRINT_BOARD
-			DBP
+			LDA #$01
+STA $FF00
             ; Print Board Lines 1-3
             LDX #BOARD_X
             LDY #BOARD_Y
@@ -530,3 +532,4 @@ MSGS_H
 LAST                            ; End of the entire program
 
 .ENDLOGICAL
+

@@ -24,7 +24,7 @@ public class CodyAssembler
         {
             outputFile = FileUtils.GetWithChangedExtension(inputFile, ".bin");
         }
-        CodyPreprocessor.PreprocessFile(inputFile, outputFile);
+        CodyPreprocessor.PreprocessFile(inputFile, inputFile); // Preprocess in-place (overwriting original) to avoid temp file management.
         TassAssembler.AssembleFile(inputFile, outputFile);
         return outputFile;
     }
