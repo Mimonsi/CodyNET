@@ -405,7 +405,7 @@ public partial class MainWindow : Window
                 // Step
                 case Key.F8:
                     OnStepButtonClick(sender, e);
-                    break;
+                    return;
             }
 
 
