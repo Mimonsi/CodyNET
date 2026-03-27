@@ -169,10 +169,14 @@ public partial class MainWindow : Window
             case RunStatus.Running:
                 FooterStatusText.Text = "Running";
                 FooterStatusText.Foreground = Brush.Parse("#31c436");
+                MenuPauseResumeButton.Header = "_Pause [F9]";
+                MenuStepButton.IsEnabled = false;
                 break;
             case RunStatus.Paused:
                 FooterStatusText.Text = "Paused";
                 FooterStatusText.Foreground = Brush.Parse("#ff2414");
+                MenuPauseResumeButton.Header = "_Resume [F9]";
+                MenuStepButton.IsEnabled = true;
                 break;
         }
         
@@ -285,18 +289,14 @@ public partial class MainWindow : Window
     
     private void OnPauseResumeButtonClick(object? sender, RoutedEventArgs e)
     {
-        // If text is "_Pause [F9]", change it to "_Resume [F9]"
-        if (MenuPauseResumeButton.Header is not string headerText) return;
-        if (headerText.StartsWith("_Pause")) // Clicked on Pause
+        var status = FrontendHostBridge.GetStatusSnapshot();
+        if (status == null) return;
+        if (status.RunStatus == RunStatus.Running)
         {
-            MenuPauseResumeButton.Header = headerText.Replace("_Pause", "_Resume");
-            MenuStepButton.IsEnabled = true;
             FrontendHostBridge.SetRunState(0);
         }
-        else if (headerText.StartsWith("_Resume")) // Clicked on Resume
+        else if (status.RunStatus == RunStatus.Paused)
         {
-            MenuPauseResumeButton.Header = headerText.Replace("_Resume", "_Pause");
-            MenuStepButton.IsEnabled = false;
             FrontendHostBridge.SetRunState(-1);
         }
     }
@@ -327,6 +327,9 @@ public partial class MainWindow : Window
             }
 
 
+            if (CodeEditorTextBox.IsFocused)
+                return;
+
             var keyboard = FrontendHostBridge.Keyboard;
             if (keyboard == null)
                 return;
@@ -349,6 +352,8 @@ public partial class MainWindow : Window
             // Do not send key up events for debugger control keys to avoid issues with key repeat and lost key up events
             return;
         }
+        if (CodeEditorTextBox.IsFocused)
+            return;
         var keyboard = FrontendHostBridge.Keyboard;
         if (keyboard == null)
             return;
