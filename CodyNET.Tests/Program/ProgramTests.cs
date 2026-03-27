@@ -16,7 +16,7 @@ public class ProgramTests
         Cody cody = new Cody(CodySetupOptions.Default);
         var loadOptions = new CodyLoadOptions()
         {
-            File = new FileInfo(FileUtils.GetTestDataPath("minimal.s")),
+            File = new FileInfo(FileUtils.GetTestDataPath("minimal.asm")),
         };
         cody.RunAssemblyFile(loadOptions);
         Assert.True(true);

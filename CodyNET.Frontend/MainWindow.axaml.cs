@@ -509,7 +509,7 @@ public partial class MainWindow : Window
                 [
                     new FilePickerFileType("Assembly files")
                     {
-                        Patterns = ["*.asm", "*.s"]
+                        Patterns = ["*.asm"]
                     },
                     new FilePickerFileType("All files")
                     {
@@ -532,7 +532,7 @@ public partial class MainWindow : Window
     {
         if (!IsAssemblySourceFile(fileInfo))
         {
-            MessageBox("Unsupported File", "Please choose a .asm or .s file.");
+            MessageBox("Unsupported File", "Please choose a .asm file.");
             return;
         }
 
@@ -588,7 +588,7 @@ public partial class MainWindow : Window
 
         CodeFileNameText.Text = hasFile
             ? BuildCodePanelFileLabel(fileName!, sourceText)
-            : "No .asm or .s file loaded";
+            : "No .asm file loaded";
     }
     
     private string BuildCodePanelFileLabel(string fileName, string? sourceText)
@@ -630,9 +630,9 @@ public partial class MainWindow : Window
             finalCode.Add(lineText);
         }
 
-        var inputFile = new FileInfo("editor.s");
+        var inputFile = new FileInfo("editor.asm");
         File.WriteAllText(inputFile.FullName, string.Join("\n", finalCode));
-        var preprocessedFile = new FileInfo("editor_preprocessed.s");
+        var preprocessedFile = new FileInfo("editor_preprocessed.asm");
         CodyPreprocessor.PreprocessFile(inputFile, preprocessedFile);
         var bytes = TassAssembler.AssembleFile(preprocessedFile.FullName);
         var binaryFile = new FileInfo("editor.bin");
@@ -671,8 +671,7 @@ public partial class MainWindow : Window
     private static bool IsAssemblySourceFile(FileInfo fileInfo)
     {
         var extension = fileInfo.Extension;
-        return extension.Equals(".asm", StringComparison.OrdinalIgnoreCase)
-               || extension.Equals(".s", StringComparison.OrdinalIgnoreCase);
+        return extension.Equals(".asm", StringComparison.OrdinalIgnoreCase);
     }
 
     private void RefreshCodeEditorLineNumbers(int lineCount)

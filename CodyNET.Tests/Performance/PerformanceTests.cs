@@ -55,7 +55,7 @@ public class PerformanceTests
     public void MinimalProgram()
     {
         /*Cody cody = new Cody(CodySetupOptions.Default);
-        cody.RunAssemblyFile(FileUtils.GetTestDataFile("minimal.s"));
+        cody.RunAssemblyFile(FileUtils.GetTestDataFile("minimal.asm"));
         Assert.True(true);*/
         Assert.Inconclusive("Fix");
         // TODO: Fix

@@ -120,6 +120,8 @@ public class Cody
         {
             Memory.RegisterDevice(VID);
         }
+        
+        Log.Info("Cody Setup complete");
     }
 
     public void Reset()

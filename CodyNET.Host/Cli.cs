@@ -61,7 +61,7 @@ public static class Cli
     }
     private static Command BuildListCommand()
     {
-        var cmd = new Command("list", "Lists .s source files and .bin binaries in the current directory")
+        var cmd = new Command("list", "Lists .asm source files and .bin binaries in the current directory")
         {
             Aliases = { "ls", "dir" }
         };
@@ -76,8 +76,8 @@ public static class Cli
         cmd.SetAction(parseResult =>
         {
             bool rec = parseResult.GetValue(recursive);
-            Console.WriteLine("Available .s files:");
-            Console.WriteLine(GetSubdirFilesText("*.s", rec));
+            Console.WriteLine("Available .asm files:");
+            Console.WriteLine(GetSubdirFilesText("*.asm", rec));
                 
             Console.WriteLine("Available .bin files:");
             Console.WriteLine(GetSubdirFilesText("*.bin", rec));
@@ -439,14 +439,13 @@ public static class Cli
 
         var fileArg = new Argument<FileInfo>("file")
         {
-            Description = "Assembly source file (.s or .asm)"
+            Description = "Assembly source file (.asm)"
         }.AcceptExistingOnly();
 
         fileArg.CompletionSources.Add(_ =>
         {
             return Directory.EnumerateFiles(Directory.GetCurrentDirectory(), "*.*")
-                .Where(file => file.EndsWith(".s", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".asm", StringComparison.OrdinalIgnoreCase))
+                .Where(file => file.EndsWith(".asm", StringComparison.OrdinalIgnoreCase))
                 .Select(file => new CompletionItem(file));
         });
 
@@ -547,7 +546,7 @@ public static class Cli
 
         var output = new Option<FileInfo?>("--output", ["-o"])
         {
-            Description = "Output assembly path (default: <input>.s)"
+            Description = "Output assembly path (default: <input>.asm)"
         }.AcceptLegalFileNamesOnly();
 
         cmd.Options.Add(asCartridge);
@@ -575,7 +574,7 @@ public static class Cli
 
     private static void ExecuteDisassembleCommand(FileInfo inputFile, FileInfo? outputFile, bool asCartridge, string? loadAddress)
     {
-        outputFile ??= new FileInfo(Path.ChangeExtension(inputFile.FullName, ".s")); // If no output supplied, use same path and name
+        outputFile ??= new FileInfo(Path.ChangeExtension(inputFile.FullName, ".asm")); // If no output supplied, use same path and name
         Log.Info("Executing disassemble command");
         try
         {

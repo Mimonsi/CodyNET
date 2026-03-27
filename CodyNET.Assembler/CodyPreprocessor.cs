@@ -13,7 +13,7 @@ public static class CodyPreprocessor
             throw new  FileNotFoundException("Input file does not exist", inputFile.FullName);
         if (outputFile == null)
         {
-            outputFile = new FileInfo(inputFile.FullName.Replace(inputFile.Extension, "_pre.s"));
+            outputFile = new FileInfo(inputFile.FullName.Replace(inputFile.Extension, "_pre.asm"));
         }
 
         var inputCode = File.ReadAllText(inputFile.FullName);
