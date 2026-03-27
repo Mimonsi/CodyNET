@@ -632,12 +632,10 @@ public partial class MainWindow : Window
 
         var inputFile = new FileInfo("editor.asm");
         File.WriteAllText(inputFile.FullName, string.Join("\n", finalCode));
-        var preprocessedFile = new FileInfo("editor_preprocessed.asm");
-        CodyPreprocessor.PreprocessFile(inputFile, preprocessedFile);
-        var bytes = TassAssembler.AssembleFile(preprocessedFile.FullName);
-        var binaryFile = new FileInfo("editor.bin");
-        File.WriteAllBytes(binaryFile.FullName, bytes);
-
+        // Comment this in to test preprocessing
+        // var preprocessedFile = new FileInfo("editor_preprocessed.asm");
+        // CodyPreprocessor.PreprocessFile(inputFile, preprocessedFile);
+        var bytes = CodyAssembler.AssembleFile(inputFile);
         SendAssemblyOverUartButton.IsEnabled = true;
     }
 

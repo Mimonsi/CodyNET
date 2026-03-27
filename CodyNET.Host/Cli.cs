@@ -456,27 +456,7 @@ public static class Cli
             Description = "Output binary path (default: <input>.bin)"
         }.AcceptLegalFileNamesOnly();
 
-        var format = new Option<string>("--format")
-        {
-            Description = "Output format: raw | cartridge",
-            DefaultValueFactory = _ => RawFormat
-        };
-
-        var loadAddress = new Option<string>("--load-address", ["-l"])
-        {
-            Description = "Load address used when creating cartridge output",
-            DefaultValueFactory = _ => DefaultLoadAddress
-        };
-
-        var warnAsError = new Option<bool>("--warn-as-error")
-        {
-            Description = "Treat assembler warnings as errors when supported by the underlying assembler"
-        };
-
         cmd.Options.Add(output);
-        cmd.Options.Add(format);
-        cmd.Options.Add(loadAddress);
-        cmd.Options.Add(warnAsError);
 
         cmd.SetAction(parseResult =>
         {
@@ -487,11 +467,7 @@ public static class Cli
 
             ExecuteAssembleCommand(
                 inputFile,
-                parseResult.GetValue(output),
-                parseResult.GetValue(format),
-                parseResult.GetValue(loadAddress),
-                parseResult.GetValue(warnAsError));
-
+                parseResult.GetValue(output));
             return 0;
         });
 
@@ -500,27 +476,13 @@ public static class Cli
 
     private static void ExecuteAssembleCommand(
         FileInfo inputFile,
-        FileInfo? outputFile,
-        string? format,
-        string? loadAddress,
-        bool warnAsError)
+        FileInfo? outputFile)
     {
-        if (warnAsError)
-            throw new NotSupportedException("--warn-as-error is not supported by the current 64tass integration.");
-
-        var normalizedFormat = NormalizeFormat(format);
-        var program = TassAssembler.AssembleFile(inputFile.FullName);
-        if (program.Length == 0)
+        outputFile = CodyAssembler.AssembleFile(inputFile, outputFile);
+        if (outputFile.Length == 0)
             throw new InvalidOperationException("Assembler produced no output bytes.");
-
-        var targetFile = outputFile ?? new FileInfo(Path.ChangeExtension(inputFile.FullName, ".bin"));
-
-        byte[] outputBytes = normalizedFormat == CartridgeFormat
-            ? CreateCartridgeImage(program, CliValueParser.ParseAddress(loadAddress, "load-address"))
-            : program;
-
-        File.WriteAllBytes(targetFile.FullName, outputBytes);
-        Log.Info("Assembled {InputFile} -> {OutputFile} ({Format})", inputFile.FullName, targetFile.FullName, normalizedFormat);
+        
+        Log.Info("Assembled {InputFile} -> {OutputFile} ({Format})", inputFile.FullName, outputFile.FullName);
     }
 
     private static Command BuildDisassembleCommand(Option<bool> verboseOption)
@@ -592,17 +554,6 @@ public static class Cli
         {
             Log.Error(x, "Error executing disassemble command");
         }
-    }
-    
-    private static string NormalizeFormat(string? format)
-    {
-        var normalized = (format ?? RawFormat).Trim().ToLowerInvariant();
-        return normalized switch
-        {
-            RawFormat => RawFormat,
-            CartridgeFormat => CartridgeFormat,
-            _ => throw new ArgumentException($"Invalid format '{format}'. Supported values: {RawFormat}, {CartridgeFormat}.")
-        };
     }
 
     private static byte[] CreateCartridgeImage(byte[] program, ushort loadAddress)

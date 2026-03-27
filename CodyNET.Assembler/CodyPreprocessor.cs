@@ -1,13 +1,14 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 
 namespace CodyNET.Assembler;
 
 /// <summary>
 /// Replaces custom CodyNET debug commands by their actual implementations
 /// </summary>
-public static class CodyPreprocessor
+internal static class CodyPreprocessor
 {
-    public static void PreprocessFile(FileInfo inputFile, FileInfo? outputFile = null)
+    internal static void PreprocessFile(FileInfo inputFile, FileInfo? outputFile = null)
     {
         if (!inputFile.Exists)
             throw new  FileNotFoundException("Input file does not exist", inputFile.FullName);
@@ -26,12 +27,12 @@ public static class CodyPreprocessor
         File.WriteAllText(outputFile.FullName, outputCode);
     }
     
-    public static string Preprocess(string code)
+    internal static string Preprocess(string code)
     {
         return Preprocess(code.Split('\n').ToList());
     }
 
-    public static string Preprocess(List<string> lines)
+    internal static string Preprocess(List<string> lines)
     {
         var code = "";
 

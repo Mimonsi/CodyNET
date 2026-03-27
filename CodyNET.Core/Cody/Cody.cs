@@ -263,8 +263,8 @@ public class Cody
     public void LoadAssemblyFile(CodyLoadOptions loadOptions)
     {
         CheckFilePath(loadOptions.File);
-
-        var program = TassAssembler.AssembleFile(loadOptions.File!.FullName);
+        
+        var program = CodyAssembler.AssembleFileToBytes(loadOptions.File!);
         LoadBinary(program, loadOptions);
     }
     

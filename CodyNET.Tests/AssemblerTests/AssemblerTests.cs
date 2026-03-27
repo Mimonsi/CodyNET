@@ -13,7 +13,7 @@ public class AssemblerTests
     [Test]
     public void TestAssembler()
     {
-        var bytes = TassAssembler.AssembleFile(FileUtils.GetTestDataPath("minimal.asm"));
+        var bytes = CodyAssembler.AssembleFileToBytes(FileUtils.GetTestDataFile("minimal.asm"));
         var expectedBytes = Binary.LoadBinaryText(FileUtils.GetTestDataPath("minimal.bin"));
         Assert.AreEqual(bytes, expectedBytes);
     }
@@ -21,19 +21,19 @@ public class AssemblerTests
     [Test]
     public void TestFileNotFound()
     {
-        Assert.Throws<FileNotFoundException>(() => TassAssembler.AssembleFile(FileUtils.GetTestDataPath("not-existing.asm")));
+        Assert.Throws<FileNotFoundException>(() => CodyAssembler.AssembleFileToBytes(FileUtils.GetTestDataFile("not-existing.asm")));
     }
 
     [Test]
     public void TestInvalidOpcode()
     {
-        Assert.Throws<InvalidOperationException>(() => TassAssembler.AssembleFile(FileUtils.GetTestDataPath("invalidOpcode.asm")));
+        Assert.Throws<InvalidOperationException>(() => CodyAssembler.AssembleFileToBytes(FileUtils.GetTestDataFile("invalidOpcode.asm")));
     }
 
     [Test]
     public void TestUnmappedArea()
     {
-        var bytes = TassAssembler.AssembleFile(FileUtils.GetTestDataPath("debugTesting/unmappedArea.asm"));
+        var bytes = CodyAssembler.AssembleFileToBytes(FileUtils.GetTestDataFile("debugTesting/unmappedArea.asm"));
         Assert.True(true);
     }
 
@@ -60,7 +60,7 @@ public class AssemblerTests
     {
         byte[] original = [0xD0, 0xFE];
         string disassembly = CodyDisassembler.Disassemble(original, 0xE000);
-        var reassembled = TassAssembler.Assemble(disassembly);
+        var reassembled = CodyAssembler.AssembleTextToBytes(disassembly);
 
         Assert.That(reassembled, Is.EqualTo(original), disassembly);
     }
@@ -72,7 +72,7 @@ public class AssemblerTests
         var folderPath = "C:\\Users\\Konsi\\Documents\\CodyNETSecond\\CodyNET.Tests\\testdata\\programs\\assembly";
         var name = "TicTacToe";
         var asm = File.ReadAllText(Path.Combine(folderPath, $"{name}.asm"));
-        var assembled = TassAssembler.Assemble(asm);
+        var assembled = CodyAssembler.AssembleTextToBytes(asm);
         // Write to file
         var assembledPath = FileUtils.GetTestDataPath(Path.Combine(folderPath, $"{name}_assembled.bin"));
         File.WriteAllBytes(assembledPath, assembled);
@@ -87,7 +87,7 @@ public class AssemblerTests
     {
         var original = File.ReadAllBytes(FileUtils.GetTestDataPath("programs/codybasic.bin"));
         string disassembly = CodyDisassembler.Disassemble(original, 0xE000);
-        var reassembled = TassAssembler.Assemble(disassembly);
+        var reassembled = CodyAssembler.AssembleTextToBytes(disassembly);
 
         Assert.That(reassembled, Is.EqualTo(original));
     }
