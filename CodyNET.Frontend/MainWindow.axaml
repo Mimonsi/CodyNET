@@ -248,8 +248,24 @@
             
             <GridSplitter x:Name="LeftSplitter" Grid.Column="1" Background="#49454E" ResizeDirection="Columns"></GridSplitter>
             
-            <Grid x:Name="MainColumn" Grid.Column="2" Classes="panel" RowDefinitions="*,4,250"> <!-- Center Column, Screen and fixed height Lower panel -->
-                <Border Grid.Row="0" Background="#232123" Padding="16"> <!-- Screen -->
+            <Grid x:Name="MainColumn" Grid.Column="2" Classes="panel" RowDefinitions="Auto,*,4,250"> <!-- Center Column, Screen and fixed height Lower panel -->
+                <Border Grid.Row="0" Classes="panel-header"> <!-- Emulator Toolbar -->
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                        <TextBlock Classes="panel-header-text" Text="Emulator" VerticalAlignment="Center" />
+                        <Button Grid.Column="1"
+                                x:Name="EmulatorPauseResumeButton"
+                                Classes="code-toolbar-button"
+                                Content="Pause [F9]"
+                                Click="OnPauseResumeButtonClick" />
+                        <Button Grid.Column="2"
+                                x:Name="EmulatorStepButton"
+                                Classes="code-toolbar-button"
+                                Content="Step [F8]"
+                                IsEnabled="False"
+                                Click="OnStepButtonClick" />
+                    </Grid>
+                </Border>
+                <Border Grid.Row="1" Background="#232123" Padding="16"> <!-- Screen -->
                     <ScrollViewer HorizontalScrollBarVisibility="Auto"
                                   VerticalScrollBarVisibility="Auto">
                         <controls:ScreenControl x:Name="Screen"
@@ -260,9 +276,9 @@
                     </ScrollViewer>
                 </Border>
                 
-                <GridSplitter x:Name="LowerPanelSplitter" Grid.Row="1" Background="#49454E" ResizeDirection="Rows" /> <!-- Screen-Lower Divider -->
-                
-                <Border x:Name="LowerPanel" Grid.Row="2" Background="#201F22" Padding="0,0,0,8">
+                <GridSplitter x:Name="LowerPanelSplitter" Grid.Row="2" Background="#49454E" ResizeDirection="Rows" /> <!-- Screen-Lower Divider -->
+
+                <Border x:Name="LowerPanel" Grid.Row="3" Background="#201F22" Padding="0,0,0,8">
                     <Grid RowDefinitions="Auto,*">
                         <Border Grid.Row="0" Classes="panel-header">
                             <TextBlock Classes="panel-header-text" Text="Breakpoints" />

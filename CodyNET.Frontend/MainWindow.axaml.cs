@@ -171,12 +171,16 @@ public partial class MainWindow : Window
                 FooterStatusText.Foreground = Brush.Parse("#31c436");
                 MenuPauseResumeButton.Header = "_Pause [F9]";
                 MenuStepButton.IsEnabled = false;
+                EmulatorPauseResumeButton.Content = "Pause [F9]";
+                EmulatorStepButton.IsEnabled = false;
                 break;
             case RunStatus.Paused:
                 FooterStatusText.Text = "Paused";
                 FooterStatusText.Foreground = Brush.Parse("#ff2414");
                 MenuPauseResumeButton.Header = "_Resume [F9]";
                 MenuStepButton.IsEnabled = true;
+                EmulatorPauseResumeButton.Content = "Resume [F9]";
+                EmulatorStepButton.IsEnabled = true;
                 break;
         }
         
