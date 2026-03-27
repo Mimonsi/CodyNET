@@ -17,6 +17,8 @@ public static class FrontendHostBridge
     public static Keyboard? Keyboard { get; private set; }
     public static Debugger? Debugger { get; private set; }
     
+    public static long InitialClockFrequency { get; private set; }
+
     // Frontend Bindings
     private static Action<long>? setClockFrequencyAction; // Buttons to set frequency
     private static Action<FileInfo>? loadUart1SourceAction; // Button for loading UART1 source data from file
@@ -73,9 +75,10 @@ public static class FrontendHostBridge
         loadUart1SourceAction?.Invoke(fileInfo);
     }
     
-    public static void RegisterClockFrequencySetter(Action<long> setter)
+    public static void RegisterClockFrequencySetter(Action<long> setter, long initialFrequencyHz)
     {
         setClockFrequencyAction = setter;
+        InitialClockFrequency = initialFrequencyHz;
     }
     
     public static void SetClockFrequency(long frequencyHz)

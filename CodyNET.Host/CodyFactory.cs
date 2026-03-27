@@ -52,7 +52,7 @@ public static class CodyFactory
 
     private static void RegisterBindings(Cody cody)
     {
-        FrontendHostBridge.RegisterClockFrequencySetter(frequencyHz => cody.FrequencyHz = frequencyHz);
+        FrontendHostBridge.RegisterClockFrequencySetter(frequencyHz => cody.FrequencyHz = frequencyHz, cody.FrequencyHz);
         FrontendHostBridge.RegisterUart1SourceLoader(fileInfo =>
         {
             cody.LoadUartSource(fileInfo);

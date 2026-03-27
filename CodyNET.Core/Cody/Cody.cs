@@ -88,7 +88,7 @@ public class Cody
         // 2. Set up devices
         if (options.EnableProfiler)
         {
-            Profiler = new Profiler(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5)); // 5 second window for averaging
+            Profiler = new Profiler(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5)); // 5 second window for averaging
         }
         if (options.EnableDebugger)
         {

@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
@@ -41,8 +42,14 @@ public partial class MainWindow : Window
     private DispatcherTimer? registerRefreshTimer;
     private DispatcherTimer? footerRefreshTimer;
     private string? _loadedAssemblyPath;
+    private static readonly long[] ClockStepFrequencies = [100_000, 500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000, -1];
+    private static readonly string[] ClockStepLabels    = ["100 kHz", "500 kHz", "1 MHz", "2 MHz", "5 MHz", "10 MHz", "∞"];
+
     private bool _isAssemblyDirty;
     private bool _suppressCodeEditorEvents;
+    private bool _suppressClockSliderEvents;
+    private int _lastClockComboIndex = 2;
+    private int _lastRenderedLineCount = -1;
     private readonly Dictionary<int, bool> _codeEditorBreakpointLines = new();
     private List<string> _codeLines = [];
     
@@ -73,8 +80,22 @@ public partial class MainWindow : Window
         screen?.Focus();
         RefreshRegisterValues();
         RefreshBreakpointsPanel();
+        SyncInitialClockFrequency();
         registerRefreshTimer?.Start();
         footerRefreshTimer?.Start();
+    }
+
+    private void SyncInitialClockFrequency()
+    {
+        var hz = FrontendHostBridge.InitialClockFrequency;
+        if (hz == 0)
+            return;
+
+        var step = Array.IndexOf(ClockStepFrequencies, hz);
+        _lastClockComboIndex = step >= 0 ? step : ClockStepFrequencies.Length;
+        _suppressClockSliderEvents = true;
+        ClockSpeedComboBox.SelectedIndex = _lastClockComboIndex;
+        _suppressClockSliderEvents = false;
     }
 
     private void OnWindowClosed(object? sender, EventArgs e)
@@ -143,7 +164,8 @@ public partial class MainWindow : Window
         breakpointsPanel.Children.Clear();
 
         AddBreakpointHeader();
-        
+
+        _lastRenderedLineCount = -1; // Force gutter redraw to reflect breakpoint changes
         RefreshCodeEditorLineNumbers(CountLines(CodeEditorTextBox.Text));
         if (_codeEditorBreakpointLines.Count == 0)
         {
@@ -187,14 +209,9 @@ public partial class MainWindow : Window
         if (status.ProfilerSnapshot == null)
             return;
         var actualFrequencyText = Unit.FormatSi(status.ProfilerSnapshot.ActualFrequency, "Hz");
-        var targetFrequencyText = Unit.FormatSi(status.ProfilerSnapshot.TargetFrequency, "Hz");
-        var rightText = $"Speed: {actualFrequencyText}";
-        if (status.ProfilerSnapshot.TargetFrequency > 0)
-        {
-            rightText += $" / {targetFrequencyText} ({Math.Round(status.ProfilerSnapshot.FrequencyTargetPercent)}%)";
-        }
-        
-        SetText("FooterRightText", rightText);
+        ClockActualLabel.Text = status.ProfilerSnapshot.TargetFrequency > 0
+            ? $"{actualFrequencyText} ({Math.Round(status.ProfilerSnapshot.FrequencyTargetPercent)}%)"
+            : actualFrequencyText;
     }
 
     private void SetFlagText(string controlName, bool value)
@@ -289,8 +306,62 @@ public partial class MainWindow : Window
             return;
 
         FrontendHostBridge.SetClockFrequency(frequencyHz);
-    }    
-    
+        SyncClockSliderToFrequency(frequencyHz);
+    }
+
+    private void OnClockComboBoxChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressClockSliderEvents || ClockSpeedComboBox is null)
+            return;
+
+        var step = ClockSpeedComboBox.SelectedIndex;
+
+        if (step < 0 || step >= ClockStepFrequencies.Length)
+            return; // "Custom…" is handled by OnClockDropDownClosed
+
+        _lastClockComboIndex = step;
+        FrontendHostBridge.SetClockFrequency(ClockStepFrequencies[step]);
+    }
+
+    private void OnClockDropDownClosed(object? sender, EventArgs e)
+    {
+        if (ClockSpeedComboBox.SelectedIndex == ClockStepFrequencies.Length)
+            _ = OpenCustomClockDialogAsync();
+    }
+
+    private async Task OpenCustomClockDialogAsync()
+    {
+        var dialog = new ClockFrequencyDialog();
+        await dialog.ShowDialog(this);
+
+        if (dialog.ResultHz is { } hz)
+        {
+            FrontendHostBridge.SetClockFrequency(hz);
+            SyncClockSliderToFrequency(hz);
+            // If no preset matched, keep "Custom…" selected and update the actual label
+            if (Array.IndexOf(ClockStepFrequencies, hz) < 0)
+                ClockActualLabel.Text = Unit.FormatSi(hz, "Hz");
+        }
+        else
+        {
+            // User cancelled — restore previous ComboBox state without touching the emulator
+            _suppressClockSliderEvents = true;
+            ClockSpeedComboBox.SelectedIndex = _lastClockComboIndex;
+            _suppressClockSliderEvents = false;
+        }
+    }
+
+    private void SyncClockSliderToFrequency(long hz)
+    {
+        var step = Array.IndexOf(ClockStepFrequencies, hz);
+        if (step < 0)
+            return;
+
+        _suppressClockSliderEvents = true;
+        ClockSpeedComboBox.SelectedIndex = step;
+        _suppressClockSliderEvents = false;
+    }
+
     private void OnPauseResumeButtonClick(object? sender, RoutedEventArgs e)
     {
         var status = FrontendHostBridge.GetStatusSnapshot();
@@ -684,6 +755,9 @@ public partial class MainWindow : Window
     private void RefreshCodeEditorLineNumbers(int lineCount)
     {
         lineCount = Math.Max(1, lineCount);
+        if (lineCount == _lastRenderedLineCount)
+            return;
+        _lastRenderedLineCount = lineCount;
         CodeEditorLineNumberPanel.Children.Clear();
         // Canvas height must be explicit so the outer ScrollViewer knows the scrollable area
         CodeEditorLineNumberPanel.Height = GutterTopPadding + lineCount * CodeLineHeight + GutterBottomPadding;
