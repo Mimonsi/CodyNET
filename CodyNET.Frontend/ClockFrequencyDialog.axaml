@@ -1,0 +1,50 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CodyNET.Frontend.ClockFrequencyDialog"
+        Title="Custom Clock Speed"
+        Width="320"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="#1E1E1E"
+        ShowInTaskbar="False">
+    <Window.Styles>
+        <Style Selector="Button.action">
+            <Setter Property="Background" Value="#0D82D2" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Padding" Value="16,8" />
+        </Style>
+        <Style Selector="Button.action.secondary">
+            <Setter Property="Background" Value="#3A3840" />
+        </Style>
+    </Window.Styles>
+
+    <StackPanel Margin="20" Spacing="14">
+        <TextBlock Text="Enter a clock frequency:"
+                   Foreground="#99B7DE"
+                   FontSize="13" />
+
+        <TextBox x:Name="FrequencyInput"
+                 Watermark="e.g.  3.5 MHz,  500 kHz,  3500000"
+                 FontFamily="Cascadia Mono, Consolas, monospace"
+                 FontSize="14"
+                 Background="#2B292E"
+                 Foreground="#E7EAF2"
+                 BorderBrush="#4A474F"
+                 CaretBrush="#E7EAF2"
+                 Padding="10,8"
+                 KeyDown="OnInputKeyDown" />
+
+        <TextBlock x:Name="ErrorLabel"
+                   Foreground="#FF6B6B"
+                   FontSize="12"
+                   IsVisible="False" />
+
+        <Grid ColumnDefinitions="*,8,Auto" Margin="0,6,0,0">
+            <Button Grid.Column="0" Classes="action" Content="Apply" Click="OnApplyClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+            <Button Grid.Column="2" Classes="action secondary" Content="Cancel" Click="OnCancelClick" />
+        </Grid>
+    </StackPanel>
+</Window>

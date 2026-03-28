@@ -11,12 +11,12 @@ public sealed record CodyDisassemblerOptions
 
 public class CodyDisassembler
 {
-    public static void DisassembleFile(FileInfo input, FileInfo? output)
+    public static void DisassembleFile(FileInfo input, FileInfo output)
     {
         DisassembleFile(input, output, new CodyDisassemblerOptions());
     }
 
-    public static void DisassembleFile(FileInfo input, FileInfo? output, CodyDisassemblerOptions options)
+    public static void DisassembleFile(FileInfo input, FileInfo output, CodyDisassemblerOptions options)
     {
         if (input == null)
             throw new ArgumentNullException(nameof(input));
@@ -27,8 +27,7 @@ public class CodyDisassembler
         var bytes = File.ReadAllBytes(input.FullName);
         var (program, loadAddress) = ParseInput(bytes, options);
         string disassembly = Disassemble(program, loadAddress);
-
-        output ??= new FileInfo(Path.ChangeExtension(input.FullName, ".s"));
+        
         File.WriteAllText(output.FullName, disassembly);
     }
 
@@ -43,33 +42,35 @@ public class CodyDisassembler
             throw new ArgumentNullException(nameof(bytes));
 
         var builder = new StringBuilder();
-        if (loadAddress.HasValue)
+        /*if (loadAddress.HasValue) // TODO: Check if this is needed
         {
             builder.AppendLine($"* = ${loadAddress.Value:X4}");
             builder.AppendLine();
-        }
+        }*/
 
         int index = 0;
 
         while (index < bytes.Length)
         {
+            int instructionStartIndex = index;
             byte opcode = bytes[index++];
             var instruction = OpcodeLookup.Instructions.FirstOrDefault(item => item.Opcode == opcode);
 
             if (instruction == null)
             {
-                builder.AppendLine($"DB ${opcode:X2}");
+                builder.AppendLine($".byte ${opcode:X2}");
                 continue;
             }
 
+            ushort instructionAddress = (ushort)((loadAddress ?? 0) + instructionStartIndex);
             var operands = new List<string>();
-            string operand = FormatOperand(instruction.AddressingMode, bytes, ref index);
+            string operand = FormatOperand(instruction.AddressingMode, bytes, ref index, instructionAddress, instruction.Bytes);
             if (!string.IsNullOrEmpty(operand))
                 operands.Add(operand);
 
             if (instruction.AddressingMode2.HasValue)
             {
-                string operand2 = FormatOperand(instruction.AddressingMode2.Value, bytes, ref index);
+                string operand2 = FormatOperand(instruction.AddressingMode2.Value, bytes, ref index, instructionAddress, instruction.Bytes);
                 if (!string.IsNullOrEmpty(operand2))
                     operands.Add(operand2);
             }
@@ -106,7 +107,7 @@ public class CodyDisassembler
         return (program, start);
     }
 
-    private static string FormatOperand(AddressingMode mode, byte[] bytes, ref int index)
+    private static string FormatOperand(AddressingMode mode, byte[] bytes, ref int index, ushort instructionAddress, int instructionSize)
     {
         int size = OperandSize(mode);
 
@@ -133,7 +134,7 @@ public class CodyDisassembler
                 AddressingMode.ZeroPageIndirect => $"(${value:X2})",
                 AddressingMode.ZeroPageIndexedIndirectX => $"(${value:X2},X)",
                 AddressingMode.ZeroPageIndirectIndexedY => $"(${value:X2}),Y",
-                AddressingMode.ProgramCounterRelative => $"${value:X2}",
+                AddressingMode.ProgramCounterRelative => FormatRelativeTarget(value, instructionAddress, instructionSize),
                 _ => $"${value:X2}"
             };
         }
@@ -150,6 +151,14 @@ public class CodyDisassembler
             AddressingMode.AbsoluteIndexedIndirectX => $"(${word:X4},X)",
             _ => $"${word:X4}"
         };
+    }
+
+    private static string FormatRelativeTarget(byte relativeOffset, ushort instructionAddress, int instructionSize)
+    {
+        int nextInstructionAddress = instructionAddress + instructionSize;
+        int signedOffset = unchecked((sbyte)relativeOffset);
+        ushort targetAddress = (ushort)(nextInstructionAddress + signedOffset);
+        return $"${targetAddress:X4}";
     }
 
     private static int OperandSize(AddressingMode mode)

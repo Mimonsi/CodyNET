@@ -14,12 +14,13 @@ namespace CodyNET.Core.Cody;
 public sealed record CodySetupOptions
 {
     public static CodySetupOptions Default => new();
-    
+
     public long FrequencyHz { get; init; } = 1_000_000; // 1 MHz, -1 = as fast as possible
     public bool EnableDebugger { get; init; } = true;
     public bool PhysicalKeyboard { get; init; } = true; // Use physical keyboard input (instead of logical)
     public bool EnableScreen { get; init; } = true;
     public bool EnableProfiler { get; init; } = true;
+    public bool StartPaused { get; init; } = false;
 }
 
 public sealed record CodyLoadOptions
@@ -48,6 +49,9 @@ public class Cody
     public UartDevice Uart2 { get; private set; }
     public IScreenDevice? Screen { get; init; }
     public Profiler? Profiler;
+    
+    private int _allowedSteps = -1; // -1 = Normal running, 0 = Paused, 1 = Single Step Mode
+    private readonly ManualResetEventSlim _resumeEvent = new(initialState: true); // true = open (running)
 
     public long FrequencyHz
     {
@@ -67,6 +71,10 @@ public class Cody
     // TODO: Cody shouldn't need setup options, as Factory create devices based on options and passes them in. Refactor to remove this dependency.
     public Cody(CodySetupOptions options, IVideoDevice? videoDevice = null, IScreenDevice? screen = null)
     {
+        if (options.StartPaused)
+        {
+            Pause();
+        }
         VID = videoDevice;
         Screen = screen;
         
@@ -80,19 +88,15 @@ public class Cody
         // 2. Set up devices
         if (options.EnableProfiler)
         {
-            Profiler = new Profiler(TimeSpan.FromSeconds(5)); // 5 second window for averaging
+            Profiler = new Profiler(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5)); // 5 second window for averaging
         }
         if (options.EnableDebugger)
         {
             // watch addresses 0xA000 - 0xA3E7 (text screen)
-            var addresses = new List<ushort>();
+            /*var addresses = new List<ushort>();
             for (ushort addr = 0xA000; addr <= 0xA3E7; addr++)
-                addresses.Add(addr);
-            Debugger = new Debugger(Cpu)
-            {
-                WatchAddresses = addresses,
-                Breakpoints = [0xFD93]
-            };
+                addresses.Add(addr);*/
+            Debugger = new Debugger(Cpu);
             Memory.RegisterDevice(Debugger);
             Memory.RegisterTap(Debugger);
         }
@@ -116,6 +120,8 @@ public class Cody
         {
             Memory.RegisterDevice(VID);
         }
+        
+        Log.Info("Cody Setup complete");
     }
 
     public void Reset()
@@ -127,6 +133,27 @@ public class Cody
     {
         return Cpu.Step();
     }
+    
+    public void Pause()
+    {
+        _allowedSteps = 0;
+        _resumeEvent.Reset();
+    }
+
+    public void Resume()
+    {
+        _allowedSteps = -1;
+        _resumeEvent.Set();
+    }
+
+    public void SetAllowedSteps(int steps)
+    {
+        _allowedSteps = steps;
+        if (steps != 0)
+            _resumeEvent.Set();
+        else
+            _resumeEvent.Reset();
+    }
 
     private Stopwatch screenStopwatch = new();
     public void RunUntilFinish()
@@ -136,14 +163,22 @@ public class Cody
         //Log.Level = LogLevel.Trace;
         do
         {
-            result = Cpu.Step();
-            Profiler?.SampleCpu(Cpu.TotalCyclesExecuted, Cpu.CyclesPerSecond);
-            // TEMP
             if (Debugger is not null && Debugger.IsAtBreakpoint())
             {
                 Log.Info("Execution paused by debugger on PC={PC:X4}", Cpu.PC);
+                Pause();
                 //break;
             }
+            _resumeEvent.Wait(); // Block here when paused — zero latency on resume
+            result = Cpu.Step();
+            if (_allowedSteps > 0) // After step, reduce allowed steps, if limited
+            {
+                _allowedSteps--;
+                if (_allowedSteps == 0)
+                    _resumeEvent.Reset(); // Single-step done → pause again
+            }
+            Profiler?.SampleCpu(Cpu.TotalCyclesExecuted, Cpu.CyclesPerSecond);
+            // TEMP
 
             // 60 times per second
             if (screenStopwatch.Elapsed >= TimeSpan.FromSeconds(1.0 / 60))
@@ -186,6 +221,11 @@ public class Cody
     /// <param name="fixNewlines"></param>
     public void LoadUartSource(FileInfo file, int uartNumber = 1, bool fixNewlines = false)
     {
+        if (file.Extension == ".bas")
+        {
+            fixNewlines = true; // Automatically set to true when reading basic file. TODO: Find better solution
+            Log.Info("BASIC file being set as UART source, enabling fix-newlines parameter");
+        }
         var source = UartSource.FromFile(file, fixNewlines);
 
         if (uartNumber == 1)
@@ -223,8 +263,8 @@ public class Cody
     public void LoadAssemblyFile(CodyLoadOptions loadOptions)
     {
         CheckFilePath(loadOptions.File);
-
-        var program = TassAssembler.AssembleFile(loadOptions.File!.FullName);
+        
+        var program = CodyAssembler.AssembleFileToBytes(loadOptions.File!);
         LoadBinary(program, loadOptions);
     }
     
@@ -339,13 +379,18 @@ public class Cody
         Memory.ForceWrite(0xFFFB, (byte)(address >> 8));
     }
 
-    private static string ResolveBasicRomPath()
+    public CodyStatusSnapshot GetStatusSnapshot()
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "roms", "codybasic.bin");
-        if (File.Exists(path))
-            return path;
-
-        throw new FileNotFoundException(
-            $"File not found: {path}");
+        /*var runStatus = RunStatus.Running;
+        if (!Cpu.Run)
+            runStatus = RunStatus.Paused;*/
+        var runStatus = RunStatus.Running;
+        if (_allowedSteps == 0)
+            runStatus = RunStatus.Paused;
+        return new CodyStatusSnapshot
+        {
+            RunStatus = runStatus,
+            ProfilerSnapshot = Profiler?.LastSnapshot
+        };
     }
 }

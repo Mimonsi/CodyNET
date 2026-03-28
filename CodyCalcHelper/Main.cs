@@ -155,7 +155,7 @@ public partial class Main : Form
     {
         try
         {
-            var text = TassAssembler.Assemble(txtAssemblerInput.Text);
+            var text = CodyAssembler.AssembleTextToBytes(txtAssemblerInput.Text);
             txtAssemblerOutput.Text = string.Join(" ", text.Select(b => b.ToString("X2")));
         }
         catch (Exception x)

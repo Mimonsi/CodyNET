@@ -1,6 +1,8 @@
 using System.CommandLine;
 using System.CommandLine.Completions;
 using System.Globalization;
+using System.Runtime.ExceptionServices;
+using Avalonia;
 using CodyNET.Assembler;
 using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
@@ -23,7 +25,8 @@ public static class Cli
         Option<bool> PhysicalKeyboard,
         Option<string?> Clock,
         Option<bool> Fast,
-        Option<bool> Headless);
+        Option<bool> Headless,
+        Option<bool> StartPaused);
     
     private static void ApplyLogging(ParseResult parseResult, Option<bool> verboseOption)
     {
@@ -31,7 +34,7 @@ public static class Cli
             Log.Level = LogLevel.Verbose;
     }
     
-    public static RootCommand BuildRootCommand()
+    public static RootCommand BuildRootCommand(bool useMainThreadScreenHost = true)
     {
         var root = new RootCommand("CodyNET");
 
@@ -42,8 +45,8 @@ public static class Cli
         root.Options.Add(verboseOption);
 
         root.Subcommands.Add(BuildListCommand());
-        root.Subcommands.Add(BuildBootCommand(verboseOption));
-        root.Subcommands.Add(BuildRunCommand(verboseOption));
+        root.Subcommands.Add(BuildBootCommand(verboseOption, useMainThreadScreenHost));
+        root.Subcommands.Add(BuildRunCommand(verboseOption, useMainThreadScreenHost));
         root.Subcommands.Add(BuildAssembleCommand(verboseOption));
         root.Subcommands.Add(BuildDisassembleCommand(verboseOption));
         root.Subcommands.Add(BuildLogTestCommand());
@@ -56,10 +59,9 @@ public static class Cli
 
         return root;
     }
-
     private static Command BuildListCommand()
     {
-        var cmd = new Command("list", "Lists .s source files and .bin binaries in the current directory")
+        var cmd = new Command("list", "Lists .asm source files and .bin binaries in the current directory")
         {
             Aliases = { "ls", "dir" }
         };
@@ -74,8 +76,8 @@ public static class Cli
         cmd.SetAction(parseResult =>
         {
             bool rec = parseResult.GetValue(recursive);
-            Console.WriteLine("Available .s files:");
-            Console.WriteLine(GetSubdirFilesText("*.s", rec));
+            Console.WriteLine("Available .asm files:");
+            Console.WriteLine(GetSubdirFilesText("*.asm", rec));
                 
             Console.WriteLine("Available .bin files:");
             Console.WriteLine(GetSubdirFilesText("*.bin", rec));
@@ -240,7 +242,13 @@ public static class Cli
             Description = "Run without video output"
         };
 
-        cmd.Add(debug);
+        var startPaused = new Option<bool>("--start-paused")
+        {
+            Description = "Start emulator in paused state"
+        };
+
+        if (debug is not null)
+            cmd.Add(debug);
         cmd.Add(uart1Source);
         cmd.Add(uart2Source);
         cmd.Add(fixNewlines);
@@ -248,8 +256,9 @@ public static class Cli
         cmd.Add(clock);
         cmd.Add(fast);
         cmd.Add(headless);
+        cmd.Add(startPaused);
         
-        return new ExecutionOptions(debug, uart1Source, uart2Source, fixNewlines, physicalKeyboard, clock, fast, headless);
+        return new ExecutionOptions(debug, uart1Source, uart2Source, fixNewlines, physicalKeyboard, clock, fast, headless, startPaused);
     }
 
     private static CodySetupOptions BuildSetupOptions(ParseResult parseResult, ExecutionOptions options)
@@ -261,7 +270,8 @@ public static class Cli
             FrequencyHz = parseResult.GetValue(options.Fast)
                 ? -1
                 : CliValueParser.ParseClock(parseResult.GetValue(options.Clock)),
-            EnableScreen = !parseResult.GetValue(options.Headless)
+            EnableScreen = !parseResult.GetValue(options.Headless),
+            StartPaused = parseResult.GetValue(options.StartPaused)
         };
     }
 
@@ -275,7 +285,7 @@ public static class Cli
         };
     }
 
-    private static Command BuildBootCommand(Option<bool> verboseOption)
+    private static Command BuildBootCommand(Option<bool> verboseOption, bool useMainThreadScreenHost)
     {
         var cmd = new Command("boot", "Boot the emulator with the built-in CodyBASIC");
         var executionOptions = AddExecutionOptions(cmd, includeDebug: true);
@@ -283,9 +293,13 @@ public static class Cli
         cmd.SetAction(parseResult =>
         {
             ApplyLogging(parseResult, verboseOption);
-            ExecuteBootCommand(
-                BuildSetupOptions(parseResult, executionOptions),
-                BuildSharedLoadOptions(parseResult, executionOptions));
+            var setupOptions = BuildSetupOptions(parseResult, executionOptions);
+            var loadOptions = BuildSharedLoadOptions(parseResult, executionOptions);
+
+            if (useMainThreadScreenHost && setupOptions.EnableScreen)
+                ExecuteBootCommandWithScreenHost(setupOptions, loadOptions);
+            else
+                ExecuteBootCommand(setupOptions, loadOptions);
 
             return 0;
         });
@@ -300,7 +314,17 @@ public static class Cli
         cody.Boot(loadOptions);
     }
 
-    private static Command BuildRunCommand(Option<bool> verboseOption)
+    private static void ExecuteBootCommandWithScreenHost(CodySetupOptions setupOptions, CodyLoadOptions loadOptions)
+    {
+        Log.Info("Executing boot command with main-thread screen host");
+        RunWithMainThreadScreenHost(() =>
+        {
+            var cody = CodyFactory.CreateCodyForHostedScreen(setupOptions);
+            cody.Boot(loadOptions);
+        });
+    }
+
+    private static Command BuildRunCommand(Option<bool> verboseOption, bool useMainThreadScreenHost)
     {
         var cmd = new Command("run", "Run a binary file with the emulator");
 
@@ -349,7 +373,13 @@ public static class Cli
                 NmiVectorOverride = CliValueParser.ParseOptionalAddress(parseResult.GetValue(nmiVector), nmiVector.Name)
             };
 
-            ExecuteRunCommand(BuildSetupOptions(parseResult, executionOptions), loadOptions);
+            var setupOptions = BuildSetupOptions(parseResult, executionOptions);
+
+            if (useMainThreadScreenHost && setupOptions.EnableScreen)
+                ExecuteRunCommandWithScreenHost(setupOptions, loadOptions);
+            else
+                ExecuteRunCommand(setupOptions, loadOptions);
+
             return 0;
         });
 
@@ -364,20 +394,58 @@ public static class Cli
         cody.RunBinaryFile(loadOptions);
     }
 
+    private static void ExecuteRunCommandWithScreenHost(CodySetupOptions setupOptions, CodyLoadOptions loadOptions)
+    {
+        Log.Info("Executing run command with main-thread screen host");
+        RunWithMainThreadScreenHost(() =>
+        {
+            var cody = CodyFactory.CreateCodyForHostedScreen(setupOptions);
+            cody.RunBinaryFile(loadOptions);
+        });
+    }
+
+    private static void RunWithMainThreadScreenHost(Action commandAction)
+    {
+        CodyFactory.PrepareScreenHost();
+
+        ExceptionDispatchInfo? commandException = null;
+
+        CodyNET.Frontend.Program.BuildAvaloniaApp().StartWithClassicDesktopLifetime([], desktop =>
+        {
+            desktop.Startup += (_, _) =>
+            {
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        commandAction();
+                    }
+                    catch (Exception ex)
+                    {
+                        commandException = ExceptionDispatchInfo.Capture(ex);
+                        Log.Error(ex, "Emulator command failed while running with the main-thread screen host.");
+                        desktop.TryShutdown(-1);
+                    }
+                });
+            };
+        });
+
+        commandException?.Throw();
+    }
+
     private static Command BuildAssembleCommand(Option<bool> verboseOption)
     {
         var cmd = new Command("assemble", "Assemble a source file into a binary");
 
         var fileArg = new Argument<FileInfo>("file")
         {
-            Description = "Assembly source file (.s or .asm)"
+            Description = "Assembly source file (.asm)"
         }.AcceptExistingOnly();
 
         fileArg.CompletionSources.Add(_ =>
         {
             return Directory.EnumerateFiles(Directory.GetCurrentDirectory(), "*.*")
-                .Where(file => file.EndsWith(".s", StringComparison.OrdinalIgnoreCase) ||
-                               file.EndsWith(".asm", StringComparison.OrdinalIgnoreCase))
+                .Where(file => file.EndsWith(".asm", StringComparison.OrdinalIgnoreCase))
                 .Select(file => new CompletionItem(file));
         });
 
@@ -388,27 +456,7 @@ public static class Cli
             Description = "Output binary path (default: <input>.bin)"
         }.AcceptLegalFileNamesOnly();
 
-        var format = new Option<string>("--format")
-        {
-            Description = "Output format: raw | cartridge",
-            DefaultValueFactory = _ => RawFormat
-        };
-
-        var loadAddress = new Option<string>("--load-address", ["-l"])
-        {
-            Description = "Load address used when creating cartridge output",
-            DefaultValueFactory = _ => DefaultLoadAddress
-        };
-
-        var warnAsError = new Option<bool>("--warn-as-error")
-        {
-            Description = "Treat assembler warnings as errors when supported by the underlying assembler"
-        };
-
         cmd.Options.Add(output);
-        cmd.Options.Add(format);
-        cmd.Options.Add(loadAddress);
-        cmd.Options.Add(warnAsError);
 
         cmd.SetAction(parseResult =>
         {
@@ -419,11 +467,7 @@ public static class Cli
 
             ExecuteAssembleCommand(
                 inputFile,
-                parseResult.GetValue(output),
-                parseResult.GetValue(format),
-                parseResult.GetValue(loadAddress),
-                parseResult.GetValue(warnAsError));
-
+                parseResult.GetValue(output));
             return 0;
         });
 
@@ -432,27 +476,13 @@ public static class Cli
 
     private static void ExecuteAssembleCommand(
         FileInfo inputFile,
-        FileInfo? outputFile,
-        string? format,
-        string? loadAddress,
-        bool warnAsError)
+        FileInfo? outputFile)
     {
-        if (warnAsError)
-            throw new NotSupportedException("--warn-as-error is not supported by the current 64tass integration.");
-
-        var normalizedFormat = NormalizeFormat(format);
-        var program = TassAssembler.AssembleFile(inputFile.FullName);
-        if (program.Length == 0)
+        outputFile = CodyAssembler.AssembleFile(inputFile, outputFile);
+        if (outputFile.Length == 0)
             throw new InvalidOperationException("Assembler produced no output bytes.");
-
-        var targetFile = outputFile ?? new FileInfo(Path.ChangeExtension(inputFile.FullName, ".bin"));
-
-        byte[] outputBytes = normalizedFormat == CartridgeFormat
-            ? CreateCartridgeImage(program, CliValueParser.ParseAddress(loadAddress, "load-address"))
-            : program;
-
-        File.WriteAllBytes(targetFile.FullName, outputBytes);
-        Log.Info("Assembled {InputFile} -> {OutputFile} ({Format})", inputFile.FullName, targetFile.FullName, normalizedFormat);
+        
+        Log.Info("Assembled {InputFile} -> {OutputFile}", inputFile.FullName, outputFile.FullName);
     }
 
     private static Command BuildDisassembleCommand(Option<bool> verboseOption)
@@ -478,7 +508,7 @@ public static class Cli
 
         var output = new Option<FileInfo?>("--output", ["-o"])
         {
-            Description = "Output assembly path (default: <input>.s)"
+            Description = "Output assembly path (default: <input>.asm)"
         }.AcceptLegalFileNamesOnly();
 
         cmd.Options.Add(asCartridge);
@@ -504,34 +534,26 @@ public static class Cli
         return cmd;
     }
 
-    private static void ExecuteDisassembleCommand(
-        FileInfo inputFile,
-        FileInfo? outputFile,
-        bool asCartridge,
-        string? loadAddress)
+    private static void ExecuteDisassembleCommand(FileInfo inputFile, FileInfo? outputFile, bool asCartridge, string? loadAddress)
     {
-        _ = asCartridge;
-        _ = loadAddress;
+        outputFile ??= new FileInfo(Path.ChangeExtension(inputFile.FullName, ".asm")); // If no output supplied, use same path and name
         Log.Info("Executing disassemble command");
-        CodyDisassembler.DisassembleFile(
-            inputFile,
-            outputFile,
-            new CodyDisassemblerOptions
-            {
-                AsCartridge = asCartridge,
-                LoadAddress = CliValueParser.ParseAddress(loadAddress, "load-address")
-            });
-    }
-    
-    private static string NormalizeFormat(string? format)
-    {
-        var normalized = (format ?? RawFormat).Trim().ToLowerInvariant();
-        return normalized switch
+        try
         {
-            RawFormat => RawFormat,
-            CartridgeFormat => CartridgeFormat,
-            _ => throw new ArgumentException($"Invalid format '{format}'. Supported values: {RawFormat}, {CartridgeFormat}.")
-        };
+            CodyDisassembler.DisassembleFile(
+                inputFile,
+                outputFile,
+                new CodyDisassemblerOptions
+                {
+                    AsCartridge = asCartridge,
+                    LoadAddress = CliValueParser.ParseAddress(loadAddress, "load-address")
+                });
+            Log.Info("File disassembled successfully, output written to {outputFile}", outputFile.FullName);
+        }
+        catch (Exception x)
+        {
+            Log.Error(x, "Error executing disassemble command");
+        }
     }
 
     private static byte[] CreateCartridgeImage(byte[] program, ushort loadAddress)

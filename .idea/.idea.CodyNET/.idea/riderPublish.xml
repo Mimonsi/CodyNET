@@ -5,6 +5,7 @@
       <list>
         <option value="$USER_HOME$/Desktop/CodyNET_Publish/win-x64" />
         <option value="$USER_HOME$/Desktop/CodyNET_Publish/linux-x64" />
+        <option value="$USER_HOME$/Desktop/CodyNET_Publish/osx-arm64" />
       </list>
     </option>
   </component>

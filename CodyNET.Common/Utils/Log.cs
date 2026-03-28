@@ -190,6 +190,9 @@ public static class Log
         BreakIfConfigured();
     }
 
+    /// <summary>
+    /// Debugger break when error is logged
+    /// </summary>
     [Conditional("DEBUG")]
     private static void BreakIfConfigured()
     {

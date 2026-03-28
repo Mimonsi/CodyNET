@@ -1,48 +1,387 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="using:CodyNET.Frontend.Controls"
-        xmlns:controls1="clr-namespace:CodyNET.Frontend.Controls"
+        xmlns:avaloniaEdit="using:AvaloniaEdit"
         x:Class="CodyNET.Frontend.MainWindow"
         Title="Cody Computer Emulator"
-        SizeToContent="WidthAndHeight"
+        Width="1500"
+        Height="900"
+        MinWidth="1000"
+        MinHeight="700"
         Background="#1E1E1E">
-    
-    <DockPanel>
+    <Window.Styles>
+        <Style Selector="Border.panel">
+            <Setter Property="Background" Value="#2B292E" />
+            <Setter Property="BorderBrush" Value="#4A474F" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="Border.panel-header">
+            <Setter Property="Background" Value="#2E2B31" />
+            <Setter Property="BorderBrush" Value="#4A474F" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="18,14" />
+        </Style>
+
+        <Style Selector="TextBlock.panel-header-text">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#F5F5F7" />
+        </Style>
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#99B7DE" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+        <Style Selector="TextBlock.data-label">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="Foreground" Value="#F2F2F3" />
+        </Style>
+        <Style Selector="TextBlock.data-hex">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" />
+            <Setter Property="Foreground" Value="#48FF88" />
+        </Style>
+        <Style Selector="TextBlock.data-dec">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" />
+            <Setter Property="Foreground" Value="#FFCC3E" />
+        </Style>
+        <Style Selector="TextBlock.code-text">
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" />
+            <Setter Property="FontSize" Value="14" />
+        </Style>
+        <Style Selector="Button.breakpoint-delete">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Background" Value="#FF4A4A" />
+            <Setter Property="Foreground" Value="#F5F5F7" />
+            <Setter Property="FontFamily" Value="Segoe UI, sans-serif" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Border.breakpoint-row">
+            <Setter Property="BorderBrush" Value="#4A474F" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="18,2" />
+        </Style>
+        <Style Selector="Border.breakpoint-header-row">
+            <Setter Property="BorderBrush" Value="#4A474F" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="18,10" />
+        </Style>
+        <Style Selector="TextBlock.breakpoint-column-header">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#99B7DE" />
+        </Style>
+        <Style Selector="TextBlock.code-file-name">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="#B8C8E6" />
+        </Style>
+        
+        <Style Selector="Border.code-editor-shell">
+            <Setter Property="Background" Value="#1A191D" />
+            <Setter Property="BorderBrush" Value="#34313A" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Margin" Value="0,0,4,0" />
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style Selector="Border.code-editor-gutter">
+            <Setter Property="Background" Value="#201F24" />
+            <Setter Property="BorderBrush" Value="#34313A" />
+            <Setter Property="BorderThickness" Value="0,0,1,0" />
+        </Style>
+        <Style Selector="ScrollViewer.code-editor-gutter-scroll">
+            <Setter Property="VerticalScrollBarVisibility" Value="Hidden" />
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+        </Style>
+        <Style Selector="Canvas.code-editor-gutter-panel">
+            <Setter Property="Width" Value="60" />
+        </Style>
+        <Style Selector="TextBox.code-editor">
+            <Setter Property="Background" Value="#1A191D" />
+            <Setter Property="Foreground" Value="#E7EAF2" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="4,4,32,8" />
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="LineHeight" Value="20" />
+            <Setter Property="CaretBrush" Value="#E7EAF2" />
+            <Setter Property="SelectionBrush" Value="#A97A14" />
+        </Style>
+    </Window.Styles>
+    <DockPanel LastChildFill="True"> <!-- Header Bar -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
+                <MenuItem Header="Load _Assembly into Editor.." Click="OnLoadAssemblyClick" />
                 <MenuItem Header="_Load UART1.." Click="OnLoadUart1Click" />
                 <MenuItem Header="_Exit" />
             </MenuItem>
             <MenuItem Header="_View">
-                <MenuItem Header="Scale 100%" Tag="1.0" Click="OnScaleMenuClick" />
-                <MenuItem Header="Scale 200%" Tag="2.0" Click="OnScaleMenuClick" />
-                <MenuItem Header="Scale 300%" Tag="3.0" Click="OnScaleMenuClick" />
-                <MenuItem Header="Scale 400%" Tag="4.0" Click="OnScaleMenuClick" />
-                <MenuItem Header="Scale 600%" Tag="6.0" Click="OnScaleMenuClick" />
-                <MenuItem Header="Scale 800%" Tag="8.0" Click="OnScaleMenuClick" />
+                <MenuItem Header="Scale 100%" Tag="1.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
+                <MenuItem Header="Scale 200%" Tag="2.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
+                <MenuItem Header="Scale 300%" Tag="3.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
+                <MenuItem Header="Scale 400%" Tag="4.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
+                <MenuItem Header="Scale 600%" Tag="6.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
+                <MenuItem Header="Scale 800%" Tag="8.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
             </MenuItem>
-            <MenuItem Header="_Emulation">
-                <MenuItem Header="_Pause" />
-                <MenuItem Header="_Reset" />
-            </MenuItem>
-            <MenuItem Header="_Clock">
-                <MenuItem Header="500 _kHz" Tag="500000" Click="OnClockMenuClick" />
-                <MenuItem Header="_1 MHz (Standard)" Tag="1000000" Click="OnClockMenuClick" />
-                <MenuItem Header="_2 MHz" Tag="2000000" Click="OnClockMenuClick" />
-                <MenuItem Header="_5 MHz" Tag="5000000" Click="OnClockMenuClick" />
-                <MenuItem Header="_Unthrottled" Tag="-1" Click="OnClockMenuClick" />
+            <MenuItem Header="_Emulator">
+                <MenuItem x:Name="MenuPauseResumeButton" Header="_Pause [F9]" Click="OnPauseResumeButtonClick"/>
+                <MenuItem x:Name="MenuStepButton" Header="_Step [F8]" Click="OnStepButtonClick" IsEnabled="False" />
+                <Separator/>
+                <MenuItem Header="500 _kHz" Tag="500000" Click="OnClockMenuClick" ToggleType="CheckBox" />
+                <MenuItem Header="_1 MHz (Standard)" Tag="1000000" Click="OnClockMenuClick" ToggleType="CheckBox"/>
+                <MenuItem Header="_2 MHz" Tag="2000000" Click="OnClockMenuClick" ToggleType="CheckBox"/>
+                <MenuItem Header="_5 MHz" Tag="5000000" Click="OnClockMenuClick" ToggleType="CheckBox"/>
+                <MenuItem Header="_Unthrottled" Tag="-1" Click="OnClockMenuClick" ToggleType="CheckBox"/>
             </MenuItem>
             <MenuItem Header="_Debug">
-                <MenuItem Header="Show _Debugger" />
+                <MenuItem x:Name="ShowDebuggerMenuItem"
+                          Header="Show _Debugger"
+                          ToggleType="CheckBox"
+                          IsChecked="True"
+                          Click="OnToggleDebuggerClick" />
             </MenuItem>
         </Menu>
         
-        <Border Padding="20" DockPanel.Dock="Top">
-            <Border BorderBrush="Black" 
-                    BorderThickness="20" 
-                    Padding="10">
-                <controls1:ScreenControl x:Name="Screen" Focusable="True" />
-            </Border>
+        <Border DockPanel.Dock="Bottom" Background="#0D82D2" Padding="12,8"> <!-- Footer Bar --> 
+            <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
+                <TextBlock x:Name="FooterModeText" Text="CodyNET Emulator Version 1" Foreground="White" FontWeight="SemiBold" />
+                <TextBlock Grid.Column="1" Text="•" Margin="14,0" Foreground="#B9E7FF" />
+                <TextBlock x:Name="FooterStatusText" Grid.Column="2" Text="Status: Stopped" Foreground="White" FontWeight="SemiBold" />
+                <TextBlock x:Name="FooterRightText" Grid.Column="4" Text="Line 13/37" Foreground="White" FontWeight="SemiBold" />
+            </Grid>
         </Border>
+        
+        <Grid x:Name="WorkspaceGrid">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" MinWidth="220" /> <!-- Left Column: Registers and Memory -->
+                <ColumnDefinition Width="4" /> <!-- Divider -->
+                <ColumnDefinition Width="*" MinWidth="420" /> <!-- Center Column, Screen and Console -->
+                <ColumnDefinition Width="4" /> <!-- Divider -->
+                <ColumnDefinition Width="400" MinWidth="220" /> <!-- Right Column: Code Panel -->
+            </Grid.ColumnDefinitions>
+            
+            <Border x:Name="LeftSidebar" Grid.Column="0" Classes="panel">
+                <TabControl Background="#2E2B31" BorderThickness="0">
+                    <TabItem>
+                        <TabItem.Header>
+                            <Border Classes="panel-header">
+                                <TextBlock Classes="panel-header-text" Text="CPU State" />
+                            </Border>
+                        </TabItem.Header>
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                                      VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="20,18,20,22" Spacing="18"> <!-- Vertical Layout -->
+                            <TextBlock Classes="section-title" Text="REGISTERS" />
+                            <Grid ColumnDefinitions="*,90,90" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Classes="data-label" Text="Name" />
+                                <TextBlock Grid.Row="0" Grid.Column="1" Classes="data-label" Text="Hex" />
+                                <TextBlock Grid.Row="0" Grid.Column="2" Classes="data-label" Text="Dec" />
+                                
+                                <TextBlock Grid.Row="1" Grid.Column="0" Classes="data-label" Text="A" />
+                                <TextBlock x:Name="RegisterAHexText" Grid.Row="1" Grid.Column="1" Classes="data-hex" Text="00" />
+                                <TextBlock x:Name="RegisterADecText" Grid.Row="1" Grid.Column="2" Classes="data-dec" Text="0" />
+                                
+                                <TextBlock Grid.Row="2" Grid.Column="0" Classes="data-label" Text="X" />
+                                <TextBlock x:Name="RegisterXHexText" Grid.Row="2" Grid.Column="1" Classes="data-hex" Text="00" />
+                                <TextBlock x:Name="RegisterXDecText" Grid.Row="2" Grid.Column="2" Classes="data-dec" Text="0" />
+                                
+                                <TextBlock Grid.Row="3" Grid.Column="0" Classes="data-label" Text="Y" />
+                                <TextBlock x:Name="RegisterYHexText" Grid.Row="3" Grid.Column="1" Classes="data-hex" Text="00" />
+                                <TextBlock x:Name="RegisterYDecText" Grid.Row="3" Grid.Column="2" Classes="data-dec" Text="0" />
+                                
+                                <TextBlock Grid.Row="4" Grid.Column="0" Classes="data-label" Text="SP" />
+                                <TextBlock x:Name="RegisterSPHexText" Grid.Row="4" Grid.Column="1" Classes="data-hex" Text="00" />
+                                <TextBlock x:Name="RegisterSPDecText" Grid.Row="4" Grid.Column="2" Classes="data-dec" Text="0" />
+                                
+                                <TextBlock Grid.Row="5" Grid.Column="0" Classes="data-label" Text="PC" />
+                                <TextBlock x:Name="RegisterPCHexText" Grid.Row="5" Grid.Column="1" Classes="data-hex" Text="0000" />
+                                <TextBlock x:Name="RegisterPCDecText" Grid.Row="5" Grid.Column="2" Classes="data-dec" Text="0" />
+
+                                <TextBlock Grid.Row="6" Grid.Column="0" Classes="data-label" Text="P" />
+                                <TextBlock x:Name="RegisterPHexText" Grid.Row="6" Grid.Column="1" Classes="data-hex" Text="00" />
+                                <TextBlock x:Name="RegisterPDecText" Grid.Row="6" Grid.Column="2" Classes="data-dec" Text="0" />
+                            </Grid>
+
+                            <TextBlock Classes="section-title" Text="FLAGS" />
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Classes="data-label" Text="Carry" />
+                                <TextBlock x:Name="FlagCarryText" Grid.Row="0" Grid.Column="1" Classes="data-dec" Text="0" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Classes="data-label" Text="Zero" />
+                                <TextBlock x:Name="FlagZeroText" Grid.Row="1" Grid.Column="1" Classes="data-dec" Text="0" />
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Classes="data-label" Text="Irq Disable" />
+                                <TextBlock x:Name="FlagInterruptDisableText" Grid.Row="2" Grid.Column="1" Classes="data-dec" Text="0" />
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Classes="data-label" Text="Decimal" />
+                                <TextBlock x:Name="FlagDecimalText" Grid.Row="3" Grid.Column="1" Classes="data-dec" Text="0" />
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Classes="data-label" Text="Break" />
+                                <TextBlock x:Name="FlagBreakText" Grid.Row="4" Grid.Column="1" Classes="data-dec" Text="0" />
+
+                                <TextBlock Grid.Row="5" Grid.Column="0" Classes="data-label" Text="Overflow" />
+                                <TextBlock x:Name="FlagOverflowText" Grid.Row="5" Grid.Column="1" Classes="data-dec" Text="0" />
+
+                                <TextBlock Grid.Row="6" Grid.Column="0" Classes="data-label" Text="Negative" />
+                                <TextBlock x:Name="FlagNegativeText" Grid.Row="6" Grid.Column="1" Classes="data-dec" Text="0" />
+                            </Grid>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+                    <TabItem>
+                        <TabItem.Header>
+                            <Border Classes="panel-header">
+                                <TextBlock Classes="panel-header-text" Text="Memory" />
+                            </Border>
+                        </TabItem.Header>
+                        <TextBlock>Moin</TextBlock>
+                    </TabItem>
+                </TabControl>
+            </Border>
+            
+            <GridSplitter x:Name="LeftSplitter" Grid.Column="1" Background="#49454E" ResizeDirection="Columns"></GridSplitter>
+            
+            <Grid x:Name="MainColumn" Grid.Column="2" Classes="panel" RowDefinitions="Auto,*,4,250"> <!-- Center Column, Screen and fixed height Lower panel -->
+                <Border Grid.Row="0" Classes="panel-header"> <!-- Emulator Toolbar -->
+                    <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="12">
+                        <TextBlock Grid.Column="0" Classes="panel-header-text" Text="Emulator" VerticalAlignment="Center" />
+                        <Separator Grid.Column="1" Background="#4A474F" Width="1" Margin="0,4" />
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                            <TextBlock Text="Speed:"
+                                       Foreground="#99B7DE"
+                                       FontSize="13"
+                                       VerticalAlignment="Center" />
+                            <ComboBox x:Name="ClockSpeedComboBox"
+                                      SelectedIndex="2"
+                                      VerticalAlignment="Center"
+                                      FontFamily="Cascadia Mono, Consolas, monospace"
+                                      FontSize="13"
+                                      SelectionChanged="OnClockComboBoxChanged"
+                                      DropDownClosed="OnClockDropDownClosed">
+                                <ComboBoxItem Content="100 kHz" />
+                                <ComboBoxItem Content="500 kHz" />
+                                <ComboBoxItem Content="1 MHz" />
+                                <ComboBoxItem Content="2 MHz" />
+                                <ComboBoxItem Content="5 MHz" />
+                                <ComboBoxItem Content="10 MHz" />
+                                <ComboBoxItem Content="∞  Unthrottled" />
+                                <ComboBoxItem Content="Custom…" />
+                            </ComboBox>
+<TextBlock x:Name="ClockActualLabel"
+                                       Foreground="#888"
+                                       FontFamily="Cascadia Mono, Consolas, monospace"
+                                       FontSize="12"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                        <Button Grid.Column="3"
+                                x:Name="EmulatorPauseResumeButton"
+                                Classes="code-toolbar-button"
+                                Content="Pause [F9]"
+                                Click="OnPauseResumeButtonClick" />
+                        <Button Grid.Column="4"
+                                x:Name="EmulatorStepButton"
+                                Classes="code-toolbar-button"
+                                Content="Step [F8]"
+                                IsEnabled="False"
+                                Click="OnStepButtonClick" />
+                    </Grid>
+                </Border>
+                <Border Grid.Row="1" Background="#232123" Padding="16"> <!-- Screen -->
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto">
+                        <controls:ScreenControl x:Name="Screen"
+                                                Focusable="True"
+                                                ScaleFactor="2"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center" />
+                    </ScrollViewer>
+                </Border>
+                
+                <GridSplitter x:Name="LowerPanelSplitter" Grid.Row="2" Background="#49454E" ResizeDirection="Rows" /> <!-- Screen-Lower Divider -->
+
+                <Border x:Name="LowerPanel" Grid.Row="3" Background="#201F22" Padding="0,0,0,8">
+                    <Grid RowDefinitions="Auto,*">
+                        <Border Grid.Row="0" Classes="panel-header">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Classes="panel-header-text" Text="Breakpoints" />
+                                <Border x:Name="BreakpointBadge"
+                                        IsVisible="False"
+                                        Background="#4A474F"
+                                        CornerRadius="8"
+                                        Padding="6,1">
+                                    <TextBlock x:Name="BreakpointBadgeText"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               Foreground="#F5F5F7" />
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                        
+                        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
+                            <StackPanel
+                                x:Name="BreakpointsPanel"
+                                Margin="0,0,0,24"
+                                Spacing="0">
+                                </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+            </Grid>
+            
+            <GridSplitter x:Name="RightSplitter" Grid.Column="3" Background="#49454E" ResizeDirection="Columns"></GridSplitter>
+            
+            <Border x:Name="CodePanel" Grid.Column="4" Classes="panel"> <!-- Right Colum: Code Panel -->
+                <Grid RowDefinitions="Auto,*">
+                    <Border Grid.Row="0" Classes="panel-header">
+                        <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
+                            <StackPanel Spacing="3">
+                                <TextBlock Classes="panel-header-text" Text="Assembly Editor" />
+                                <TextBlock x:Name="CodeFileNameText"
+                                           Classes="code-file-name"
+                                           Text="No .asm or .s file loaded" />
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    x:Name="LoadAssemblyButton"
+                                    Classes="code-toolbar-button"
+                                    Content="Load"
+                                    Click="OnLoadAssemblyClick" />
+                            <Button Grid.Column="2"
+                                    x:Name="CompileAssemblyButton"
+                                    Classes="code-toolbar-button"
+                                    Content="Compile"
+                                    IsEnabled="False"
+                                    Click="OnCompileAssemblyClick" />
+                            <Button Grid.Column="3"
+                                    x:Name="SendAssemblyOverUartButton"
+                                    Classes="code-toolbar-button"
+                                    Content="UART"
+                                    IsEnabled="False"
+                                    Click="OnSendAssemblyOverUartClick" />
+                        </Grid>
+                    </Border>
+                    <Border Grid.Row="1" x:Name="CodeEditor" Classes="code-editor-shell">
+                        <avaloniaEdit:TextEditor x:Name="CodeEditorTextBox"
+                                                 FontFamily="Cascadia Mono, Consolas, monospace"
+                                                 FontSize="14"
+                                                 ShowLineNumbers="True"
+                                                 LineNumbersForeground="#8191B0"
+                                                 Background="#1A191D"
+                                                 Foreground="#E7EAF2"
+                                                 WordWrap="False"
+                                                 HorizontalScrollBarVisibility="Auto"
+                                                 VerticalScrollBarVisibility="Auto" />
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
     </DockPanel>
 </Window>

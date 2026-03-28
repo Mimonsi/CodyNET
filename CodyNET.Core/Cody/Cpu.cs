@@ -101,6 +101,26 @@ public class Cpu()
             Ram = Memory.GetAsList()
         };
     }
+
+    public CpuRegisterSnapshot GetRegisterSnapshot()
+    {
+        return new CpuRegisterSnapshot
+        {
+            A = A,
+            X = X,
+            Y = Y,
+            S = S,
+            P = Status.ToByte(),
+            PC = PC,
+            Carry = Status.Carry,
+            Zero = Status.Zero,
+            InterruptDisable = Status.InterruptDisable,
+            Decimal = Status.DecimalMode,
+            Break = Status.BreakCommand,
+            Overflow = Status.Overflow,
+            Negative = Status.Negative
+        };
+    }
     #endregion
     
     /// <summary>

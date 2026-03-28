@@ -7,6 +7,7 @@ namespace CodyNET.Tests.Performance;
 
 public class FullPerformance
 {
+    [Explicit]
     [Test]
     public void TestFullPerformance()
     {

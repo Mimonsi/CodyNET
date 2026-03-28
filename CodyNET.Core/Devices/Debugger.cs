@@ -4,8 +4,24 @@ using CodyNET.Core.Interfaces;
 
 namespace CodyNET.Core.Devices;
 
+public class Breakpoint
+{
+    public bool Enabled = true;
+    public ushort Address;
+    public string? Text;
+}
+
+public class WatchAddress
+{
+    public bool Enabled = true;
+    public ushort Address;
+    public bool WatchRead = true;
+    public bool WatchWrite = true;
+}
+
 public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
 {
+    private readonly object _breakpointsLock = new();
     public ushort StartAddress => 0xFF00;
     public ushort EndAddress => 0xFFFF;
     public bool SupportsRead { get; } = false;
@@ -13,9 +29,12 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
     
     // Addresses to watch for writes
     // TODO: Get to work, IMemoryTap concept?
-    public List<ushort> WatchAddresses { get; set; } = [];
+    public List<WatchAddress> WatchAddresses { get; set; } = [];
     // Breakpoints (Essentially watch PC)
-    public List<ushort> Breakpoints { get; set; } = [];
+    private List<Breakpoint> Breakpoints { get; } = [];
+
+    // Set to true when breakpoint is hit; volatile ensures visibility across threads
+    private volatile bool _requestPause;
 
     public Interrupt Update(long cycle)
     {
@@ -47,27 +66,101 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
        }
     }
     
-    public void AddWatch(ushort address)
+    public void AddBreakpoint(ushort address, bool enabled, string? text = null)
     {
-        if (!WatchAddresses.Contains(address))
+        lock (_breakpointsLock)
         {
-            WatchAddresses.Add(address);
-            Log.Debug($"[Debugger] Added watch on address {address:X4}");
+            if (Breakpoints.All(bp => bp.Address != address))
+            {
+                Breakpoints.Add(new Breakpoint { Address = address, Enabled = enabled, Text = text });
+                Log.Debug("[Debugger] Added breakpoint at address {address:X4}. {text}", address, text ?? "");
+                return;
+            }
         }
+
+        Log.Warn($"[Debugger] Attempted to add duplicate breakpoint at address {address:X4}");
+    }
+
+    public void RemoveBreakpoint(ushort address)
+    {
+        lock (_breakpointsLock)
+        {
+            if (Breakpoints.All(bp => bp.Address != address))
+            {
+                Log.Warn($"[Debugger] Attempted to remove non-existent breakpoint at address {address:X4}");
+                return;
+            }
+
+            Breakpoints.RemoveAll(bp => bp.Address == address);
+        }
+
+        Log.Debug("[Debugger] Removed breakpoint at address {address:X4}", address);
+    }
+
+    public bool SetBreakpointEnabled(ushort address, bool enabled)
+    {
+        lock (_breakpointsLock)
+        {
+            var breakpoint = Breakpoints.FirstOrDefault(bp => bp.Address == address);
+            if (breakpoint == null)
+                return false;
+
+            breakpoint.Enabled = enabled;
+            return true;
+        }
+    }
+
+    public bool HasBreakpoints()
+    {
+        lock (_breakpointsLock)
+        {
+            return Breakpoints.Count > 0;
+        }
+    }
+
+    public List<Breakpoint> GetBreakpointsSnapshot()
+    {
+        lock (_breakpointsLock)
+        {
+            return Breakpoints
+                .Select(bp => new Breakpoint
+                {
+                    Address = bp.Address,
+                    Enabled = bp.Enabled,
+                    Text = bp.Text
+                })
+                .ToList();
+        }
+    }
+    
+    public void AddWatch(ushort address, bool enabled=true, bool watchRead=true, bool watchWrite=true)
+    {
+        if (WatchAddresses.All(w => w.Address != address))
+        {
+            WatchAddresses.Add(new WatchAddress { Address = address,  Enabled = enabled, WatchRead = watchRead, WatchWrite = watchWrite });
+            Log.Debug("[Debugger] Added watch on address {{address:X4}}. R: {watchRead}, W: {watchWrite}", address,
+                watchRead, watchWrite);
+            return;
+        }
+        Log.Warn($"[Debugger] Attempted to add duplicate watch on address {address:X4}");
     }
     
     public void RemoveWatch(ushort address)
     {
-        if (WatchAddresses.Contains(address))
+        if (WatchAddresses.All(w => w.Address != address))
         {
-            WatchAddresses.Remove(address);
-            Log.Debug($"[Debugger] Removed watch on address {address:X4}");
+            Log.Warn($"[Debugger] Attempted to remove non-existent watch on address {address:X4}");
+            return;
         }
+        
+        WatchAddresses.RemoveAll(w => w.Address == address);
+        Log.Debug("[Debugger] Removed watch on address {{address:X4}}", address);
     }
 
     private void DBP(byte value)
     {
         Log.Info("[Debugger] DBP: {value}", value);
+        _requestPause = true;
     }
     
     private void DRS(byte index)
@@ -95,10 +188,28 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
     /// </summary>
     public bool IsAtBreakpoint()
     {
-        if (Breakpoints.Count > 0 && Breakpoints.Contains(cpu.PC))
+        try
         {
-            Log.Info("[Debugger] Breakpoint hit at PC={PC:X4}", cpu.PC);
-            return true;
+            lock (_breakpointsLock)
+            {
+                if (_requestPause)
+                {
+                    _requestPause = false;
+                    return true;
+                }
+                if (Breakpoints.Count == 0)
+                    return false;
+
+                if (Breakpoints.Any(bp => bp is { Enabled: true } && bp.Address == cpu.PC))
+                {
+                    Log.Info("[Debugger] Breakpoint hit at PC={PC:X4}", cpu.PC);
+                    return true;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Breakpoint error:");
         }
 
         return false;
@@ -107,16 +218,15 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
     #region Memory Tapping
     public void OnRead(ushort address)
     {
-        // TODO: Differentiate between write and read watch
-        /*if (WatchAddresses.Contains(address))
+        if (WatchAddresses.Any(w => w.Address == address && w.WatchRead))
         {
-            Log.Info($"[Debugger] Memory Watch: Read from address {address:X4}");
-        }*/
+            Log.Info("[Debugger] Memory Watch: Read from address {address:X4}", address);
+        }
     }
 
     public void OnWrite(ushort address, byte value)
     {
-        if (WatchAddresses.Contains(address))
+        if (WatchAddresses.Any(w => w.Address == address && w.WatchWrite))
         {
             Log.Info("[Debugger] Memory Watch: Wrote {value:X2} to address {address:X4}", value, address);
         }

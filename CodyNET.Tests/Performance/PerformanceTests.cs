@@ -1,7 +1,6 @@
 ﻿using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
 using NUnit.Framework;
-using Math = CodyNET.Common.Utils.Math;
 
 namespace CodyNET.Tests.Performance;
 
@@ -56,7 +55,7 @@ public class PerformanceTests
     public void MinimalProgram()
     {
         /*Cody cody = new Cody(CodySetupOptions.Default);
-        cody.RunAssemblyFile(FileUtils.GetTestDataFile("minimal.s"));
+        cody.RunAssemblyFile(FileUtils.GetTestDataFile("minimal.asm"));
         Assert.True(true);*/
         Assert.Inconclusive("Fix");
         // TODO: Fix
@@ -114,7 +113,7 @@ public class PerformanceTests
     public double RunPerformanceTest(int seconds, long targetFrequency, bool logDisabled = false)
     {
         Log.Level = LogLevel.Debug;
-        Log.Info("Starting Performance for {seconds} seconds with target frequency {targetFrequency} Hz", seconds, Math.FormatSi(targetFrequency, "Hz"));
+        Log.Info("Starting Performance for {seconds} seconds with target frequency {targetFrequency} Hz", seconds, Unit.FormatSi(targetFrequency, "Hz"));
         CodySetupOptions options = new CodySetupOptions
         {
             FrequencyHz =  targetFrequency
@@ -133,10 +132,10 @@ public class PerformanceTests
             {
                 cycles += cody.SingleStep();
             }
-            Log.Info("Cycles executed in 1 second: {cycles}. CPU Frequency: {frequency} Hz", cycles, Math.FormatSi(cycles, "Hz"));
+            Log.Info("Cycles executed in 1 second: {cycles}. CPU Frequency: {frequency} Hz", cycles, Unit.FormatSi(cycles, "Hz"));
             totalCycles += cycles;
         }
-        Log.Info("Final Average CPU Frequency {frequency}", Math.FormatSi(totalCycles / (double) seconds, "Hz"));
+        Log.Info("Final Average CPU Frequency {frequency}", Unit.FormatSi(totalCycles / (double) seconds, "Hz"));
         return totalCycles / (double) seconds;
     }
 }

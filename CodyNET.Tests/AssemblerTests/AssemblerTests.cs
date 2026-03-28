@@ -13,7 +13,7 @@ public class AssemblerTests
     [Test]
     public void TestAssembler()
     {
-        var bytes = TassAssembler.AssembleFile(FileUtils.GetTestDataPath("minimal.s"));
+        var bytes = CodyAssembler.AssembleFileToBytes(FileUtils.GetTestDataFile("minimal.asm"));
         var expectedBytes = Binary.LoadBinaryText(FileUtils.GetTestDataPath("minimal.bin"));
         Assert.AreEqual(bytes, expectedBytes);
     }
@@ -21,19 +21,19 @@ public class AssemblerTests
     [Test]
     public void TestFileNotFound()
     {
-        Assert.Throws<FileNotFoundException>(() => TassAssembler.AssembleFile(FileUtils.GetTestDataPath("not-existing.s")));
+        Assert.Throws<FileNotFoundException>(() => CodyAssembler.AssembleFileToBytes(FileUtils.GetTestDataFile("not-existing.asm")));
     }
 
     [Test]
     public void TestInvalidOpcode()
     {
-        Assert.Throws<InvalidOperationException>(() => TassAssembler.AssembleFile(FileUtils.GetTestDataPath("invalidOpcode.s")));
+        Assert.Throws<InvalidOperationException>(() => CodyAssembler.AssembleFileToBytes(FileUtils.GetTestDataFile("invalidOpcode.asm")));
     }
 
     [Test]
     public void TestUnmappedArea()
     {
-        var bytes = TassAssembler.AssembleFile(FileUtils.GetTestDataPath("debugTesting/unmappedArea.s"));
+        var bytes = CodyAssembler.AssembleFileToBytes(FileUtils.GetTestDataFile("debugTesting/unmappedArea.asm"));
         Assert.True(true);
     }
 
@@ -53,5 +53,65 @@ public class AssemblerTests
         result = result.Replace("\r\n", "\n").TrimEnd();
         var expected = "LDA #$01\nSTA $0200\nLDA #$05\nSTA $0201\nLDA #$08\nSTA $0202";
         Assert.AreEqual(expected, result);
+    }
+
+    [Test]
+    public void TestDisassemblerRelativeBranchRoundtrip()
+    {
+        byte[] original = [0xD0, 0xFE];
+        string disassembly = CodyDisassembler.Disassemble(original, 0xE000);
+        var reassembled = CodyAssembler.AssembleTextToBytes(disassembly);
+
+        Assert.That(reassembled, Is.EqualTo(original), disassembly);
+    }
+
+    [Test]
+    [Explicit("Dev Test")]
+    public void TestAssembleDisassembleRoundtripCodybasic()
+    {
+        var folderPath = "C:\\Users\\Konsi\\Documents\\CodyNETSecond\\CodyNET.Tests\\testdata\\programs\\assembly";
+        var name = "TicTacToe";
+        var asm = File.ReadAllText(Path.Combine(folderPath, $"{name}.asm"));
+        var assembled = CodyAssembler.AssembleTextToBytes(asm);
+        // Write to file
+        var assembledPath = FileUtils.GetTestDataPath(Path.Combine(folderPath, $"{name}_assembled.bin"));
+        File.WriteAllBytes(assembledPath, assembled);
+        var disassembled  = CodyDisassembler.Disassemble(assembled);
+        var disassembledPath = Path.Combine(folderPath, $"{name}_disassembled.asm");
+        File.WriteAllText(disassembledPath, disassembled);
+        Console.WriteLine($"Files written to {assembledPath} and {disassembledPath}");
+    }
+
+    [Test]
+    public void TestDisassemblerRoundtrip()
+    {
+        var original = File.ReadAllBytes(FileUtils.GetTestDataPath("programs/codybasic.bin"));
+        string disassembly = CodyDisassembler.Disassemble(original, 0xE000);
+        var reassembled = CodyAssembler.AssembleTextToBytes(disassembly);
+
+        Assert.That(reassembled, Is.EqualTo(original));
+    }
+
+    [Explicit("Dev Test")]
+    [Test]
+    public void TestPreprocessor()
+    {
+        var code = "LDA #1\nSTA #1\n\n";
+        var x = CodyPreprocessor.Preprocess(code);
+        
+        List<string> lines = code.Split('\n').ToList();
+        var y = CodyPreprocessor.Preprocess(lines);
+        
+        Assert.That(x , Is.EqualTo(y));
+    }
+    
+    [Explicit("Dev Test")]
+    [Test]
+    public void TestDisassembler()
+    {
+        var file1 = "C:\\Users\\Konsi\\Documents\\CodyNET\\CodyNET.Tests\\testdata\\programs\\assembly\\TicTacToe_assembled.bin";
+        var file2 = "C:\\Users\\Konsi\\Documents\\CodyNET\\CodyNET.Tests\\testdata\\programs\\assembly\\TicTacToe_breakpoint.bin";
+        CodyDisassembler.DisassembleFile(new FileInfo(file1), new FileInfo(file1.Replace(".bin", ".asm")));
+        CodyDisassembler.DisassembleFile(new FileInfo(file2), new FileInfo(file2.Replace(".bin", ".asm")));
     }
 }

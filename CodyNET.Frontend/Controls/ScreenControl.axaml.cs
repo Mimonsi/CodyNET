@@ -73,7 +73,6 @@ public partial class ScreenControl : Control, IScreenDevice
 
         Dispatcher.UIThread.Post(() =>
         {
-            InvalidateMeasure();
             InvalidateVisual();
         }, DispatcherPriority.Render);
     }

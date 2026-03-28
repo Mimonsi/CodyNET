@@ -36,6 +36,7 @@ public class TestVideoFrame
         }
     }
     
+    [Explicit("Manual visual debug helper.")]
     [Test]
     public void TestDumpVideoFrame()
     {

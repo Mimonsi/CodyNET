@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using CodyNET.Common.Video;
+using CodyNET.Core.Cody;
 using CodyNET.Core.Devices;
+using Debugger = CodyNET.Core.Devices.Debugger;
 
 namespace CodyNET.Frontend;
 
@@ -12,10 +15,16 @@ public static class FrontendHostBridge
 
     public static Task<IScreenDevice> ScreenTask => screenSource.Task;
     public static Keyboard? Keyboard { get; private set; }
+    public static Debugger? Debugger { get; private set; }
     
+    public static long InitialClockFrequency { get; private set; }
+
     // Frontend Bindings
-    private static Action<long>? setClockFrequencyAction;
-    private static Action<FileInfo>? loadUart1SourceAction;
+    private static Action<long>? setClockFrequencyAction; // Buttons to set frequency
+    private static Action<FileInfo>? loadUart1SourceAction; // Button for loading UART1 source data from file
+    private static Func<CpuRegisterSnapshot>? getRegisterSnapshotFunc; // Display for Register and CPU Flags
+    private static Func<CodyStatusSnapshot>? getStatusSnapshotFunc; // Display for Frequency and FPS
+    private static Action<int>? setRunStateAction; // Buttons for Pause, Resume and Single Step
 
     public static void Reset()
     {
@@ -24,6 +33,9 @@ public static class FrontendHostBridge
 
         setClockFrequencyAction = null;
         loadUart1SourceAction = null;
+        getRegisterSnapshotFunc = null;
+        getStatusSnapshotFunc = null;
+        setRunStateAction = null;
     }
 
     public static void SetScreen(IScreenDevice screen)
@@ -34,6 +46,11 @@ public static class FrontendHostBridge
     public static void SetKeyboard(Keyboard keyboard)
     {
         Keyboard = keyboard;
+    }
+    
+    public static void SetDebugger(Debugger debugger)
+    {
+        Debugger = debugger;
     }
 
     public static void SetInitializationError(Exception exception)
@@ -58,9 +75,10 @@ public static class FrontendHostBridge
         loadUart1SourceAction?.Invoke(fileInfo);
     }
     
-    public static void RegisterClockFrequencySetter(Action<long> setter)
+    public static void RegisterClockFrequencySetter(Action<long> setter, long initialFrequencyHz)
     {
         setClockFrequencyAction = setter;
+        InitialClockFrequency = initialFrequencyHz;
     }
     
     public static void SetClockFrequency(long frequencyHz)
@@ -68,6 +86,35 @@ public static class FrontendHostBridge
         setClockFrequencyAction?.Invoke(frequencyHz);
     }
     
-    #endregion
+    public static void RegisterRunStateAction(Action<int> setter)
+    {
+        setRunStateAction = setter;
+    }
+    
+    public static void SetRunState(int runState)
+    {
+        setRunStateAction?.Invoke(runState);
+    }
 
+    public static void RegisterRegisterSnapshotProvider(Func<CpuRegisterSnapshot> provider)
+    {
+        getRegisterSnapshotFunc = provider;
+    }
+    
+    public static void RegisterStatusSnapshotProvider(Func<CodyStatusSnapshot> provider)
+    {
+        getStatusSnapshotFunc = provider;
+    }
+
+    public static CpuRegisterSnapshot? GetRegisterSnapshot()
+    {
+        return getRegisterSnapshotFunc?.Invoke();
+    }
+    
+    public static CodyStatusSnapshot? GetStatusSnapshot()
+    {
+        return getStatusSnapshotFunc?.Invoke();
+    }
+    
+    #endregion
 }

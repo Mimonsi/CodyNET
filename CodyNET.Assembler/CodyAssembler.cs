@@ -1,31 +1,67 @@
-﻿using CodyNET.Common.Utils;
+﻿using System.Text;
+using CodyNET.Common.Utils;
 
 namespace CodyNET.Assembler;
 
+/// <summary>
+/// Wrapper for TassAssembler that includes preprocessing
+/// </summary>
 public static class CodyAssembler
 {
-    public static byte[] AssembleFile(string file)
+    public static byte[] AssembleFileToBytes(FileInfo inputFile)
     {
+        var outputFile = FileUtils.GetWithChangedExtension(inputFile, ".bin");
+        AssembleFile(inputFile, outputFile);
+        return File.ReadAllBytes(outputFile.FullName);
+    }
+    
+    public static FileInfo AssembleFile(FileInfo inputFile, FileInfo? outputFile = null)
+    {
+        if (!inputFile.Exists)
+            throw new FileNotFoundException("Input file does not exist", inputFile.FullName);
+            
+        if (outputFile == null)
+        {
+            outputFile = FileUtils.GetWithChangedExtension(inputFile, ".bin");
+        }
+        var preFile = FileUtils.GetWithChangedExtension(inputFile, "_pre.asm");
+        CodyPreprocessor.PreprocessFile(inputFile, preFile); // Preprocess in-place (overwriting original) to avoid temp file management.
+        TassAssembler.AssembleFile(preFile, outputFile);
+        return outputFile;
+    }
+    
+    public static byte[] AssembleTextToBytes(string assemblyCode)
+    {
+        if (string.IsNullOrEmpty(assemblyCode))
+            throw new ArgumentNullException(nameof(assemblyCode));
+
+        var guid = Guid.NewGuid().ToString("N");
+        string tempInputFile = Path.Combine(Path.GetTempPath(), $"cody_{guid}.asm");
+        string tempOutputFile = Path.Combine(Path.GetTempPath(), $"cody_{guid}.asm");
+
         try
         {
-            string assemblyCode = File.ReadAllText(file);
-            Log.Info("Assembling file {file}", file);
-            return Assemble(assemblyCode);
+            File.WriteAllText(tempInputFile, assemblyCode, Encoding.UTF8);
+            AssembleFile(new FileInfo(tempInputFile), new FileInfo(tempOutputFile));
+            return File.ReadAllBytes(tempOutputFile);
         }
-        catch (Exception ex)
+        finally
         {
-            Log.Error("Failed to assemble file {file}: {ex.Message}", file, ex.Message);
-            return Array.Empty<byte>();
+            TryDelete(tempInputFile);
+            TryDelete(tempOutputFile);
         }
     }
     
-    public static byte[] Assemble(string assemblyCode)
+    private static void TryDelete(string path)
     {
-        // Placeholder implementation
-        // In a real assembler, this method would parse the assembly code
-        // and convert it into machine code (byte array).
-        List<byte> instructions = new List<byte>();
-        
-        return instructions.ToArray();
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
+                File.Delete(path);
+        }
+        catch
+        {
+            // Intentionally ignore cleanup failures.
+        }
     }
 }
