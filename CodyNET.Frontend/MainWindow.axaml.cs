@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -78,10 +79,16 @@ public partial class MainWindow : Window
         CodeEditorTextBox.SyntaxHighlighting = HighlightingLoader.Load(xshd, HighlightingManager.Instance);
     }
 
+    private string _fullVersionText;
+
     private void InitUi()
     {
-        // TODO: Get version
-        FooterModeText.Text = $"CodyNET - Version 1";
+        _fullVersionText = Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion ?? "unknown";
+        var version = _fullVersionText.Contains('+') ? _fullVersionText[.._fullVersionText.IndexOf('+')] : _fullVersionText;
+        FooterVersionText.Text = $"CodyNET - Version {version}";
+        ToolTip.SetTip(FooterVersionText, _fullVersionText);
         SetCodePanelState(null, null);
     }
     
