@@ -524,12 +524,17 @@ public partial class MainWindow : Window
         enabledToggle.IsCheckedChanged += OnBreakpointCheckedChanged;
         row.Children.Add(CreateBreakpointCell(enabledToggle, 0));
 
-        row.Children.Add(CreateBreakpointCell(new TextBlock
+        var lineNumberText = new TextBlock
         {
             Text = $"{line}",
             Foreground = Brush.Parse(enabled ? "#00FF8E" : "#8191B0"),
             VerticalAlignment = VerticalAlignment.Center,
-        }, 1, "code-text"));
+            Cursor = new Cursor(StandardCursorType.Hand),
+            Tag = line,
+            TextDecorations = TextDecorations.Underline,
+        };
+        lineNumberText.PointerPressed += OnBreakpointLineNumberClicked;
+        row.Children.Add(CreateBreakpointCell(lineNumberText, 1, "code-text"));
 
         row.Children.Add(CreateBreakpointCell(new TextBlock
         {
@@ -574,6 +579,22 @@ public partial class MainWindow : Window
         }
 
         return control;
+    }
+
+    private void OnBreakpointLineNumberClicked(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is not TextBlock { Tag: int line })
+            return;
+        JumpToEditorLine(line);
+        e.Handled = true;
+    }
+
+    private void JumpToEditorLine(int line)
+    {
+        CodeEditorTextBox.TextArea.Caret.Line = line;
+        CodeEditorTextBox.TextArea.Caret.Column = 1;
+        CodeEditorTextBox.TextArea.Caret.BringCaretToView();
+        CodeEditorTextBox.Focus();
     }
 
     private void OnBreakpointCheckedChanged(object? sender, RoutedEventArgs e)
