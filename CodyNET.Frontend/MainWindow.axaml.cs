@@ -391,7 +391,7 @@ public partial class MainWindow : Window
             FrontendHostBridge.SetRunState(-1);
         }
     }
-    
+
     private void OnStepButtonClick(object? sender, RoutedEventArgs e)
     {
         if (!MenuStepButton.IsEnabled)
@@ -825,4 +825,8 @@ public partial class MainWindow : Window
         RefreshBreakpointsPanel();
     }
 
+    private void OnCpuResetButtonClick(object? sender, RoutedEventArgs e)
+    {
+        FrontendHostBridge.ResetEmulator();
+    }
 }

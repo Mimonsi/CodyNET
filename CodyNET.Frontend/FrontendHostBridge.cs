@@ -25,6 +25,7 @@ public static class FrontendHostBridge
     private static Func<CpuRegisterSnapshot>? getRegisterSnapshotFunc; // Display for Register and CPU Flags
     private static Func<CodyStatusSnapshot>? getStatusSnapshotFunc; // Display for Frequency and FPS
     private static Action<int>? setRunStateAction; // Buttons for Pause, Resume and Single Step
+    private static Action? resetEmulatorAction; // Button for resetting the emulator
 
     public static void Reset()
     {
@@ -36,6 +37,7 @@ public static class FrontendHostBridge
         getRegisterSnapshotFunc = null;
         getStatusSnapshotFunc = null;
         setRunStateAction = null;
+        resetEmulatorAction = null;
     }
 
     public static void SetScreen(IScreenDevice screen)
@@ -90,10 +92,20 @@ public static class FrontendHostBridge
     {
         setRunStateAction = setter;
     }
-    
+
     public static void SetRunState(int runState)
     {
         setRunStateAction?.Invoke(runState);
+    }
+
+    public static void RegisterResetAction(Action action)
+    {
+        resetEmulatorAction = action;
+    }
+
+    public static void ResetEmulator()
+    {
+        resetEmulatorAction?.Invoke();
     }
 
     public static void RegisterRegisterSnapshotProvider(Func<CpuRegisterSnapshot> provider)
