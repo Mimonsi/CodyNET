@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="using:CodyNET.Frontend.Controls"
+        xmlns:avaloniaEdit="using:AvaloniaEdit"
         x:Class="CodyNET.Frontend.MainWindow"
         Title="Cody Computer Emulator"
         Width="1400"
@@ -368,26 +369,16 @@
                         </Grid>
                     </Border>
                     <Border Grid.Row="1" x:Name="CodeEditor" Classes="code-editor-shell">
-                        <ScrollViewer>
-                            <Grid ColumnDefinitions="60,*">
-                                <Border Grid.Column="0" Classes="code-editor-gutter">
-                                    <!-- <ScrollViewer x:Name="CodeEditorGutterScrollViewer" -->
-                                              <!-- Classes="code-editor-gutter-scroll"> -->
-                                    <Canvas x:Name="CodeEditorLineNumberPanel"
-                                            Classes="code-editor-gutter-panel"
-                                            PointerPressed="OnLineNumberCanvasPointerPressed" />
-                                    <!-- </ScrollViewer> -->
-                                    
-                                </Border>
-                                <TextBox Grid.Column="1"
-                                         x:Name="CodeEditorTextBox"
-                                         Classes="code-editor"
-                                         AcceptsReturn="True"
-                                         AcceptsTab="True"
-                                         TextWrapping="NoWrap"
-                                         TextChanged="OnCodeEditorTextChanged" />
-                            </Grid>
-                        </ScrollViewer>
+                        <avaloniaEdit:TextEditor x:Name="CodeEditorTextBox"
+                                                 FontFamily="Cascadia Mono, Consolas, monospace"
+                                                 FontSize="14"
+                                                 ShowLineNumbers="True"
+                                                 LineNumbersForeground="#8191B0"
+                                                 Background="#1A191D"
+                                                 Foreground="#E7EAF2"
+                                                 WordWrap="False"
+                                                 HorizontalScrollBarVisibility="Auto"
+                                                 VerticalScrollBarVisibility="Auto" />
                     </Border>
                 </Grid>
             </Border>

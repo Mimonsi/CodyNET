@@ -5,17 +5,20 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Path = System.IO.Path;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using AvaloniaEdit.Highlighting;
+using AvaloniaEdit.Highlighting.Xshd;
 using CodyNET.Assembler;
 using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
@@ -30,12 +33,6 @@ public partial class MainWindow : Window
 {
     private static readonly TimeSpan RegisterRefreshInterval = TimeSpan.FromMilliseconds(100);
 
-    // These must match the TextBox.code-editor style: Padding top=4, bottom=8, LineHeight=20
-    private const double CodeLineHeight = 20.0;
-    private const double GutterTopPadding = 4.0;
-    private const double GutterBottomPadding = 8.0;
-    private const double GutterWidth = 60.0;
-    private const double GutterRightPadding = 8.0;
     private static readonly TimeSpan FooterRefreshInterval = TimeSpan.FromMilliseconds(250);
 
     private ScreenControl? screen;
@@ -49,7 +46,7 @@ public partial class MainWindow : Window
     private bool _suppressCodeEditorEvents;
     private bool _suppressClockSliderEvents;
     private int _lastClockComboIndex = 2;
-    private int _lastRenderedLineCount = -1;
+    private BreakpointMargin? _breakpointMargin;
     private readonly Dictionary<int, bool> _codeEditorBreakpointLines = new();
     private List<string> _codeLines = [];
     
@@ -58,13 +55,27 @@ public partial class MainWindow : Window
         InitializeComponent();
         InitializeScreen();
         InitializePanels();
+        InitializeCodeEditor();
         KeyDown += OnKeyDown;
         KeyUp += OnKeyUp;
         Opened += OnOpened;
-        
+
         Closed += OnWindowClosed; // Close whole application on window close
 
         InitUi();
+    }
+
+    private void InitializeCodeEditor()
+    {
+        _breakpointMargin = new BreakpointMargin(_codeEditorBreakpointLines, ToggleBreakpoint);
+        CodeEditorTextBox.TextArea.LeftMargins.Insert(0, _breakpointMargin);
+
+        CodeEditorTextBox.Document.TextChanged += OnCodeEditorDocumentTextChanged;
+
+        using var stream = AssetLoader.Open(new Uri("avares://CodyNET.Frontend/Assets/65C02.xshd"));
+        using var xmlReader = XmlReader.Create(stream);
+        var xshd = HighlightingLoader.LoadXshd(xmlReader);
+        CodeEditorTextBox.SyntaxHighlighting = HighlightingLoader.Load(xshd, HighlightingManager.Instance);
     }
 
     private void InitUi()
@@ -72,7 +83,6 @@ public partial class MainWindow : Window
         // TODO: Get version
         FooterModeText.Text = $"CodyNET - Version 1";
         SetCodePanelState(null, null);
-        RefreshCodeEditorLineNumbers(1);
     }
     
     private void OnOpened(object? sender, EventArgs e)
@@ -165,8 +175,7 @@ public partial class MainWindow : Window
 
         AddBreakpointHeader();
 
-        _lastRenderedLineCount = -1; // Force gutter redraw to reflect breakpoint changes
-        RefreshCodeEditorLineNumbers(CountLines(CodeEditorTextBox.Text));
+        _breakpointMargin?.InvalidateVisual();
 
         var count = _codeEditorBreakpointLines.Count;
         BreakpointBadge.IsVisible = count > 0;
@@ -409,7 +418,7 @@ public partial class MainWindow : Window
             }
 
 
-            if (CodeEditorTextBox.IsFocused)
+            if (CodeEditorTextBox.TextArea.IsFocused)
                 return;
 
             var keyboard = FrontendHostBridge.Keyboard;
@@ -434,7 +443,7 @@ public partial class MainWindow : Window
             // Do not send key up events for debugger control keys to avoid issues with key repeat and lost key up events
             return;
         }
-        if (CodeEditorTextBox.IsFocused)
+        if (CodeEditorTextBox.TextArea.IsFocused)
             return;
         var keyboard = FrontendHostBridge.Keyboard;
         if (keyboard == null)
@@ -660,9 +669,8 @@ public partial class MainWindow : Window
         _suppressCodeEditorEvents = true;
         CodeEditorTextBox.Text = sourceText;
         _suppressCodeEditorEvents = false;
-        
+
         SetCodePanelState(fileInfo.Name, sourceText);
-        RefreshCodeEditorLineNumbers(CountLines(sourceText));
         CompileAssemblyButton.IsEnabled = true;
         SendAssemblyOverUartButton.IsEnabled = false;
     }
@@ -734,7 +742,7 @@ public partial class MainWindow : Window
         SendAssemblyOverUartButton.IsEnabled = false;
     }
 
-    private void OnCodeEditorTextChanged(object? sender, TextChangedEventArgs e)
+    private void OnCodeEditorDocumentTextChanged(object? sender, EventArgs e)
     {
         if (_suppressCodeEditorEvents)
             return;
@@ -742,7 +750,6 @@ public partial class MainWindow : Window
         _isAssemblyDirty = true;
         var sourceText = CodeEditorTextBox.Text ?? string.Empty;
         SetCodePanelState(GetLoadedAssemblyFileName(), sourceText);
-        RefreshCodeEditorLineNumbers(CountLines(sourceText));
     }
     
     private string GetLoadedAssemblyFileName()
@@ -759,51 +766,6 @@ public partial class MainWindow : Window
         return extension.Equals(".asm", StringComparison.OrdinalIgnoreCase);
     }
 
-    private void RefreshCodeEditorLineNumbers(int lineCount)
-    {
-        lineCount = Math.Max(1, lineCount);
-        if (lineCount == _lastRenderedLineCount)
-            return;
-        _lastRenderedLineCount = lineCount;
-        CodeEditorLineNumberPanel.Children.Clear();
-        // Canvas height must be explicit so the outer ScrollViewer knows the scrollable area
-        CodeEditorLineNumberPanel.Height = GutterTopPadding + lineCount * CodeLineHeight + GutterBottomPadding;
-
-        for (var i = 0; i < lineCount; i++)
-        {
-            var lineNumber = i + 1;
-            var hasBreakpoint = _codeEditorBreakpointLines.ContainsKey(lineNumber);
-            var y = GutterTopPadding + i * CodeLineHeight;
-
-            if (hasBreakpoint)
-            {
-                var bg = new Rectangle
-                {
-                    Width = GutterWidth,
-                    Height = CodeLineHeight,
-                    Fill = Brush.Parse("#7D2020"),
-                };
-                Canvas.SetTop(bg, y);
-                Canvas.SetLeft(bg, 0);
-                CodeEditorLineNumberPanel.Children.Add(bg);
-            }
-
-            var label = new TextBlock
-            {
-                Text = lineNumber.ToString(CultureInfo.InvariantCulture),
-                FontFamily = new FontFamily("Cascadia Mono, Consolas, monospace"),
-                FontSize = 14,
-                Height = CodeLineHeight,
-                Width = GutterWidth - GutterRightPadding,
-                Foreground = hasBreakpoint ? Brush.Parse("#FF6B6B") : Brush.Parse("#8191B0"),
-                TextAlignment = TextAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            Canvas.SetTop(label, y);
-            Canvas.SetLeft(label, 0);
-            CodeEditorLineNumberPanel.Children.Add(label);
-        }
-    }
 
     private void AddMultipleBreakpoints(int[] lineNumbers)
     {
@@ -834,13 +796,4 @@ public partial class MainWindow : Window
         RefreshBreakpointsPanel();
     }
 
-    private void OnLineNumberCanvasPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        var pos = e.GetPosition(CodeEditorLineNumberPanel);
-        var lineIndex = (int)Math.Floor((pos.Y - GutterTopPadding) / CodeLineHeight);
-        var lineNumber = lineIndex + 1;
-        if (lineNumber < 1) return;
-
-        ToggleBreakpoint(lineNumber);
-    }
 }

@@ -3,6 +3,7 @@
              x:Class="CodyNET.Frontend.App">
     <Application.Styles>
         <FluentTheme />
+        <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
     </Application.Styles>
     <Application.Resources>
         <FontFamily x:Key="C64 Pro Mono">avares://GoogleFonts/Assets/Fonts#Nunito</FontFamily>

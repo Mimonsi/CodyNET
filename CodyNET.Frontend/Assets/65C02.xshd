@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SyntaxDefinition name="65C02 Assembly" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+
+    <Color name="Comment"   foreground="#6A9955" />
+    <Color name="Opcode"    foreground="#569CD6" fontWeight="bold" />
+    <Color name="Directive" foreground="#C586C0" />
+    <Color name="Number"    foreground="#B5CEA8" />
+    <Color name="String"    foreground="#CE9178" />
+    <Color name="Label"     foreground="#DCDCAA" />
+
+    <RuleSet ignoreCase="true">
+
+        <!-- Comments -->
+        <Span color="Comment" multiline="false">
+            <Begin>;</Begin>
+        </Span>
+
+        <!-- Strings -->
+        <Span color="String">
+            <Begin>"</Begin>
+            <End>"</End>
+        </Span>
+        <Span color="String">
+            <Begin>'</Begin>
+            <End>'</End>
+        </Span>
+
+        <!-- Hex literals: $FF, $C000 -->
+        <Rule color="Number">\$[0-9a-fA-F]+</Rule>
+
+        <!-- Binary literals: %10110011 -->
+        <Rule color="Number">%[01]+</Rule>
+
+        <!-- Decimal numbers -->
+        <Rule color="Number">\b[0-9]+\b</Rule>
+
+        <!-- Labels: identifier followed by colon -->
+        <Rule color="Label">\b[a-zA-Z_][a-zA-Z0-9_]*(?=\s*:)</Rule>
+
+        <!-- Assembler directives -->
+        <Keywords color="Directive">
+            <Word>.org</Word>
+            <Word>.byte</Word>
+            <Word>.word</Word>
+            <Word>.dword</Word>
+            <Word>.db</Word>
+            <Word>.dw</Word>
+            <Word>.dd</Word>
+            <Word>.dq</Word>
+            <Word>.text</Word>
+            <Word>.ascii</Word>
+            <Word>.asciiz</Word>
+            <Word>.equ</Word>
+            <Word>.define</Word>
+            <Word>.include</Word>
+            <Word>.macro</Word>
+            <Word>.endmacro</Word>
+            <Word>.proc</Word>
+            <Word>.endproc</Word>
+            <Word>.segment</Word>
+            <Word>.code</Word>
+            <Word>.data</Word>
+            <Word>.bss</Word>
+            <Word>.align</Word>
+            <Word>.fill</Word>
+            <Word>.res</Word>
+            <Word>.addr</Word>
+            <Word>.lobyte</Word>
+            <Word>.hibyte</Word>
+            <Word>.bankbyte</Word>
+            <Word>DBP</Word>
+        </Keywords>
+
+        <!-- 65C02 Opcodes -->
+        <Keywords color="Opcode">
+            <Word>ADC</Word> <Word>AND</Word> <Word>ASL</Word>
+            <Word>BBR</Word> <Word>BBS</Word> <Word>BCC</Word> <Word>BCS</Word>
+            <Word>BEQ</Word> <Word>BIT</Word> <Word>BMI</Word> <Word>BNE</Word>
+            <Word>BPL</Word> <Word>BRA</Word> <Word>BRK</Word> <Word>BVC</Word>
+            <Word>BVS</Word>
+            <Word>CLC</Word> <Word>CLD</Word> <Word>CLI</Word> <Word>CLV</Word>
+            <Word>CMP</Word> <Word>CPX</Word> <Word>CPY</Word>
+            <Word>DEC</Word> <Word>DEX</Word> <Word>DEY</Word>
+            <Word>EOR</Word>
+            <Word>INC</Word> <Word>INX</Word> <Word>INY</Word>
+            <Word>JMP</Word> <Word>JSR</Word>
+            <Word>LDA</Word> <Word>LDX</Word> <Word>LDY</Word> <Word>LSR</Word>
+            <Word>NOP</Word>
+            <Word>ORA</Word>
+            <Word>PHA</Word> <Word>PHP</Word> <Word>PHX</Word> <Word>PHY</Word>
+            <Word>PLA</Word> <Word>PLP</Word> <Word>PLX</Word> <Word>PLY</Word>
+            <Word>RMB</Word> <Word>ROL</Word> <Word>ROR</Word>
+            <Word>RTI</Word> <Word>RTS</Word>
+            <Word>SBC</Word> <Word>SEC</Word> <Word>SED</Word> <Word>SEI</Word>
+            <Word>SMB</Word> <Word>STA</Word> <Word>STP</Word>
+            <Word>STX</Word> <Word>STY</Word> <Word>STZ</Word>
+            <Word>TAX</Word> <Word>TAY</Word> <Word>TRB</Word> <Word>TSB</Word>
+            <Word>TSX</Word> <Word>TXA</Word> <Word>TXS</Word> <Word>TYA</Word>
+            <Word>WAI</Word>
+        </Keywords>
+
+    </RuleSet>
+</SyntaxDefinition>
