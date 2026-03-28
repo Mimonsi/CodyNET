@@ -4,7 +4,7 @@
         xmlns:avaloniaEdit="using:AvaloniaEdit"
         x:Class="CodyNET.Frontend.MainWindow"
         Title="Cody Computer Emulator"
-        Width="1400"
+        Width="1500"
         Height="900"
         MinWidth="1000"
         MinHeight="700"

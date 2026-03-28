@@ -6,7 +6,7 @@ namespace CodyNET.Assembler;
 /// <summary>
 /// Wrapper for TassAssembler that includes preprocessing
 /// </summary>
-public class CodyAssembler
+public static class CodyAssembler
 {
     public static byte[] AssembleFileToBytes(FileInfo inputFile)
     {
@@ -24,8 +24,9 @@ public class CodyAssembler
         {
             outputFile = FileUtils.GetWithChangedExtension(inputFile, ".bin");
         }
-        CodyPreprocessor.PreprocessFile(inputFile, inputFile); // Preprocess in-place (overwriting original) to avoid temp file management.
-        TassAssembler.AssembleFile(inputFile, outputFile);
+        var preFile = FileUtils.GetWithChangedExtension(inputFile, "_pre.asm");
+        CodyPreprocessor.PreprocessFile(inputFile, preFile); // Preprocess in-place (overwriting original) to avoid temp file management.
+        TassAssembler.AssembleFile(preFile, outputFile);
         return outputFile;
     }
     

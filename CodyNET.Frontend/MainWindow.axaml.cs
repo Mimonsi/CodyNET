@@ -644,6 +644,8 @@ public partial class MainWindow : Window
             return;
         }
         
+        _codeEditorBreakpointLines.Clear();
+
         var codeLinesProcessed = new List<string>();
         var breakpointLines = new List<int>();
         for(int i = 0; i < _codeLines.Count; i++)
@@ -651,17 +653,19 @@ public partial class MainWindow : Window
             var line = _codeLines[i];
             if (line.Contains("DBP", StringComparison.OrdinalIgnoreCase))
             {
-                breakpointLines.Add(i + 1);
+                // The breakpoint belongs to the next non-DBP line, which will land at
+                // codeLinesProcessed.Count + 1 (1-based) in the stripped output.
+                breakpointLines.Add(codeLinesProcessed.Count + 1);
             }
             else
             {
                 codeLinesProcessed.Add(line);
             }
         }
-        AddMultipleBreakpoints(breakpointLines.ToArray());
-
         _codeLines = codeLinesProcessed;
-        sourceText =  string.Join(Environment.NewLine, _codeLines);
+        sourceText = string.Join(Environment.NewLine, _codeLines);
+
+        AddMultipleBreakpoints(breakpointLines.ToArray());
 
         _loadedAssemblyPath = fileInfo.FullName;
         _isAssemblyDirty = false;
@@ -710,17 +714,20 @@ public partial class MainWindow : Window
 
     private void OnCompileAssemblyClick(object? sender, RoutedEventArgs e)
     {
+        // Always read directly from the editor so edits are never missed.
+        var editorLines = (CodeEditorTextBox.Text ?? string.Empty)
+            .Split('\n')
+            .Select(l => l.TrimEnd('\r'))
+            .ToList();
+
         var finalCode = new List<string>();
-        for(int i = 0; i < _codeLines.Count; i++)
+        for (int i = 0; i < editorLines.Count; i++)
         {
             var lineNumber = i + 1;
-            var lineText = _codeLines[i];
-            if (_codeEditorBreakpointLines.ContainsKey(lineNumber))
+            var lineText = editorLines[i];
+            if (_codeEditorBreakpointLines.TryGetValue(lineNumber, out var enabled) && enabled)
             {
-                if (_codeEditorBreakpointLines[lineNumber])
-                {
-                    finalCode.Add($"DBP ; BREAKPOINT LINE {lineNumber}"); // Add Breakpoint command for preprocessor
-                }
+                finalCode.Add($"DBP ; BREAKPOINT LINE {lineNumber}"); // Add Breakpoint command for preprocessor
             }
             finalCode.Add(lineText);
         }
@@ -749,6 +756,7 @@ public partial class MainWindow : Window
 
         _isAssemblyDirty = true;
         var sourceText = CodeEditorTextBox.Text ?? string.Empty;
+        _codeLines = sourceText.Split('\n').Select(l => l.TrimEnd('\r')).ToList();
         SetCodePanelState(GetLoadedAssemblyFileName(), sourceText);
     }
     
