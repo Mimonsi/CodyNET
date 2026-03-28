@@ -121,6 +121,10 @@
             <MenuItem Header="_File">
                 <MenuItem Header="Load _Assembly into Editor.." Click="OnLoadAssemblyClick" />
                 <MenuItem Header="_Load UART1.." Click="OnLoadUart1Click" />
+                <Separator />
+                <MenuItem Header="_Save Snapshot.." Click="OnSaveSnapshotClick" />
+                <MenuItem Header="L_oad Snapshot.." Click="OnLoadSnapshotClick" />
+                <Separator />
                 <MenuItem Header="_Exit" />
             </MenuItem>
             <MenuItem Header="_View">

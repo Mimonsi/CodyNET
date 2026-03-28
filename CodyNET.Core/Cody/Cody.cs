@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using CodyNET.Assembler;
 using CodyNET.Common;
 using CodyNET.Common.Video;
@@ -377,6 +378,53 @@ public class Cody
     {
         Memory.ForceWrite(0xFFFA, (byte)(address & 0xFF));
         Memory.ForceWrite(0xFFFB, (byte)(address >> 8));
+    }
+
+    private static readonly JsonSerializerOptions SnapshotJsonOptions = new()
+    {
+        WriteIndented = false,
+    };
+
+    public void SaveSnapshot(FileInfo file)
+    {
+        var snapshot = new CodySnapshot
+        {
+            FrequencyHz = FrequencyHz,
+            CpuState = Cpu.GetState(),
+            ViaState = VIA!.GetState(),
+            Uart1State = Uart1.GetState(),
+            Uart2State = Uart2.GetState(),
+            VidState = (VID as Devices.VideoDevice)?.GetState(),
+        };
+
+        var json = JsonSerializer.Serialize(snapshot, SnapshotJsonOptions);
+        File.WriteAllText(file.FullName, json);
+        Log.Info("Snapshot saved to '{Path}'", file.FullName);
+    }
+
+    public void LoadSnapshot(FileInfo file)
+    {
+        if (!file.Exists)
+            throw new FileNotFoundException($"Snapshot file not found: {file.FullName}");
+
+        var json = File.ReadAllText(file.FullName);
+        var snapshot = JsonSerializer.Deserialize<CodySnapshot>(json, SnapshotJsonOptions)
+            ?? throw new InvalidDataException("Failed to deserialize snapshot.");
+
+        bool wasPaused = _allowedSteps == 0;
+        Pause(); // Prevent CPU from reading partially-cleared memory during restore
+
+        Cpu.SetState(snapshot.CpuState);
+        VIA!.SetState(snapshot.ViaState);
+        Uart1.SetState(snapshot.Uart1State);
+        Uart2.SetState(snapshot.Uart2State);
+        if (snapshot.VidState != null && VID is Devices.VideoDevice vid)
+            vid.SetState(snapshot.VidState);
+        FrequencyHz = snapshot.FrequencyHz;
+        Log.Info("Snapshot loaded from '{Path}'", file.FullName);
+
+        if (!wasPaused)
+            Resume();
     }
 
     public CodyStatusSnapshot GetStatusSnapshot()

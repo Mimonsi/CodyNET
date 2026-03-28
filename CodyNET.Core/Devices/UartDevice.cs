@@ -169,4 +169,42 @@ public class UartDevice(ushort startAddress, UartSource? source = null) : IMemor
         char c = (char)value;
         return char.IsControl(c) ? "." : c.ToString();
     }
+
+    public UartState GetState()
+    {
+        var rxData = new byte[_receiveBuffer.Capacity];
+        var txData = new byte[_transmitBuffer.Capacity];
+        for (byte i = 0; i < _receiveBuffer.Capacity; i++)
+            rxData[i] = _receiveBuffer.Get(i);
+        for (byte i = 0; i < _transmitBuffer.Capacity; i++)
+            txData[i] = _transmitBuffer.Get(i);
+
+        return new UartState
+        {
+            Control = _control,
+            Command = _command,
+            Status = _status,
+            RxHead = _receiveBuffer.Head,
+            RxTail = _receiveBuffer.Tail,
+            RxData = rxData,
+            TxHead = _transmitBuffer.Head,
+            TxTail = _transmitBuffer.Tail,
+            TxData = txData,
+        };
+    }
+
+    public void SetState(UartState state)
+    {
+        _control = state.Control;
+        _command = state.Command;
+        _status = state.Status;
+        for (byte i = 0; i < state.RxData.Length; i++)
+            _receiveBuffer.Set(i, state.RxData[i]);
+        _receiveBuffer.Head = state.RxHead;
+        _receiveBuffer.Tail = state.RxTail;
+        for (byte i = 0; i < state.TxData.Length; i++)
+            _transmitBuffer.Set(i, state.TxData[i]);
+        _transmitBuffer.Head = state.TxHead;
+        _transmitBuffer.Tail = state.TxTail;
+    }
 }

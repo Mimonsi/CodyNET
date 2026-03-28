@@ -468,6 +468,15 @@ public class VideoDevice : IVideoDevice
         }
     }
 
+    public VidState GetState() => new() { Data = (byte[])_videoMemory.Clone() };
+
+    public void SetState(VidState state)
+    {
+        int len = Math.Min(state.Data.Length, _videoMemory.Length);
+        Array.Copy(state.Data, _videoMemory, len);
+        Dirty = true;
+    }
+
     private static void FillRect(uint[] pix, int stride, int xPos, int yPos, int w, int h, uint color)
     {
         for (int y = 0; y < h; y++)

@@ -352,4 +352,36 @@ public class VersatileInterfaceAdapter(KeyState keyState) : IMemoryMappedDevice
         }
         return (_ifr & 0x80) != 0 ? Interrupt.IrqReq : Interrupt.None;
     }
+
+    public ViaState GetState() => new()
+    {
+        Registers = (byte[])_registers.Clone(),
+        T1LatchLo = _t1LatchLo,
+        T1LatchHi = _t1LatchHi,
+        T1Counter = _t1Counter,
+        T1Enabled = _t1Enabled,
+        T2LatchLo = _t2LatchLo,
+        T2LatchHi = _t2LatchHi,
+        T2Counter = _t2Counter,
+        T2Enabled = _t2Enabled,
+        Ifr = _ifr,
+        Ier = _ier,
+        LastUpdateCycle = _lastUpdateCycle,
+    };
+
+    public void SetState(ViaState state)
+    {
+        Array.Copy(state.Registers, _registers, Math.Min(state.Registers.Length, _registers.Length));
+        _t1LatchLo = state.T1LatchLo;
+        _t1LatchHi = state.T1LatchHi;
+        _t1Counter = state.T1Counter;
+        _t1Enabled = state.T1Enabled;
+        _t2LatchLo = state.T2LatchLo;
+        _t2LatchHi = state.T2LatchHi;
+        _t2Counter = state.T2Counter;
+        _t2Enabled = state.T2Enabled;
+        _ifr = state.Ifr;
+        _ier = state.Ier;
+        _lastUpdateCycle = state.LastUpdateCycle;
+    }
 }

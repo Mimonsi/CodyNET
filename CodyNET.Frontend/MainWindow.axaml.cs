@@ -308,7 +308,65 @@ public partial class MainWindow : Window
         //UpdateCodePanel(fileInfo);
         FrontendHostBridge.LoadUartSource(fileInfo);
     }
-    
+
+    private static readonly FilePickerFileType SnapshotFileType = new("CodyNET Snapshot")
+    {
+        Patterns = ["*.csnap"]
+    };
+
+    private async void OnSaveSnapshotClick(object? sender, RoutedEventArgs e)
+    {
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save Snapshot",
+            SuggestedFileName = "snapshot",
+            DefaultExtension = "csnap",
+            FileTypeChoices = [SnapshotFileType],
+        });
+
+        if (file == null)
+            return;
+
+        var path = file.TryGetLocalPath();
+        if (path == null)
+            return;
+
+        try
+        {
+            FrontendHostBridge.SaveSnapshot(new FileInfo(path));
+        }
+        catch (Exception ex)
+        {
+            MessageBox("Save Snapshot Failed", ex.Message);
+        }
+    }
+
+    private async void OnLoadSnapshotClick(object? sender, RoutedEventArgs e)
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Load Snapshot",
+            AllowMultiple = false,
+            FileTypeFilter = [SnapshotFileType],
+        });
+
+        if (files.Count == 0)
+            return;
+
+        var path = files[0].TryGetLocalPath();
+        if (path == null)
+            return;
+
+        try
+        {
+            FrontendHostBridge.LoadSnapshot(new FileInfo(path));
+        }
+        catch (Exception ex)
+        {
+            MessageBox("Load Snapshot Failed", ex.Message);
+        }
+    }
+
     private void MessageBox(string title, string message)
     {
         Dispatcher.UIThread.InvokeAsync(async () =>

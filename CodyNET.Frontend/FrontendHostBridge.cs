@@ -26,6 +26,8 @@ public static class FrontendHostBridge
     private static Func<CodyStatusSnapshot>? getStatusSnapshotFunc; // Display for Frequency and FPS
     private static Action<int>? setRunStateAction; // Buttons for Pause, Resume and Single Step
     private static Action? resetEmulatorAction; // Button for resetting the emulator
+    private static Action<FileInfo>? saveSnapshotAction;
+    private static Action<FileInfo>? loadSnapshotAction;
 
     public static void Reset()
     {
@@ -38,6 +40,8 @@ public static class FrontendHostBridge
         getStatusSnapshotFunc = null;
         setRunStateAction = null;
         resetEmulatorAction = null;
+        saveSnapshotAction = null;
+        loadSnapshotAction = null;
     }
 
     public static void SetScreen(IScreenDevice screen)
@@ -106,6 +110,26 @@ public static class FrontendHostBridge
     public static void ResetEmulator()
     {
         resetEmulatorAction?.Invoke();
+    }
+
+    public static void RegisterSaveSnapshotAction(Action<FileInfo> action)
+    {
+        saveSnapshotAction = action;
+    }
+
+    public static void SaveSnapshot(FileInfo file)
+    {
+        saveSnapshotAction?.Invoke(file);
+    }
+
+    public static void RegisterLoadSnapshotAction(Action<FileInfo> action)
+    {
+        loadSnapshotAction = action;
+    }
+
+    public static void LoadSnapshot(FileInfo file)
+    {
+        loadSnapshotAction?.Invoke(file);
     }
 
     public static void RegisterRegisterSnapshotProvider(Func<CpuRegisterSnapshot> provider)
