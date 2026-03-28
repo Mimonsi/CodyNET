@@ -47,7 +47,9 @@ public partial class MainWindow : Window
     private bool _suppressClockSliderEvents;
     private int _lastClockComboIndex = 2;
     private BreakpointMargin? _breakpointMargin;
+    private CurrentLineRenderer? _currentLineRenderer;
     private readonly Dictionary<int, bool> _codeEditorBreakpointLines = new();
+    private Dictionary<ushort, int> _addressToSourceLine = new();
     private List<string> _codeLines = [];
     
     public MainWindow()
@@ -76,6 +78,9 @@ public partial class MainWindow : Window
         using var xmlReader = XmlReader.Create(stream);
         var xshd = HighlightingLoader.LoadXshd(xmlReader);
         CodeEditorTextBox.SyntaxHighlighting = HighlightingLoader.Load(xshd, HighlightingManager.Instance);
+
+        _currentLineRenderer = new CurrentLineRenderer();
+        CodeEditorTextBox.TextArea.TextView.BackgroundRenderers.Add(_currentLineRenderer);
     }
 
     private void InitUi()
@@ -166,6 +171,34 @@ public partial class MainWindow : Window
         SetFlagText("FlagBreakText", snapshot.Break);
         SetFlagText("FlagOverflowText", snapshot.Overflow);
         SetFlagText("FlagNegativeText", snapshot.Negative);
+
+        UpdateCurrentLineHighlight(snapshot.PC);
+    }
+
+    private void UpdateCurrentLineHighlight(ushort pc)
+    {
+        if (_currentLineRenderer is null) return;
+
+        _addressToSourceLine.TryGetValue(pc, out var sourceLine);  // 0 if not found
+        var newLine = sourceLine > 0 ? sourceLine : (int?)null;
+
+        if (_currentLineRenderer.CurrentLine == newLine) return;   // nothing changed
+
+        _currentLineRenderer.CurrentLine = newLine;
+        CodeEditorTextBox.TextArea.TextView.InvalidateVisual();
+
+        // Auto-scroll to the highlighted line when paused/stepping (not while running,
+        // because the PC jumps around too fast and would be distracting).
+        if (newLine is not null)
+        {
+            var status = FrontendHostBridge.GetStatusSnapshot();
+            if (status?.RunStatus == RunStatus.Paused)
+            {
+                CodeEditorTextBox.TextArea.Caret.Line   = newLine.Value;
+                CodeEditorTextBox.TextArea.Caret.Column = 1;
+                CodeEditorTextBox.TextArea.Caret.BringCaretToView();
+            }
+        }
     }
 
     private void RefreshBreakpointsPanel()
@@ -741,24 +774,47 @@ public partial class MainWindow : Window
             .Select(l => l.TrimEnd('\r'))
             .ToList();
 
-        var finalCode = new List<string>();
+        // Build finalCode and simultaneously track which pre.asm line number
+        // (after DBP expansion: each DBP → 2 lines) maps to which editor line.
+        var finalCode             = new List<string>();
+        var preAsmLineToSourceLine = new Dictionary<int, int>();
+        int preAsmLine            = 1;
+
         for (int i = 0; i < editorLines.Count; i++)
         {
             var lineNumber = i + 1;
-            var lineText = editorLines[i];
+            var lineText   = editorLines[i];
+
             if (_codeEditorBreakpointLines.TryGetValue(lineNumber, out var enabled) && enabled)
             {
-                finalCode.Add($"DBP ; BREAKPOINT LINE {lineNumber}"); // Add Breakpoint command for preprocessor
+                // DBP → "LDA #$01\nSTA $FF00" (2 lines in pre.asm).
+                // Map both expansion lines to this editor line so the highlight appears
+                // when the emulator pauses at the breakpoint trap (STA $FF00).
+                preAsmLineToSourceLine[preAsmLine]     = lineNumber; // LDA #$01
+                preAsmLineToSourceLine[preAsmLine + 1] = lineNumber; // STA $FF00
+                preAsmLine += 2;
+
+                finalCode.Add($"DBP ; BREAKPOINT LINE {lineNumber}");
             }
+
+            preAsmLineToSourceLine[preAsmLine] = lineNumber;
+            preAsmLine++;
             finalCode.Add(lineText);
         }
 
         var inputFile = new FileInfo("editor.asm");
         File.WriteAllText(inputFile.FullName, string.Join("\n", finalCode));
-        // Comment this in to test preprocessing
-        // var preprocessedFile = new FileInfo("editor_preprocessed.asm");
-        // CodyPreprocessor.PreprocessFile(inputFile, preprocessedFile);
-        var bytes = CodyAssembler.AssembleFile(inputFile);
+
+        var (_, addressToPreLine) = CodyAssembler.AssembleFileWithMap(inputFile);
+
+        // Combine: address → pre.asm line → original editor line
+        _addressToSourceLine = new Dictionary<ushort, int>();
+        foreach (var (address, preLine) in addressToPreLine)
+        {
+            if (preAsmLineToSourceLine.TryGetValue(preLine, out var sourceLine))
+                _addressToSourceLine[address] = sourceLine;
+        }
+
         SendAssemblyOverUartButton.IsEnabled = true;
     }
 
