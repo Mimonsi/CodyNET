@@ -1,7 +1,7 @@
 ﻿<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="CodyNET Run Colorcycle (1)" type="DotNetProject" factoryName=".NET Project">
-    <option name="EXE_PATH" value="$PROJECT_DIR$/CodyNET.Host/bin/Debug/net10.0/CodyNET.Host.exe" />
-    <option name="PROGRAM_PARAMETERS" value="-v run C:\Users\Konsi\GoogleDrive\Uni\Bachelorarbeit\CodyNET\CodyNET.Tests\testdata\programs\checkerboard.bin --debug" />
+  <configuration default="false" name="CodyNET Assemble" type="DotNetProject" factoryName=".NET Project">
+    <option name="EXE_PATH" value="$PROJECT_DIR$/CodyNET.Host/bin/Debug/net10.0/CodyNET.exe" />
+    <option name="PROGRAM_PARAMETERS" value="-v assemble C:\Users\Konsi\Documents\CodyNET\CodyNET.Tests\testdata\programs\assembly\TicTacToeDBP.asm" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/CodyNET.Host/bin/Debug/net10.0" />
     <option name="PASS_PARENT_ENVS" value="1" />
     <option name="ENV_FILE_PATHS" value="" />
