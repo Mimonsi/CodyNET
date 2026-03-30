@@ -16,4 +16,16 @@
         </AssemblyAttribute>
     </ItemGroup>
 
+    <ItemGroup>
+        <EmbeddedResource Include="64tass\win-x64\64tass.exe">
+            <LogicalName>tass_win_x64</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="64tass\linux-x64\64tass">
+            <LogicalName>tass_linux_x64</LogicalName>
+        </EmbeddedResource>
+        <EmbeddedResource Include="64tass\mac-arm64\64tass">
+            <LogicalName>tass_mac_arm64</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+
 </Project>

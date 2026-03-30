@@ -45,7 +45,7 @@ public class Profiler
         _lastCycleCount = _totalCyclesExecuted;
         _lastFrameCount = 0;
         _snapshotStopwatch.Restart();
-        LogSnapshot();
+        //LogSnapshot();
     }
 
     private void LogSnapshot()
