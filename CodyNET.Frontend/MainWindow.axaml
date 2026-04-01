@@ -134,6 +134,7 @@
             <MenuItem Header="_Emulator">
                 <MenuItem x:Name="MenuPauseResumeButton" Header="_Pause [F9]" Click="OnPauseResumeButtonClick"/>
                 <MenuItem x:Name="MenuStepButton" Header="_Step [F8]" Click="OnStepButtonClick" IsEnabled="False" />
+                <MenuItem x:Name="MenuCpuResetButton" Header="CPU _Reset" Click="OnCpuResetButtonClick"/>
                 <Separator/>
                 <MenuItem Header="500 _kHz" Tag="500000" Click="OnClockMenuClick" ToggleType="CheckBox" />
                 <MenuItem Header="_1 MHz (Standard)" Tag="1000000" Click="OnClockMenuClick" ToggleType="CheckBox"/>
@@ -152,10 +153,10 @@
         
         <Border DockPanel.Dock="Bottom" Background="#0D82D2" Padding="12,8"> <!-- Footer Bar --> 
             <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
-                <TextBlock x:Name="FooterModeText" Text="CodyNET Emulator Version 1" Foreground="White" FontWeight="SemiBold" />
+                <TextBlock x:Name="FooterVersionText" Text="CodyNET Emulator Version 1" Foreground="White" FontWeight="SemiBold" />
                 <TextBlock Grid.Column="1" Text="•" Margin="14,0" Foreground="#B9E7FF" />
                 <TextBlock x:Name="FooterStatusText" Grid.Column="2" Text="Status: Stopped" Foreground="White" FontWeight="SemiBold" />
-                <TextBlock x:Name="FooterRightText" Grid.Column="4" Text="Line 13/37" Foreground="White" FontWeight="SemiBold" />
+                <TextBlock x:Name="FooterRightText" Grid.Column="4" Text="" Foreground="White" FontWeight="SemiBold" /> <!-- Currently unused -->
             </Grid>
         </Border>
         

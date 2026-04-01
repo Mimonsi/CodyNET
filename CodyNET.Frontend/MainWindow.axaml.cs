@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -83,10 +84,16 @@ public partial class MainWindow : Window
         CodeEditorTextBox.TextArea.TextView.BackgroundRenderers.Add(_currentLineRenderer);
     }
 
+    private string _fullVersionText;
+
     private void InitUi()
     {
-        // TODO: Get version
-        FooterModeText.Text = $"CodyNET - Version 1";
+        _fullVersionText = Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion ?? "unknown";
+        var version = _fullVersionText.Contains('+') ? _fullVersionText[.._fullVersionText.IndexOf('+')] : _fullVersionText;
+        FooterVersionText.Text = $"CodyNET - Version {version}";
+        ToolTip.SetTip(FooterVersionText, _fullVersionText);
         SetCodePanelState(null, null);
     }
     
@@ -424,7 +431,7 @@ public partial class MainWindow : Window
             FrontendHostBridge.SetRunState(-1);
         }
     }
-    
+
     private void OnStepButtonClick(object? sender, RoutedEventArgs e)
     {
         if (!MenuStepButton.IsEnabled)
@@ -881,4 +888,8 @@ public partial class MainWindow : Window
         RefreshBreakpointsPanel();
     }
 
+    private void OnCpuResetButtonClick(object? sender, RoutedEventArgs e)
+    {
+        FrontendHostBridge.ResetEmulator();
+    }
 }

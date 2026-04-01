@@ -11,7 +11,8 @@ namespace CodyNET.Assembler;
 /// </summary>
 internal static class TassAssembler
 {
-        private static readonly string _tassPath = ResolveTassPath();
+        private static readonly string _tassPath = ResolveAndLogTassPath();
+
         /// Full path to 64tass executable (e.g. "C:\Tools\64tass\64tass.exe" or "/usr/bin/64tass").
         private static readonly string _args = "--mw65c02 --nostart";
         /// CPU selection argument. For 65C02 you likely want something like "--m65c02" or similar
@@ -122,6 +123,12 @@ internal static class TassAssembler
 
             return inputPath;
         }
+        private static string ResolveAndLogTassPath()
+        {
+            var path = ResolveTassPath();
+            Log.Verbose("Using 64tass assembler at path: {path}", path);
+            return path;
+        }
     
 
         private static string ResolveTassPath()
@@ -130,25 +137,38 @@ internal static class TassAssembler
             if (!string.IsNullOrWhiteSpace(overridePath))
                 return overridePath;
 
-            string baseDir = AppContext.BaseDirectory;
             string osPart = GetOsPart();
             string archPart = GetArchPart();
             string exeName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "64tass.exe" : "64tass";
-            string bundledPath = Path.Combine(baseDir, "Assembler", "64tass", $"{osPart}-{archPart}", exeName);
+            string resourceName = $"tass_{osPart}_{archPart}";
 
-            if (File.Exists(bundledPath))
-                return bundledPath;
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            var assembly = typeof(TassAssembler).Assembly;
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream != null)
             {
-                string programFilesPath = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                    "64tass",
-                    "64tass.exe");
-                if (File.Exists(programFilesPath))
-                    return programFilesPath;
+                string tempDir = Path.Combine(Path.GetTempPath(), "codynet_tass");
+                Directory.CreateDirectory(tempDir);
+                string tempPath = Path.Combine(tempDir, exeName);
+
+                if (!File.Exists(tempPath) || new FileInfo(tempPath).Length != stream.Length)
+                {
+                    using var fs = File.Create(tempPath);
+                    stream.CopyTo(fs);
+                }
+
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    using var chmod = Process.Start(new ProcessStartInfo("chmod", $"+x \"{tempPath}\"")
+                    {
+                        UseShellExecute = false
+                    });
+                    chmod?.WaitForExit();
+                }
+
+                return tempPath;
             }
 
+            Log.Warn("No embedded 64tass binary found for {os}-{arch}, falling back to PATH", osPart, archPart);
             return exeName;
         }
 
