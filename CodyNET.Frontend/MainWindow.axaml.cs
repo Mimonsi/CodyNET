@@ -495,7 +495,28 @@ public partial class MainWindow : Window
 
     private void OnToggleDebuggerClick(object? sender, RoutedEventArgs e)
     {
-        
+
+    }
+
+    private void OnIgnoreBreakpointsClick(object? sender, RoutedEventArgs e)
+    {
+        var debugger = FrontendHostBridge.Debugger;
+        if (debugger == null) return;
+
+        // Sync state from whichever control was clicked
+        bool ignore;
+        if (sender is MenuItem menuItem)
+        {
+            ignore = menuItem.IsChecked;
+            IgnoreBreakpointsToggle.IsChecked = ignore;
+        }
+        else
+        {
+            ignore = IgnoreBreakpointsToggle.IsChecked == true;
+            IgnoreBreakpointsMenuItem.IsChecked = ignore;
+        }
+
+        debugger.IgnoreBreakpoints = ignore;
     }
 
     private void AddBreakpointHeader()
@@ -783,9 +804,9 @@ public partial class MainWindow : Window
 
         // Build finalCode and simultaneously track which pre.asm line number
         // (after DBP expansion: each DBP → 2 lines) maps to which editor line.
-        var finalCode             = new List<string>();
+        var finalCode = new List<string>();
         var preAsmLineToSourceLine = new Dictionary<int, int>();
-        int preAsmLine            = 1;
+        int preAsmLine = 1;
 
         for (int i = 0; i < editorLines.Count; i++)
         {

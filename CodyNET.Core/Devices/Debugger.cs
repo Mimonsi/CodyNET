@@ -36,6 +36,11 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
     // Set to true when breakpoint is hit; volatile ensures visibility across threads
     private volatile bool _requestPause;
 
+    /// <summary>
+    /// When true, breakpoints are ignored and execution continues without pausing.
+    /// </summary>
+    public volatile bool IgnoreBreakpoints;
+
     public Interrupt Update(long cycle)
     {
         // TODO: Check
@@ -188,6 +193,9 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
     /// </summary>
     public bool IsAtBreakpoint()
     {
+        if (IgnoreBreakpoints)
+            return false;
+
         try
         {
             lock (_breakpointsLock)

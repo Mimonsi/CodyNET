@@ -148,6 +148,11 @@
                           ToggleType="CheckBox"
                           IsChecked="True"
                           Click="OnToggleDebuggerClick" />
+                <MenuItem x:Name="IgnoreBreakpointsMenuItem"
+                          Header="_Ignore Breakpoints"
+                          ToggleType="CheckBox"
+                          IsChecked="False"
+                          Click="OnIgnoreBreakpointsClick" />
             </MenuItem>
         </Menu>
         
@@ -252,7 +257,7 @@
             
             <Grid x:Name="MainColumn" Grid.Column="2" Classes="panel" RowDefinitions="Auto,*,4,250"> <!-- Center Column, Screen and fixed height Lower panel -->
                 <Border Grid.Row="0" Classes="panel-header"> <!-- Emulator Toolbar -->
-                    <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="12">
+                    <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="12">
                         <TextBlock Grid.Column="0" Classes="panel-header-text" Text="Emulator" VerticalAlignment="Center" />
                         <Separator Grid.Column="1" Background="#4A474F" Width="1" Margin="0,4" />
                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
@@ -282,12 +287,20 @@
                                        FontSize="12"
                                        VerticalAlignment="Center" />
                         </StackPanel>
-                        <Button Grid.Column="3"
+                        <ToggleButton Grid.Column="3"
+                                      x:Name="IgnoreBreakpointsToggle"
+                                      Content="Ignore BPs"
+                                      IsChecked="False"
+                                      Click="OnIgnoreBreakpointsClick"
+                                      VerticalAlignment="Center"
+                                      FontSize="13"
+                                      Padding="8,4" />
+                        <Button Grid.Column="4"
                                 x:Name="EmulatorPauseResumeButton"
                                 Classes="code-toolbar-button"
                                 Content="Pause [F9]"
                                 Click="OnPauseResumeButtonClick" />
-                        <Button Grid.Column="4"
+                        <Button Grid.Column="5"
                                 x:Name="EmulatorStepButton"
                                 Classes="code-toolbar-button"
                                 Content="Step [F8]"
