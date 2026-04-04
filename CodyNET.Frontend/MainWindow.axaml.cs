@@ -201,9 +201,11 @@ public partial class MainWindow : Window
             var status = FrontendHostBridge.GetStatusSnapshot();
             if (status?.RunStatus == RunStatus.Paused)
             {
-                CodeEditorTextBox.TextArea.Caret.Line   = newLine.Value;
-                CodeEditorTextBox.TextArea.Caret.Column = 1;
-                CodeEditorTextBox.TextArea.Caret.BringCaretToView();
+                // CodeEditorTextBox.TextArea.Caret.Line   = newLine.Value;
+                // CodeEditorTextBox.TextArea.Caret.Column = 1;
+                // CodeEditorTextBox.TextArea.Caret.BringCaretToView();
+                
+                CodeEditorTextBox.ScrollToLine(newLine.Value);
             }
         }
     }
@@ -860,6 +862,7 @@ public partial class MainWindow : Window
             return;
 
         _isAssemblyDirty = true;
+        _addressToSourceLine.Clear(); // Clear mapping
         var sourceText = CodeEditorTextBox.Text ?? string.Empty;
         _codeLines = sourceText.Split('\n').Select(l => l.TrimEnd('\r')).ToList();
         SetCodePanelState(GetLoadedAssemblyFileName(), sourceText);
