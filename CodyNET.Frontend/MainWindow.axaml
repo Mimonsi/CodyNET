@@ -52,8 +52,8 @@
             <Setter Property="FontSize" Value="14" />
         </Style>
         <Style Selector="Button.breakpoint-delete">
-            <Setter Property="Width" Value="32" />
-            <Setter Property="Height" Value="32" />
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
             <Setter Property="HorizontalAlignment" Value="Right" />
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Background" Value="#FF4A4A" />
@@ -68,7 +68,7 @@
         <Style Selector="Border.breakpoint-row">
             <Setter Property="BorderBrush" Value="#4A474F" />
             <Setter Property="BorderThickness" Value="0,0,0,1" />
-            <Setter Property="Padding" Value="18,2" />
+            <Setter Property="Padding" Value="10,2" />
         </Style>
         <Style Selector="Border.breakpoint-header-row">
             <Setter Property="BorderBrush" Value="#4A474F" />
@@ -119,17 +119,24 @@
     <DockPanel LastChildFill="True"> <!-- Header Bar -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="Load _Assembly into Editor.." Click="OnLoadAssemblyClick" />
+                <MenuItem x:Name="LoadAssemblyMenuItem" Header="Load _Assembly into Editor.." Click="OnLoadAssemblyClick" />
                 <MenuItem Header="_Load UART1.." Click="OnLoadUart1Click" />
                 <MenuItem Header="_Exit" />
             </MenuItem>
             <MenuItem Header="_View">
+                <MenuItem x:Name="ScaleAutoMenuItem" Header="Scale _Auto" Tag="auto" Click="OnScaleMenuClick" ToggleType="CheckBox" IsChecked="True"/>
+                <Separator/>
                 <MenuItem Header="Scale 100%" Tag="1.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
                 <MenuItem Header="Scale 200%" Tag="2.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
                 <MenuItem Header="Scale 300%" Tag="3.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
                 <MenuItem Header="Scale 400%" Tag="4.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
                 <MenuItem Header="Scale 600%" Tag="6.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
                 <MenuItem Header="Scale 800%" Tag="8.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
+                <Separator/>
+                <MenuItem Header="Pixel Perfect" Tag="None" Click="OnRenderModeClick" ToggleType="CheckBox"/>
+                <MenuItem Header="Low Quality" Tag="LowQuality" Click="OnRenderModeClick" ToggleType="CheckBox"/>
+                <MenuItem Header="Medium Quality" Tag="MediumQuality" Click="OnRenderModeClick" ToggleType="CheckBox"/>
+                <MenuItem Header="High Quality" Tag="HighQuality" Click="OnRenderModeClick" ToggleType="CheckBox" IsChecked="True"/>
             </MenuItem>
             <MenuItem Header="_Emulator">
                 <MenuItem x:Name="MenuPauseResumeButton" Header="_Pause [F9]" Click="OnPauseResumeButtonClick"/>
@@ -142,12 +149,17 @@
                 <MenuItem Header="_5 MHz" Tag="5000000" Click="OnClockMenuClick" ToggleType="CheckBox"/>
                 <MenuItem Header="_Unthrottled" Tag="-1" Click="OnClockMenuClick" ToggleType="CheckBox"/>
             </MenuItem>
-            <MenuItem Header="_Debug">
+            <MenuItem x:Name="DebugMenu" Header="_Debug">
                 <MenuItem x:Name="ShowDebuggerMenuItem"
                           Header="Show _Debugger"
                           ToggleType="CheckBox"
-                          IsChecked="True"
+                          IsChecked="False"
                           Click="OnToggleDebuggerClick" />
+                <MenuItem x:Name="IgnoreBreakpointsMenuItem"
+                          Header="_Ignore Breakpoints"
+                          ToggleType="CheckBox"
+                          IsChecked="False"
+                          Click="OnIgnoreBreakpointsClick" />
             </MenuItem>
         </Menu>
         
@@ -252,7 +264,7 @@
             
             <Grid x:Name="MainColumn" Grid.Column="2" Classes="panel" RowDefinitions="Auto,*,4,250"> <!-- Center Column, Screen and fixed height Lower panel -->
                 <Border Grid.Row="0" Classes="panel-header"> <!-- Emulator Toolbar -->
-                    <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="12">
+                    <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" ColumnSpacing="12">
                         <TextBlock Grid.Column="0" Classes="panel-header-text" Text="Emulator" VerticalAlignment="Center" />
                         <Separator Grid.Column="1" Background="#4A474F" Width="1" Margin="0,4" />
                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
@@ -282,12 +294,20 @@
                                        FontSize="12"
                                        VerticalAlignment="Center" />
                         </StackPanel>
-                        <Button Grid.Column="3"
+                        <ToggleButton Grid.Column="3"
+                                      x:Name="IgnoreBreakpointsToggle"
+                                      Content="Ignore BPs"
+                                      IsChecked="False"
+                                      Click="OnIgnoreBreakpointsClick"
+                                      VerticalAlignment="Center"
+                                      FontSize="13"
+                                      Padding="8,4" />
+                        <Button Grid.Column="4"
                                 x:Name="EmulatorPauseResumeButton"
                                 Classes="code-toolbar-button"
                                 Content="Pause [F9]"
                                 Click="OnPauseResumeButtonClick" />
-                        <Button Grid.Column="4"
+                        <Button Grid.Column="5"
                                 x:Name="EmulatorStepButton"
                                 Classes="code-toolbar-button"
                                 Content="Step [F8]"
@@ -295,14 +315,15 @@
                                 Click="OnStepButtonClick" />
                     </Grid>
                 </Border>
-                <Border Grid.Row="1" Background="#232123" Padding="16"> <!-- Screen -->
-                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                                  VerticalScrollBarVisibility="Auto">
+                <Border Grid.Row="1" Background="#232123" Padding="0"> <!-- Screen -->
+                    <ScrollViewer x:Name="ScreenScrollViewer"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Disabled">
                         <controls:ScreenControl x:Name="Screen"
                                                 Focusable="True"
-                                                ScaleFactor="2"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center" />
+                                                FitToContainer="True"
+                                                HorizontalAlignment="Stretch"
+                                                VerticalAlignment="Stretch" />
                     </ScrollViewer>
                 </Border>
                 
@@ -326,7 +347,7 @@
                             </StackPanel>
                         </Border>
                         
-                        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
+                        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
                             <StackPanel
                                 x:Name="BreakpointsPanel"
                                 Margin="0,0,0,24"

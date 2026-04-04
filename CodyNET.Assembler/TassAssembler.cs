@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,7 +19,7 @@ internal static class TassAssembler
         /// depending on the 64tass version/syntax you use.
         /// If you do not need explicit selection, pass empty string.
 
-        internal static void AssembleFile(FileInfo inputFile, FileInfo? outputFile = null)
+        internal static void AssembleFile(FileInfo inputFile, FileInfo? outputFile = null, FileInfo? listFile = null)
         {
             //inputFile = EnsureUtf8WithoutBom(inputFile);
             
@@ -49,6 +49,14 @@ internal static class TassAssembler
             args.Append("-o ");
             args.Append('"').Append(outputFile.FullName).Append('"');
             args.Append(' ');
+
+            // Listing file (optional – used for address-to-source-line mapping)
+            if (listFile != null)
+            {
+                args.Append("--list=");
+                args.Append('"').Append(listFile.FullName).Append('"');
+                args.Append(' ');
+            }
 
             // Input file
             args.Append('"').Append(Path.GetFullPath(inputFile.FullName)).Append('"');

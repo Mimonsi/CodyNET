@@ -32,26 +32,26 @@ public class UartSource
 
         var data = new List<byte>();
         
-        // TEMP TEST
-        var x = File.ReadAllBytes(file.FullName);
-        var text = $"UART1 data length: {x.Length}\n";
-        for (int i = 0; i < x.Length; i++)
-        {
-            byte b = x[i];
-
-            string display = b switch
-            {
-                (byte)'\n' => "\\n",
-                (byte)'\r' => "\\r",
-                (byte)'\t' => "\\t",
-                >= 0x20 and <= 0x7E => ((char)b).ToString(),
-                _ => $"\\x{b:X2}"
-            };
-
-            text += $"[{i:0000}] 0x{b:X2} {b,3} {display}\n";
-        }
-
-        Log.Verbose(text);
+        // Debug Output
+        // var x = File.ReadAllBytes(file.FullName);
+        // var text = $"UART1 data length: {x.Length}\n";
+        // for (int i = 0; i < x.Length; i++)
+        // {
+        //     byte b = x[i];
+        //
+        //     string display = b switch
+        //     {
+        //         (byte)'\n' => "\\n",
+        //         (byte)'\r' => "\\r",
+        //         (byte)'\t' => "\\t",
+        //         >= 0x20 and <= 0x7E => ((char)b).ToString(),
+        //         _ => $"\\x{b:X2}"
+        //     };
+        //
+        //     text += $"[{i:0000}] 0x{b:X2} {b,3} {display}\n";
+        // }
+        //
+        // Log.Verbose(text);
 
         // Normalize Line Ending only works with text based files, not byte based!
         if (normalizeLineEndings)

@@ -14,6 +14,7 @@ using Path = System.IO.Path;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
@@ -46,9 +47,12 @@ public partial class MainWindow : Window
     private bool _isAssemblyDirty;
     private bool _suppressCodeEditorEvents;
     private bool _suppressClockSliderEvents;
+    private bool _debugUiActive;
     private int _lastClockComboIndex = 2;
     private BreakpointMargin? _breakpointMargin;
+    private CurrentLineRenderer? _currentLineRenderer;
     private readonly Dictionary<int, bool> _codeEditorBreakpointLines = new();
+    private Dictionary<ushort, int> _addressToSourceLine = new();
     private List<string> _codeLines = [];
     
     public MainWindow()
@@ -77,6 +81,9 @@ public partial class MainWindow : Window
         using var xmlReader = XmlReader.Create(stream);
         var xshd = HighlightingLoader.LoadXshd(xmlReader);
         CodeEditorTextBox.SyntaxHighlighting = HighlightingLoader.Load(xshd, HighlightingManager.Instance);
+
+        _currentLineRenderer = new CurrentLineRenderer();
+        CodeEditorTextBox.TextArea.TextView.BackgroundRenderers.Add(_currentLineRenderer);
     }
 
     private string _fullVersionText;
@@ -95,6 +102,12 @@ public partial class MainWindow : Window
     private void OnOpened(object? sender, EventArgs e)
     {
         screen?.Focus();
+        
+        // Set buttons visible only if debug mode is enabled. Debug UI can also be disabled while debug mode is on
+        var debugMode = FrontendHostBridge.DebugMode;
+        DebugMenu.IsVisible = debugMode;
+        LoadAssemblyMenuItem.IsVisible = debugMode;
+        SetDebugUiActive(debugMode);
         RefreshRegisterValues();
         RefreshBreakpointsPanel();
         SyncInitialClockFrequency();
@@ -147,6 +160,8 @@ public partial class MainWindow : Window
 
     private void RefreshRegisterValues()
     {
+        if (!_debugUiActive)
+            return;
         var snapshot = FrontendHostBridge.GetRegisterSnapshot();
         if (snapshot == null)
         {
@@ -173,6 +188,36 @@ public partial class MainWindow : Window
         SetFlagText("FlagBreakText", snapshot.Break);
         SetFlagText("FlagOverflowText", snapshot.Overflow);
         SetFlagText("FlagNegativeText", snapshot.Negative);
+
+        UpdateCurrentLineHighlight(snapshot.PC);
+    }
+
+    private void UpdateCurrentLineHighlight(ushort pc)
+    {
+        if (_currentLineRenderer is null) return;
+
+        _addressToSourceLine.TryGetValue(pc, out var sourceLine);  // 0 if not found
+        var newLine = sourceLine > 0 ? sourceLine : (int?)null;
+
+        if (_currentLineRenderer.CurrentLine == newLine) return;   // nothing changed
+
+        _currentLineRenderer.CurrentLine = newLine;
+        CodeEditorTextBox.TextArea.TextView.InvalidateVisual();
+
+        // Auto-scroll to the highlighted line when paused/stepping (not while running,
+        // because the PC jumps around too fast and would be distracting).
+        if (newLine is not null)
+        {
+            var status = FrontendHostBridge.GetStatusSnapshot();
+            if (status?.RunStatus == RunStatus.Paused)
+            {
+                // CodeEditorTextBox.TextArea.Caret.Line   = newLine.Value;
+                // CodeEditorTextBox.TextArea.Caret.Column = 1;
+                // CodeEditorTextBox.TextArea.Caret.BringCaretToView();
+                
+                CodeEditorTextBox.ScrollToLine(newLine.Value);
+            }
+        }
     }
 
     private void RefreshBreakpointsPanel()
@@ -253,18 +298,56 @@ public partial class MainWindow : Window
 
     private void OnScaleMenuClick(object? sender, RoutedEventArgs e)
     {
-        if (screen == null || sender is not MenuItem menuItem)
+        if (screen == null || sender is not MenuItem menuItem || menuItem.Parent is not MenuItem viewMenu)
         {
             return;
         }
 
-        if (menuItem.Tag is string tagValue
-            && double.TryParse(tagValue, NumberStyles.Float, CultureInfo.InvariantCulture, out double scale))
+        // Uncheck sibling scale items (not render mode items)
+        foreach (var child in viewMenu.Items)
+        {
+            if (child is MenuItem sibling && sibling.ToggleType == MenuItemToggleType.CheckBox
+                && sibling.Tag is string t && (t == "auto" || double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture, out _)))
+                sibling.IsChecked = sibling == menuItem;
+        }
+
+        var isAuto = menuItem.Tag is string tagValue && tagValue == "auto";
+        screen.FitToContainer = isAuto;
+        ScreenScrollViewer.HorizontalScrollBarVisibility = isAuto
+            ? Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+            : Avalonia.Controls.Primitives.ScrollBarVisibility.Auto;
+        ScreenScrollViewer.VerticalScrollBarVisibility = isAuto
+            ? Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+            : Avalonia.Controls.Primitives.ScrollBarVisibility.Auto;
+
+        if (!isAuto && menuItem.Tag is string scaleValue
+            && double.TryParse(scaleValue, NumberStyles.Float, CultureInfo.InvariantCulture, out double scale))
         {
             screen.ScaleFactor = scale;
         }
     }
     
+    private static readonly string[] RenderModes = ["None", "LowQuality", "MediumQuality", "HighQuality"];
+
+    private void OnRenderModeClick(object? sender, RoutedEventArgs e)
+    {
+        if (screen == null || sender is not MenuItem menuItem || menuItem.Parent is not MenuItem viewMenu)
+            return;
+
+        // Uncheck sibling render mode items
+        foreach (var child in viewMenu.Items)
+        {
+            if (child is MenuItem sibling && sibling.Tag is string t && RenderModes.Contains(t))
+                sibling.IsChecked = sibling == menuItem;
+        }
+
+        if (menuItem.Tag is string modeTag && Enum.TryParse<BitmapInterpolationMode>(modeTag, out var mode))
+        {
+            RenderOptions.SetBitmapInterpolationMode(screen, mode);
+            screen.InvalidateVisual();
+        }
+    }
+
     private async void OnLoadUart1Click(object? sender, RoutedEventArgs e)
     {
         if (screen == null || sender is not MenuItem menuItem)
@@ -462,7 +545,86 @@ public partial class MainWindow : Window
 
     private void OnToggleDebuggerClick(object? sender, RoutedEventArgs e)
     {
-        
+        bool show;
+        if (sender is MenuItem menuItem)
+        {
+            show = menuItem.IsChecked;
+            ShowDebuggerMenuItem.IsChecked = show;
+        }
+        else
+        {
+            show = ShowDebuggerMenuItem.IsChecked;
+        }
+        SetDebugUiActive(show);
+    }
+
+    private void SetDebugUiActive(bool enabled)
+    {
+        _debugUiActive = enabled;
+        ShowDebuggerMenuItem.IsChecked = enabled;
+
+        var cols = WorkspaceGrid.ColumnDefinitions;
+
+        IgnoreBreakpointsToggle.IsVisible = enabled;
+        // Column 0: Left Sidebar, 1: Splitter, 3: Splitter, 4: Code Panel
+        LeftSidebar.IsVisible = enabled;
+        LeftSplitter.IsVisible = enabled;
+        RightSplitter.IsVisible = enabled;
+        CodePanel.IsVisible = enabled;
+
+        // Lower panel (Breakpoints) and its splitter
+        LowerPanel.IsVisible = enabled;
+        LowerPanelSplitter.IsVisible = enabled;
+
+        if (enabled)
+        {
+            cols[0].Width = new GridLength(300);
+            cols[0].MinWidth = 220;
+            cols[1].Width = new GridLength(4);
+            cols[3].Width = new GridLength(4);
+            cols[4].Width = new GridLength(400);
+            cols[4].MinWidth = 220;
+
+            // Restore screen row split
+            var rows = MainColumn.RowDefinitions;
+            rows[2].Height = new GridLength(4);
+            rows[3].Height = new GridLength(250);
+        }
+        else
+        {
+            cols[0].Width = new GridLength(0);
+            cols[0].MinWidth = 0;
+            cols[1].Width = new GridLength(0);
+            cols[3].Width = new GridLength(0);
+            cols[4].Width = new GridLength(0);
+            cols[4].MinWidth = 0;
+
+            // Screen takes full height (no lower panel)
+            var rows = MainColumn.RowDefinitions;
+            rows[2].Height = new GridLength(0);
+            rows[3].Height = new GridLength(0);
+        }
+    }
+
+    private void OnIgnoreBreakpointsClick(object? sender, RoutedEventArgs e)
+    {
+        var debugger = FrontendHostBridge.Debugger;
+        if (debugger == null) return;
+
+        // Sync state from whichever control was clicked
+        bool ignore;
+        if (sender is MenuItem menuItem)
+        {
+            ignore = menuItem.IsChecked;
+            IgnoreBreakpointsToggle.IsChecked = ignore;
+        }
+        else
+        {
+            ignore = IgnoreBreakpointsToggle.IsChecked == true;
+            IgnoreBreakpointsMenuItem.IsChecked = ignore;
+        }
+
+        debugger.IgnoreBreakpoints = ignore;
     }
 
     private void AddBreakpointHeader()
@@ -543,13 +705,16 @@ public partial class MainWindow : Window
         lineNumberText.PointerPressed += OnBreakpointLineNumberClicked;
         row.Children.Add(CreateBreakpointCell(lineNumberText, 1, "code-text"));
 
-        row.Children.Add(CreateBreakpointCell(new TextBlock
+        var codeText = GetLineText(line).TrimStart();
+        var codeBlock = new TextBlock
         {
-            Text = GetLineText(line),
+            Text = codeText,
             Foreground = Brush.Parse(enabled ? "#00FF8E" : "#8191B0"),
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
-        }, 2, "code-text"));
+        };
+        ToolTip.SetTip(codeBlock, codeText);
+        row.Children.Add(CreateBreakpointCell(codeBlock, 2, "code-text"));
 
         var deleteButton = new Button
         {
@@ -572,8 +737,8 @@ public partial class MainWindow : Window
     {
         return new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("60,*,*,32"),
-            ColumnSpacing = 18,
+            ColumnDefinitions = new ColumnDefinitions("40,60,*,36"),
+            ColumnSpacing = 8,
         };
     }
 
@@ -748,24 +913,47 @@ public partial class MainWindow : Window
             .Select(l => l.TrimEnd('\r'))
             .ToList();
 
+        // Build finalCode and simultaneously track which pre.asm line number
+        // (after DBP expansion: each DBP → 2 lines) maps to which editor line.
         var finalCode = new List<string>();
+        var preAsmLineToSourceLine = new Dictionary<int, int>();
+        int preAsmLine = 1;
+
         for (int i = 0; i < editorLines.Count; i++)
         {
             var lineNumber = i + 1;
-            var lineText = editorLines[i];
+            var lineText   = editorLines[i];
+
             if (_codeEditorBreakpointLines.TryGetValue(lineNumber, out var enabled) && enabled)
             {
-                finalCode.Add($"DBP ; BREAKPOINT LINE {lineNumber}"); // Add Breakpoint command for preprocessor
+                // DBP → "LDA #$01\nSTA $FF00" (2 lines in pre.asm).
+                // Map both expansion lines to this editor line so the highlight appears
+                // when the emulator pauses at the breakpoint trap (STA $FF00).
+                preAsmLineToSourceLine[preAsmLine]     = lineNumber; // LDA #$01
+                preAsmLineToSourceLine[preAsmLine + 1] = lineNumber; // STA $FF00
+                preAsmLine += 2;
+
+                finalCode.Add($"DBP ; BREAKPOINT LINE {lineNumber}");
             }
+
+            preAsmLineToSourceLine[preAsmLine] = lineNumber;
+            preAsmLine++;
             finalCode.Add(lineText);
         }
 
         var inputFile = new FileInfo("editor.asm");
         File.WriteAllText(inputFile.FullName, string.Join("\n", finalCode));
-        // Comment this in to test preprocessing
-        // var preprocessedFile = new FileInfo("editor_preprocessed.asm");
-        // CodyPreprocessor.PreprocessFile(inputFile, preprocessedFile);
-        var bytes = CodyAssembler.AssembleFile(inputFile);
+
+        var (_, addressToPreLine) = CodyAssembler.AssembleFileWithMap(inputFile);
+
+        // Combine: address → pre.asm line → original editor line
+        _addressToSourceLine = new Dictionary<ushort, int>();
+        foreach (var (address, preLine) in addressToPreLine)
+        {
+            if (preAsmLineToSourceLine.TryGetValue(preLine, out var sourceLine))
+                _addressToSourceLine[address] = sourceLine;
+        }
+
         SendAssemblyOverUartButton.IsEnabled = true;
     }
 
@@ -783,6 +971,7 @@ public partial class MainWindow : Window
             return;
 
         _isAssemblyDirty = true;
+        _addressToSourceLine.Clear(); // Clear mapping
         var sourceText = CodeEditorTextBox.Text ?? string.Empty;
         _codeLines = sourceText.Split('\n').Select(l => l.TrimEnd('\r')).ToList();
         SetCodePanelState(GetLoadedAssemblyFileName(), sourceText);

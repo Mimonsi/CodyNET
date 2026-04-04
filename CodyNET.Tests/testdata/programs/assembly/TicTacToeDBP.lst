@@ -1,0 +1,374 @@
+
+; 64tass Turbo Assembler Macro V1.60.3243 listing file
+; 64tass.exe --mw65c02 --nostart -o C:\Users\Konsi\Documents\CodyNET\CodyNET.Host\bin\Debug\net10.0\editor.bin --list=C:\Users\Konsi\Documents\CodyNET\CodyNET.Host\bin\Debug\net10.0\editor._pre.lst C:\Users\Konsi\Documents\CodyNET\CodyNET.Host\bin\Debug\net10.0\editor._pre.asm
+; Wed Apr 01 15:57:55 2026
+
+;Offset	;PC	;Hex		;Monitor	;Source
+
+;******  Processing input file: C:\Users\Konsi\Documents\CodyNET\CodyNET.Host\bin\Debug\net10.0\editor._pre.asm
+
+=$3000						ADDR    = $3000                 ; The actual loading address of the program
+=$c400						SCRRAM  = $C400                 ; The default location of screen memory
+=$9f00						VIA_BASE  = $9F00               ; VIA base address and register locations
+=40704						VIA_IORB  = VIA_BASE+$0
+=40705						VIA_IORA  = VIA_BASE+$1
+=40706						VIA_DDRB  = VIA_BASE+$2
+=40707						VIA_DDRA  = VIA_BASE+$3
+=40708						VIA_T1CL  = VIA_BASE+$4
+=40709						VIA_T1CH  = VIA_BASE+$5
+=40714						VIA_SR    = VIA_BASE+$A
+=40715						VIA_ACR   = VIA_BASE+$B
+=40716						VIA_PCR   = VIA_BASE+$C
+=40717						VIA_IFR   = VIA_BASE+$D
+=$d0						STRPTR    = $D0                 ; Pointer to string (2 bytes)
+=$d2						SCRPTR    = $D2                 ; Pointer to screen (2 bytes)
+=$da						KEYROW0   = $DA                 ; Keyboard row 0
+=$db						KEYROW1   = $DB                 ; Keyboard row 1
+=$dc						KEYROW2   = $DC                 ; Keyboard row 2
+=$dd						KEYROW3   = $DD                 ; Keyboard row 3
+=$de						KEYROW4   = $DE                 ; Keyboard row 4
+=$df						KEYROW5   = $DF                 ; Keyboard row 5
+=26						BOARD_X   = 26
+=1						BOARD_Y   = 1
+=$e0						PLAYER_TURN = $E0 ; 0 = Player 1 (X), 1 = Player 2 (O)
+>0000		00 30				.WORD ADDR                      ; Starting address (just like KIM-1, Commodore, etc.)
+>0002		11 33				.WORD (ADDR + LAST - MAIN - 1)  ; Ending address (so we know when we're done loading)
+.0004	3000					MAIN
+.0004	3000	a9 01		lda #$01	LDA #$01
+.0006	3002	8d 00 ff	sta $ff00	STA $FF00 ; BREAKPOINT LINE 61
+.0009	3005	20 60 31	jsr $3160	            JSR SHOWSCRN
+.000c	3008	20 a0 31	jsr $31a0	_LOOP       JSR KEYSCAN         ; Scan the keyboard
+.000f	300b	a5 df		lda $df		            LDA KEYROW5         ; Pressed P for play?
+.0011	300d	29 10		and #$10	            AND #%10000
+.0013	300f	d0 09		bne $301a	            BNE _PLAY
+.0015	3011	a5 da		lda $da		            LDA KEYROW0         ; Pressed Q for quit?
+.0017	3013	29 01		and #$01	            AND #%00001
+.0019	3015	d0 02		bne $3019	            BNE _QUIT
+.001b	3017	80 ef		bra $3008	            BRA _LOOP           ; Repeat main loop
+.001d	3019	60		rts		_QUIT       RTS                 ; Return to BASIC
+.001e	301a	20 2c 30	jsr $302c	_PLAY       JSR GAMESTART       ; Start the game
+.0021	301d	80 e9		bra $3008	            BRA _LOOP
+.0023	301f					_PROG
+.0023	301f	80 e7		bra $3008	            BRA _LOOP
+.0025	3021					WAIT_HALF_SECOND:
+.0025	3021	a0 c8		ldy #$c8	    LDY #200        ; Ã¤uÃ<9F>ere Schleife
+.0027	3023	a2 ff		ldx #$ff	W0: LDX #255
+.0029	3025	ca		dex		W1: DEX
+.002a	3026	d0 fd		bne $3025	    BNE W1          ; innere Schleife lÃ¤uft 256
+.002c	3028	88		dey		    DEY
+.002d	3029	d0 f8		bne $3023	    BNE W0          ; Ã¤uÃ<9F>ere Schleife: 200Ã<97>
+.002f	302b	60		rts		    RTS
+.0030	302c					GAMESTART
+.0030	302c	20 e2 31	jsr $31e2	            JSR CLRSCRN ; Clear screen
+.0033	302f	a9 00		lda #$00	            LDA #0
+.0035	3031	85 e0		sta $e0		            STA PLAYER_TURN     ; Player 1 (X) starts first
+.0037	3033	a2 00		ldx #$00	            LDX #0
+.0039	3035	a0 00		ldy #$00	            LDY #0
+.003b	3037	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.003e	303a	a2 00		ldx #$00	            LDX #MSG_TICTACTOE ; Print title
+.0040	303c	20 13 32	jsr $3213	            JSR PUTMSG
+.0043	303f	20 1e 31	jsr $311e	            JSR _PRINT_BOARD
+.0046	3042	20 46 30	jsr $3046	            JSR _LOOP
+.0049	3045	60		rts		            RTS
+.004a	3046					_LOOP
+.004a	3046	20 21 30	jsr $3021	            JSR WAIT_HALF_SECOND ; Debounce delay
+.004d	3049	20 21 30	jsr $3021	            JSR WAIT_HALF_SECOND ; Debounce delay
+.0050	304c	20 21 30	jsr $3021	            JSR WAIT_HALF_SECOND ; Debounce delay
+.0053	304f	20 21 30	jsr $3021	            JSR WAIT_HALF_SECOND ; Debounce delay
+.0056	3052	20 21 30	jsr $3021	            JSR WAIT_HALF_SECOND ; Debounce delay
+.0059	3055	20 21 30	jsr $3021	            JSR WAIT_HALF_SECOND ; Debounce delay
+.005c	3058	a2 00		ldx #$00	            LDX #0 ; Player 1: Make your move
+.005e	305a	a0 01		ldy #$01	            LDY #1
+.0060	305c	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.0063	305f	a5 e0		lda $e0		            LDA PLAYER_TURN
+.0065	3061	f0 04		beq $3067	            BEQ _P1 ; If Player 1
+.0067	3063	a2 06		ldx #$06	            LDX #MSG_P2MOVE ; Else code
+.0069	3065	80 02		bra $3069	            BRA _DONE
+.006b	3067	a2 05		ldx #$05	_P1         LDX #MSG_P1MOVE  ; Player 1 code
+.006d	3069	20 13 32	jsr $3213	_DONE       JSR PUTMSG
+.0070	306c	20 a0 31	jsr $31a0	            JSR KEYSCAN         ; Scan the keyboard for number
+.0073	306f	a5 da		lda $da		            LDA KEYROW0         ; Pressed Q=1?
+.0075	3071	29 01		and #$01	            AND #%00001
+.0077	3073	d0 34		bne $30a9	            BNE _1
+.0079	3075	a5 df		lda $df		            LDA KEYROW5         ; Pressed W=2?
+.007b	3077	29 01		and #$01	            AND #%00001
+.007d	3079	d0 3b		bne $30b6	            BNE _2
+.007f	307b	a5 da		lda $da		            LDA KEYROW0         ; Pressed E=3?
+.0081	307d	29 02		and #$02	            AND #%00010
+.0083	307f	d0 42		bne $30c3	            BNE _3
+.0085	3081	a5 df		lda $df		            LDA KEYROW5         ; Pressed R=4?
+.0087	3083	29 02		and #$02	            AND #%00010
+.0089	3085	d0 49		bne $30d0	            BNE _4
+.008b	3087	a5 da		lda $da		            LDA KEYROW0         ; Pressed T=5?
+.008d	3089	29 04		and #$04	            AND #%00100
+.008f	308b	d0 50		bne $30dd	            BNE _5
+.0091	308d	a5 df		lda $df		            LDA KEYROW5         ; Pressed Y=6?
+.0093	308f	29 04		and #$04	            AND #%00100
+.0095	3091	d0 57		bne $30ea	            BNE _6
+.0097	3093	a5 da		lda $da		            LDA KEYROW0         ; Pressed U=7?
+.0099	3095	29 08		and #$08	            AND #%01000
+.009b	3097	d0 5e		bne $30f7	            BNE _7
+.009d	3099	a5 df		lda $df		            LDA KEYROW5         ; Pressed I=8?
+.009f	309b	29 08		and #$08	            AND #%01000
+.00a1	309d	d0 65		bne $3104	            BNE _8
+.00a3	309f	a5 da		lda $da		            LDA KEYROW0         ; Pressed O=9?
+.00a5	30a1	29 10		and #$10	            AND #%10000
+.00a7	30a3	d0 6c		bne $3111	            BNE _9
+.00a9	30a5	80 9f		bra $3046	            BRA _LOOP           ; Repeat main loop
+.00ab	30a7	80 9d		bra $3046	            BRA _LOOP
+.00ad	30a9	a2 1b		ldx #$1b	_1          LDX #BOARD_X + 1
+.00af	30ab	a0 01		ldy #$01	            LDY #BOARD_Y + 0
+.00b1	30ad	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.00b4	30b0	20 ff 31	jsr $31ff	            JSR PUTPLAYERCHAR
+.00b7	30b3	4c 46 30	jmp $3046	            JMP _LOOP
+.00ba	30b6	a2 1f		ldx #$1f	_2          LDX #BOARD_X + 5
+.00bc	30b8	a0 01		ldy #$01	            LDY #BOARD_Y + 0
+.00be	30ba	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.00c1	30bd	20 ff 31	jsr $31ff	            JSR PUTPLAYERCHAR
+.00c4	30c0	4c 46 30	jmp $3046	            JMP _LOOP
+.00c7	30c3	a2 23		ldx #$23	_3          LDX #BOARD_X + 9
+.00c9	30c5	a0 01		ldy #$01	            LDY #BOARD_Y + 0
+.00cb	30c7	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.00ce	30ca	20 ff 31	jsr $31ff	            JSR PUTPLAYERCHAR
+.00d1	30cd	4c 46 30	jmp $3046	            JMP _LOOP
+.00d4	30d0	a2 1b		ldx #$1b	_4          LDX #BOARD_X + 1
+.00d6	30d2	a0 03		ldy #$03	            LDY #BOARD_Y + 2
+.00d8	30d4	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.00db	30d7	20 ff 31	jsr $31ff	            JSR PUTPLAYERCHAR
+.00de	30da	4c 46 30	jmp $3046	            JMP _LOOP
+.00e1	30dd	a2 1f		ldx #$1f	_5          LDX #BOARD_X + 5
+.00e3	30df	a0 03		ldy #$03	            LDY #BOARD_Y + 2
+.00e5	30e1	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.00e8	30e4	20 ff 31	jsr $31ff	            JSR PUTPLAYERCHAR
+.00eb	30e7	4c 46 30	jmp $3046	            JMP _LOOP
+.00ee	30ea	a2 23		ldx #$23	_6          LDX #BOARD_X + 9
+.00f0	30ec	a0 03		ldy #$03	            LDY #BOARD_Y + 2
+.00f2	30ee	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.00f5	30f1	20 ff 31	jsr $31ff	            JSR PUTPLAYERCHAR
+.00f8	30f4	4c 46 30	jmp $3046	            JMP _LOOP
+.00fb	30f7	a2 1b		ldx #$1b	_7          LDX #BOARD_X + 1
+.00fd	30f9	a0 05		ldy #$05	            LDY #BOARD_Y + 4
+.00ff	30fb	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.0102	30fe	20 ff 31	jsr $31ff	            JSR PUTPLAYERCHAR
+.0105	3101	4c 46 30	jmp $3046	            JMP _LOOP
+.0108	3104	a2 1f		ldx #$1f	_8          LDX #BOARD_X + 5
+.010a	3106	a0 05		ldy #$05	            LDY #BOARD_Y + 4
+.010c	3108	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.010f	310b	20 ff 31	jsr $31ff	            JSR PUTPLAYERCHAR
+.0112	310e	4c 46 30	jmp $3046	            JMP _LOOP
+.0115	3111	a2 23		ldx #$23	_9          LDX #BOARD_X + 9
+.0117	3113	a0 05		ldy #$05	            LDY #BOARD_Y + 4
+.0119	3115	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.011c	3118	20 ff 31	jsr $31ff	            JSR PUTPLAYERCHAR
+.011f	311b	4c 46 30	jmp $3046	            JMP _LOOP
+.0122	311e					_PRINT_BOARD
+.0122	311e	a9 01		lda #$01	LDA #$01
+.0124	3120	8d 00 ff	sta $ff00	STA $FF00 ; BREAKPOINT LINE 234
+.0127	3123	a2 1a		ldx #$1a	            LDX #BOARD_X
+.0129	3125	a0 01		ldy #$01	            LDY #BOARD_Y
+.012b	3127	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.012e	312a	a2 09		ldx #$09	            LDX #MSG_BOARD_LINE ; Print board line 1
+.0130	312c	20 13 32	jsr $3213	            JSR PUTMSG
+.0133	312f	a2 1a		ldx #$1a	            LDX #BOARD_X
+.0135	3131	a0 02		ldy #$02	            LDY #BOARD_Y + 1
+.0137	3133	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.013a	3136	a2 0a		ldx #$0a	            LDX #MSG_BOARD_SEPARATOR ; Print board separator
+.013c	3138	20 13 32	jsr $3213	            JSR PUTMSG
+.013f	313b	a2 1a		ldx #$1a	            LDX #BOARD_X
+.0141	313d	a0 03		ldy #$03	            LDY #BOARD_Y + 2
+.0143	313f	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.0146	3142	a2 09		ldx #$09	            LDX #MSG_BOARD_LINE ; Print board line 2
+.0148	3144	20 13 32	jsr $3213	            JSR PUTMSG
+.014b	3147	a2 1a		ldx #$1a	            LDX #BOARD_X
+.014d	3149	a0 04		ldy #$04	            LDY #BOARD_Y + 3
+.014f	314b	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.0152	314e	a2 0a		ldx #$0a	            LDX #MSG_BOARD_SEPARATOR ; Print board separator
+.0154	3150	20 13 32	jsr $3213	            JSR PUTMSG
+.0157	3153	a2 1a		ldx #$1a	            LDX #BOARD_X
+.0159	3155	a0 05		ldy #$05	            LDY #BOARD_Y + 4
+.015b	3157	20 bc 31	jsr $31bc	            JSR MOVESCRN
+.015e	315a	a2 09		ldx #$09	            LDX #MSG_BOARD_LINE ; Print board line 3
+.0160	315c	20 13 32	jsr $3213	            JSR PUTMSG
+.0163	315f	60		rts		            RTS
+.0164	3160	20 e2 31	jsr $31e2	SHOWSCRN  JSR CLRSCRN
+.0167	3163	a2 00		ldx #$00	          LDX #0
+.0169	3165	a0 00		ldy #$00	          LDY #0
+.016b	3167	20 bc 31	jsr $31bc	          JSR MOVESCRN
+.016e	316a	a2 00		ldx #$00	          LDX #MSG_TICTACTOE
+.0170	316c	20 13 32	jsr $3213	          JSR PUTMSG
+.0173	316f	a2 00		ldx #$00	          LDX #0
+.0175	3171	a0 01		ldy #$01	          LDY #1
+.0177	3173	20 bc 31	jsr $31bc	          JSR MOVESCRN
+.017a	3176	a2 01		ldx #$01	          LDX #MSG_SUBTITLE
+.017c	3178	20 13 32	jsr $3213	          JSR PUTMSG
+.017f	317b	a2 00		ldx #$00	          LDX #0
+.0181	317d	a0 03		ldy #$03	          LDY #3
+.0183	317f	20 bc 31	jsr $31bc	          JSR MOVESCRN
+.0186	3182	a2 02		ldx #$02	          LDX #MSG_MENUINSTRUCTIONS
+.0188	3184	20 13 32	jsr $3213	          JSR PUTMSG
+.018b	3187	a2 00		ldx #$00	          LDX #0
+.018d	3189	a0 04		ldy #$04	          LDY #4
+.018f	318b	20 bc 31	jsr $31bc	          JSR MOVESCRN
+.0192	318e	a2 03		ldx #$03	          LDX #MSG_MENUPLAY
+.0194	3190	20 13 32	jsr $3213	          JSR PUTMSG
+.0197	3193	a2 00		ldx #$00	          LDX #0
+.0199	3195	a0 05		ldy #$05	          LDY #5
+.019b	3197	20 bc 31	jsr $31bc	          JSR MOVESCRN
+.019e	319a	a2 04		ldx #$04	          LDX #MSG_MENUQUIT
+.01a0	319c	20 13 32	jsr $3213	          JSR PUTMSG
+.01a3	319f	60		rts		          RTS
+.01a4	31a0	48		pha		KEYSCAN     PHA                   ; Preserve registers
+.01a5	31a1	da		phx		            PHX
+.01a6	31a2	9c 01 9f	stz $9f01	            STZ VIA_IORA          ; Start at the first row and first key of the keyboard
+.01a9	31a5	a2 00		ldx #$00	            LDX #0
+.01ab	31a7	ad 01 9f	lda $9f01	_LOOP       LDA VIA_IORA          ; Read the keys for the current row from the VIA port
+.01ae	31aa	49 ff		eor #$ff	            EOR #$FF
+.01b0	31ac	4a		lsr a		            LSR A
+.01b1	31ad	4a		lsr a		            LSR A
+.01b2	31ae	4a		lsr a		            LSR A
+.01b3	31af	95 da		sta $da,x	            STA KEYROW0,X
+.01b5	31b1	ee 01 9f	inc $9f01	            INC VIA_IORA          ; Move on to the next keyboard row
+.01b8	31b4	e8		inx		            INX
+.01b9	31b5	e0 06		cpx #$06	            CPX #6                ; Do we have any rows remaining to scan?
+.01bb	31b7	d0 ee		bne $31a7	            BNE _LOOP
+.01bd	31b9	fa		plx		            PLX                   ; Restore registers
+.01be	31ba	68		pla		            PLA
+.01bf	31bb	60		rts		            RTS
+.01c0	31bc	a9 00		lda #$00	MOVESCRN  LDA #<SCRRAM            ; Move screen pointer to beginning
+.01c2	31be	85 d2		sta $d2		          STA SCRPTR+0
+.01c4	31c0	a9 c4		lda #$c4	          LDA #>SCRRAM
+.01c6	31c2	85 d3		sta $d3		          STA SCRPTR+1
+.01c8	31c4	c8		iny		          INY                     ; Increment pointer for each row
+.01c9	31c5	18		clc		_LOOPY    CLC
+.01ca	31c6	a5 d2		lda $d2		          LDA SCRPTR+0
+.01cc	31c8	69 28		adc #$28	          ADC #40
+.01ce	31ca	85 d2		sta $d2		          STA SCRPTR+0
+.01d0	31cc	a5 d3		lda $d3		          LDA SCRPTR+1
+.01d2	31ce	69 00		adc #$00	          ADC #0
+.01d4	31d0	85 d3		sta $d3		          STA SCRPTR+1
+.01d6	31d2	88		dey		          DEY
+.01d7	31d3	d0 f0		bne $31c5	          BNE _LOOPY
+.01d9	31d5	18		clc		          CLC                     ; Add position on column
+.01da	31d6	8a		txa		          TXA
+.01db	31d7	65 d2		adc $d2		          ADC SCRPTR+0
+.01dd	31d9	85 d2		sta $d2		          STA SCRPTR+0
+.01df	31db	a5 d3		lda $d3		          LDA SCRPTR+1
+.01e1	31dd	69 00		adc #$00	          ADC #0
+.01e3	31df	85 d3		sta $d3		          STA SCRPTR+1
+.01e5	31e1	60		rts		          RTS
+.01e6	31e2	a9 00		lda #$00	CLRSCRN   LDA #<SCRRAM            ; Move screen pointer to beginning
+.01e8	31e4	85 d2		sta $d2		          STA SCRPTR+0
+.01ea	31e6	a9 c4		lda #$c4	          LDA #>SCRRAM
+.01ec	31e8	85 d3		sta $d3		          STA SCRPTR+1
+.01ee	31ea	a9 14		lda #$14	          LDA #20                 ; Clear screen by filling with whitespaces
+.01f0	31ec	a0 19		ldy #$19	          LDY #25                 ; Loop 25 times on Y
+.01f2	31ee	a2 28		ldx #$28	_LOOPY    LDX #40                 ; Loop 40 times on X for each Y
+.01f4	31f0	92 d2		sta ($d2)	_LOOPX    STA (SCRPTR)            ; Store zero
+.01f6	31f2	e6 d2		inc $d2		          INC SCRPTR+0            ; Increment screen position
+.01f8	31f4	d0 02		bne $31f8	          BNE _NEXT
+.01fa	31f6	e6 d3		inc $d3		          INC SCRPTR+1
+.01fc	31f8	ca		dex		_NEXT     DEX                     ; Next X
+.01fd	31f9	d0 f5		bne $31f0	          BNE _LOOPX
+.01ff	31fb	88		dey		          DEY                     ; Next Y
+.0200	31fc	d0 f0		bne $31ee	          BNE _LOOPY
+.0202	31fe	60		rts		          RTS
+.0203	31ff					PUTPLAYERCHAR
+.0203	31ff	a5 e0		lda $e0		            LDA PLAYER_TURN
+.0205	3201	f0 04		beq $3207	            BEQ _P1
+.0207	3203	a2 0c		ldx #$0c	            LDX #MSG_P2CHAR
+.0209	3205	80 02		bra $3209	            BRA _DONE
+.020b	3207	a2 0b		ldx #$0b	_P1         LDX #MSG_P1CHAR
+.020d	3209	20 13 32	jsr $3213	_DONE       JSR PUTMSG
+.0210	320c	a5 e0		lda $e0		            LDA PLAYER_TURN ; Switch player turn
+.0212	320e	49 01		eor #$01	            EOR #1
+.0214	3210	85 e0		sta $e0		            STA PLAYER_TURN
+.0216	3212	60		rts		            RTS
+.0217	3213	48		pha		PUTMSG      PHA
+.0218	3214	5a		phy		            PHY
+.0219	3215	bd f8 32	lda $32f8,x	            LDA MSGS_L,X        ; Load the pointer for the string to print
+.021c	3218	85 d0		sta $d0		            STA STRPTR+0
+.021e	321a	bd 05 33	lda $3305,x	            LDA MSGS_H,X
+.0221	321d	85 d1		sta $d1		            STA STRPTR+1
+.0223	321f	a0 00		ldy #$00	            LDY #0
+.0225	3221	b1 d0		lda ($d0),y	_LOOP       LDA (STRPTR),Y      ; Read the next character (check for null)
+.0227	3223	f0 06		beq $322b	            BEQ _DONE
+.0229	3225	20 2e 32	jsr $322e	            JSR PUTCHR          ; Copy the character and move to next
+.022c	3228	c8		iny		            INY
+.022d	3229	80 f6		bra $3221	            BRA _LOOP           ; Next loop
+.022f	322b	7a		ply		_DONE       PLY
+.0230	322c	68		pla		            PLA
+.0231	322d	60		rts		            RTS
+.0232	322e	92 d2		sta ($d2)	PUTCHR      STA (SCRPTR)        ; Copy the character
+.0234	3230	e6 d2		inc $d2		            INC SCRPTR+0        ; Increment screen position
+.0236	3232	d0 02		bne $3236	            BNE _DONE
+.0238	3234	e6 d3		inc $d3		            INC SCRPTR+1
+.023a	3236	60		rts		_DONE       RTS
+=0						MSG_TICTACTOE  = 0
+=1						MSG_SUBTITLE  = 1
+=2						MSG_MENUINSTRUCTIONS = 2
+=3						MSG_MENUPLAY  = 3
+=4						MSG_MENUQUIT  = 4
+=5						MSG_P1MOVE  = 5
+=6						MSG_P2MOVE  = 6
+=7						MSG_P1WIN  = 7
+=8						MSG_P2WIN  = 8
+=9						MSG_BOARD_LINE = 9
+=10						MSG_BOARD_SEPARATOR = 10
+=11						MSG_P1CHAR = 11
+=12						MSG_P2CHAR = 12
+>023b	3237	54 69 63 20 54 61 63 20		STR_TICTACTOE  .NULL "Tic Tac Toe"
+>0243	323f	54 6f 65 00
+>0247	3243	57 65 6c 63 6f 6d 65 20		STR_SUBTITLE  .NULL "Welcome to Tic Tac Toe!"
+>024f	324b	74 6f 20 54 69 63 20 54 61 63 20 54 6f 65 21 00
+>025f	325b	50 72 65 73 73 20 31 2d		STR_MENUINSTRUCTIONS .NULL "Press 1-9 keys to select position."
+>0267	3263	39 20 6b 65 79 73 20 74 6f 20 73 65 6c 65 63 74
+>0277	3273	20 70 6f 73 69 74 69 6f 6e 2e 00
+>0282	327e	28 50 29 6c 61 79 00		STR_MENUPLAY  .NULL "(P)lay"
+>0289	3285	28 51 29 75 69 74 00		STR_MENUQUIT  .NULL "(Q)uit"
+>0290	328c	50 6c 61 79 65 72 20 31		STR_P1MOVE  .NULL "Player 1: Make your Move"
+>0298	3294	3a 20 4d 61 6b 65 20 79 6f 75 72 20 4d 6f 76 65
+>02a8	32a4	00
+>02a9	32a5	50 6c 61 79 65 72 20 32		STR_P2MOVE  .NULL "Player 2: Make your Move"
+>02b1	32ad	3a 20 4d 61 6b 65 20 79 6f 75 72 20 4d 6f 76 65
+>02c1	32bd	00
+>02c2	32be	50 6c 61 79 65 72 20 31		STR_P1WIN  .NULL "Player 1 wins!"
+>02ca	32c6	20 77 69 6e 73 21 00
+>02d1	32cd	50 6c 61 79 65 72 20 32		STR_P2WIN  .NULL "Player 2 wins!"
+>02d9	32d5	20 77 69 6e 73 21 00
+>02e0	32dc	20 20 20 7c 20 20 20 7c		STR_BOARD_LINE       .NULL "   |   |   "
+>02e8	32e4	20 20 20 00
+>02ec	32e8	2d 2d 2d 2b 2d 2d 2d 2b		STR_BOARD_SEPARATOR  .NULL "---+---+---"
+>02f4	32f0	2d 2d 2d 00
+>02f8	32f4	58 00				STR_P1CHAR  .NULL "X"
+>02fa	32f6	4f 00				STR_P2CHAR  .NULL "O"
+.02fc	32f8					MSGS_L
+>02fc	32f8	37				  .BYTE <STR_TICTACTOE
+>02fd	32f9	43				  .BYTE <STR_SUBTITLE
+>02fe	32fa	5b				  .BYTE <STR_MENUINSTRUCTIONS
+>02ff	32fb	7e				  .BYTE <STR_MENUPLAY
+>0300	32fc	85				  .BYTE <STR_MENUQUIT
+>0301	32fd	8c				  .BYTE <STR_P1MOVE
+>0302	32fe	a5				  .BYTE <STR_P2MOVE
+>0303	32ff	be				  .BYTE <STR_P1WIN
+>0304	3300	cd				  .BYTE <STR_P2WIN
+>0305	3301	dc				  .BYTE <STR_BOARD_LINE
+>0306	3302	e8				  .BYTE <STR_BOARD_SEPARATOR
+>0307	3303	f4				  .BYTE <STR_P1CHAR
+>0308	3304	f6				  .BYTE <STR_P2CHAR
+.0309	3305					MSGS_H
+>0309	3305	32				  .BYTE >STR_TICTACTOE
+>030a	3306	32				  .BYTE >STR_SUBTITLE
+>030b	3307	32				  .BYTE >STR_MENUINSTRUCTIONS
+>030c	3308	32				  .BYTE >STR_MENUPLAY
+>030d	3309	32				  .BYTE >STR_MENUQUIT
+>030e	330a	32				  .BYTE >STR_P1MOVE
+>030f	330b	32				  .BYTE >STR_P2MOVE
+>0310	330c	32				  .BYTE >STR_P1WIN
+>0311	330d	32				  .BYTE >STR_P2WIN
+>0312	330e	32				  .BYTE >STR_BOARD_LINE
+>0313	330f	32				  .BYTE >STR_BOARD_SEPARATOR
+>0314	3310	32				  .BYTE >STR_P1CHAR
+>0315	3311	32				  .BYTE >STR_P2CHAR
+.0316	3312					LAST
+
+;******  End of listing

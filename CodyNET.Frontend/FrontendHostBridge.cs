@@ -18,6 +18,7 @@ public static class FrontendHostBridge
     public static Debugger? Debugger { get; private set; }
     
     public static long InitialClockFrequency { get; private set; }
+    public static bool DebugMode { get; set; }
 
     // Frontend Bindings
     private static Action<long>? setClockFrequencyAction; // Buttons to set frequency
