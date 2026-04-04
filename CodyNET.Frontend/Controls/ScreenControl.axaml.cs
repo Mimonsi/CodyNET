@@ -17,6 +17,7 @@ public partial class ScreenControl : Control, IScreenDevice
     private const double DefaultScaleFactor = 2.0;
 
     private double scaleFactor = DefaultScaleFactor;
+    private bool fitToContainer;
     private VideoFrame currentFrame;
     private WriteableBitmap? bitmap;
     private readonly object frameSync = new();
@@ -37,6 +38,19 @@ public partial class ScreenControl : Control, IScreenDevice
         }
     }
 
+    public bool FitToContainer
+    {
+        get => fitToContainer;
+        set
+        {
+            if (fitToContainer == value)
+                return;
+            fitToContainer = value;
+            InvalidateMeasure();
+            InvalidateVisual();
+        }
+    }
+
     public ScreenControl()
     {
         InitializeComponent();
@@ -51,12 +65,22 @@ public partial class ScreenControl : Control, IScreenDevice
 
     protected override Size MeasureOverride(Size availableSize)
     {
+        if (fitToContainer && !double.IsInfinity(availableSize.Width) && !double.IsInfinity(availableSize.Height))
+        {
+            return availableSize;
+        }
         return new Size(currentFrame.Width * scaleFactor, currentFrame.Height * scaleFactor);
     }
 
     protected override Size ArrangeOverride(Size finalSize)
     {
-        return new Size(currentFrame.Width * scaleFactor, currentFrame.Height * scaleFactor);
+        if (fitToContainer)
+        {
+            var scaleX = finalSize.Width / currentFrame.Width;
+            var scaleY = finalSize.Height / currentFrame.Height;
+            scaleFactor = Math.Min(scaleX, scaleY);
+        }
+        return finalSize;
     }
 
     public void RenderFrame(VideoFrame frame)
@@ -88,7 +112,11 @@ public partial class ScreenControl : Control, IScreenDevice
         if (bitmap is null)
             return;
 
-        var destination = new Rect(0, 0, frame.Width * scaleFactor, frame.Height * scaleFactor);
+        var renderWidth = frame.Width * scaleFactor;
+        var renderHeight = frame.Height * scaleFactor;
+        var offsetX = fitToContainer ? (Bounds.Width - renderWidth) / 2 : 0;
+        var offsetY = fitToContainer ? (Bounds.Height - renderHeight) / 2 : 0;
+        var destination = new Rect(offsetX, offsetY, renderWidth, renderHeight);
         var source = new Rect(0, 0, frame.Width, frame.Height);
         context.DrawImage(bitmap, source, destination);
     }

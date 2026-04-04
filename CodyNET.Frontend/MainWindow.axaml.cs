@@ -297,13 +297,29 @@ public partial class MainWindow : Window
 
     private void OnScaleMenuClick(object? sender, RoutedEventArgs e)
     {
-        if (screen == null || sender is not MenuItem menuItem)
+        if (screen == null || sender is not MenuItem menuItem || menuItem.Parent is not MenuItem viewMenu)
         {
             return;
         }
 
-        if (menuItem.Tag is string tagValue
-            && double.TryParse(tagValue, NumberStyles.Float, CultureInfo.InvariantCulture, out double scale))
+        // Uncheck all sibling scale items
+        foreach (var child in viewMenu.Items)
+        {
+            if (child is MenuItem sibling && sibling.ToggleType == MenuItemToggleType.CheckBox)
+                sibling.IsChecked = sibling == menuItem;
+        }
+
+        var isAuto = menuItem.Tag is string tagValue && tagValue == "auto";
+        screen.FitToContainer = isAuto;
+        ScreenScrollViewer.HorizontalScrollBarVisibility = isAuto
+            ? Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+            : Avalonia.Controls.Primitives.ScrollBarVisibility.Auto;
+        ScreenScrollViewer.VerticalScrollBarVisibility = isAuto
+            ? Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+            : Avalonia.Controls.Primitives.ScrollBarVisibility.Auto;
+
+        if (!isAuto && menuItem.Tag is string scaleValue
+            && double.TryParse(scaleValue, NumberStyles.Float, CultureInfo.InvariantCulture, out double scale))
         {
             screen.ScaleFactor = scale;
         }

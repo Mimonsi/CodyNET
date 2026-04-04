@@ -124,6 +124,8 @@
                 <MenuItem Header="_Exit" />
             </MenuItem>
             <MenuItem Header="_View">
+                <MenuItem x:Name="ScaleAutoMenuItem" Header="Scale _Auto" Tag="auto" Click="OnScaleMenuClick" ToggleType="CheckBox" IsChecked="True"/>
+                <Separator/>
                 <MenuItem Header="Scale 100%" Tag="1.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
                 <MenuItem Header="Scale 200%" Tag="2.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
                 <MenuItem Header="Scale 300%" Tag="3.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
@@ -308,14 +310,15 @@
                                 Click="OnStepButtonClick" />
                     </Grid>
                 </Border>
-                <Border Grid.Row="1" Background="#232123" Padding="16"> <!-- Screen -->
-                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                                  VerticalScrollBarVisibility="Auto">
+                <Border Grid.Row="1" Background="#232123" Padding="0"> <!-- Screen -->
+                    <ScrollViewer x:Name="ScreenScrollViewer"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Disabled">
                         <controls:ScreenControl x:Name="Screen"
                                                 Focusable="True"
-                                                ScaleFactor="2"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center" />
+                                                FitToContainer="True"
+                                                HorizontalAlignment="Stretch"
+                                                VerticalAlignment="Stretch" />
                     </ScrollViewer>
                 </Border>
                 
