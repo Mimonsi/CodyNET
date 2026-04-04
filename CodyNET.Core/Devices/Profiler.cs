@@ -1,38 +1,42 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
 
 namespace CodyNET.Core.Devices;
 
-public class Profiler
+public class Profiler(TimeSpan snapshotInterval, TimeSpan? logInterval)
 {
+    private static readonly string DumpFilePath = Path.Combine(
+        AppContext.BaseDirectory, "profiler.txt");
+
     private readonly Stopwatch _snapshotStopwatch = Stopwatch.StartNew();
-    private readonly TimeSpan? _logInterval;
-    private readonly TimeSpan _snapshotInterval;
+    private readonly Stopwatch _logStopwatch = Stopwatch.StartNew();
+    private readonly TimeSpan? _logInterval = logInterval <= TimeSpan.Zero ? null : logInterval;
+    private readonly TimeSpan _snapshotInterval = snapshotInterval <= TimeSpan.Zero ? TimeSpan.FromSeconds(1) : snapshotInterval;
     private long _lastCycleCount;
     private long _lastFrameCount;
     private long _totalCyclesExecuted;
     private long _targetFrequencyHz;
-    public ProfilerSnapshot LastSnapshot;
+    public ProfilerSnapshot LastSnapshot = new();
+    private readonly List<ProfilerSnapshot> _pendingSnapshots = [];
+    private int SNAPSHOTS_TILL_EXIT = 5; // TODO: DIASBLE IN PRODUCTION
 
-    public Profiler(TimeSpan snapshotInterval, TimeSpan? logInterval)
+    static Profiler()
     {
-        _logInterval = logInterval <= TimeSpan.Zero ? null : logInterval;
-        _snapshotInterval = snapshotInterval <= TimeSpan.Zero ? TimeSpan.FromSeconds(1) : snapshotInterval;
-        LastSnapshot = new ProfilerSnapshot();
+        try { File.WriteAllText(DumpFilePath, ""); }
+        catch { /* ignore */ }
     }
 
     public void CalculateSnapshot()
     {
-        // TODO Next: Calculate actual clock and frames based on the last log interval, and update LastSnapshot accordingly.
-
         var elapsedSeconds = _snapshotStopwatch.Elapsed.TotalSeconds;
         if (elapsedSeconds <= 0)
             return;
-        
+
         var cyclesInWindow = _totalCyclesExecuted - _lastCycleCount;
         var averageFrequencyHz = (long) (cyclesInWindow / (elapsedSeconds));
-        
+
         LastSnapshot = new ProfilerSnapshot()
         {
             ActualFrequency = averageFrequencyHz,
@@ -41,23 +45,50 @@ public class Profiler
             TargetFrames = 60 * elapsedSeconds, // TODO: Find Target Frames
             SecondsElapsed = elapsedSeconds
         };
-        
+
         _lastCycleCount = _totalCyclesExecuted;
         _lastFrameCount = 0;
         _snapshotStopwatch.Restart();
-        //LogSnapshot();
+
+        if (_logInterval.HasValue)
+        {
+            _pendingSnapshots.Add(LastSnapshot);
+            if (_logStopwatch.Elapsed >= _logInterval.Value)
+            {
+                _logStopwatch.Restart();
+                FlushSnapshotsToFile();
+            }
+        }
     }
 
-    private void LogSnapshot()
+    private void FlushSnapshotsToFile()
     {
-        if (LastSnapshot.TargetFrequency <= 0)
-            Log.Info("CPU frequency avg ({windowSeconds:F1}s): {avgHz:N0} Hz (FAST Mode)",
-                LastSnapshot.SecondsElapsed, LastSnapshot.ActualFrequency, LastSnapshot.TargetFrequency, LastSnapshot.FrequencyTargetPercent);
-        else
-            Log.Info("CPU frequency avg ({windowSeconds:F1}s): {avgHz:N0} Hz (target: {targetHz:N0} Hz, {utilizationPercent:F1}% of target)",
-            LastSnapshot.SecondsElapsed, LastSnapshot.ActualFrequency, LastSnapshot.TargetFrequency, LastSnapshot.FrequencyTargetPercent);
-        Log.Info("Average frames rendered in window: {actualFrames} (target: {targetFrames}, {frameTargetPercent:F1}% of target)",
-            LastSnapshot.ActualFrames, LastSnapshot.TargetFrames, LastSnapshot.FrameTargetPercent);
+        if (_pendingSnapshots.Count == 0)
+            return;
+
+        if (SNAPSHOTS_TILL_EXIT <= 0)
+            return;
+        SNAPSHOTS_TILL_EXIT--;
+        try
+        {
+            var totalSeconds = _pendingSnapshots.Sum(s => s.SecondsElapsed);
+            var avgFreq = (long)_pendingSnapshots.Average(s => s.ActualFrequency);
+            var avgTarget = _pendingSnapshots[0].TargetFrequency;
+            var totalFrames = _pendingSnapshots.Sum(s => s.ActualFrames);
+            var avgFps = totalSeconds > 0 ? totalFrames / totalSeconds : 0;
+            var freqPct = avgTarget > 0
+                ? ((double)avgFreq / avgTarget * 100).ToString("F1", CultureInfo.InvariantCulture)
+                : "FAST";
+
+            var ts = DateTime.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture);
+            var line = $"{ts}  freq={avgFreq,10} Hz  target={avgTarget,10} Hz  pct={freqPct,6}%  fps={avgFps,5:F1}  window={totalSeconds:F2}s\n";
+            File.AppendAllText(DumpFilePath, line);
+            _pendingSnapshots.Clear();
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Failed to dump profiler snapshot: {Error}", ex.Message);
+        }
     }
 
     public void SampleCpu(long totalCyclesExecuted, long targetFrequencyHz)
