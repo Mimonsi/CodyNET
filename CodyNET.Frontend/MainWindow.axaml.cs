@@ -46,6 +46,7 @@ public partial class MainWindow : Window
     private bool _isAssemblyDirty;
     private bool _suppressCodeEditorEvents;
     private bool _suppressClockSliderEvents;
+    private bool _debugModeActive;
     private int _lastClockComboIndex = 2;
     private BreakpointMargin? _breakpointMargin;
     private CurrentLineRenderer? _currentLineRenderer;
@@ -100,6 +101,7 @@ public partial class MainWindow : Window
     private void OnOpened(object? sender, EventArgs e)
     {
         screen?.Focus();
+        SetDebugMode(FrontendHostBridge.DebugMode);
         RefreshRegisterValues();
         RefreshBreakpointsPanel();
         SyncInitialClockFrequency();
@@ -497,7 +499,64 @@ public partial class MainWindow : Window
 
     private void OnToggleDebuggerClick(object? sender, RoutedEventArgs e)
     {
+        bool show;
+        if (sender is MenuItem menuItem)
+        {
+            show = menuItem.IsChecked;
+            ShowDebuggerMenuItem.IsChecked = show;
+        }
+        else
+        {
+            show = ShowDebuggerMenuItem.IsChecked;
+        }
+        SetDebugMode(show);
+    }
 
+    private void SetDebugMode(bool enabled)
+    {
+        _debugModeActive = enabled;
+        ShowDebuggerMenuItem.IsChecked = enabled;
+
+        var cols = WorkspaceGrid.ColumnDefinitions;
+
+        // Column 0: Left Sidebar, 1: Splitter, 3: Splitter, 4: Code Panel
+        LeftSidebar.IsVisible = enabled;
+        LeftSplitter.IsVisible = enabled;
+        RightSplitter.IsVisible = enabled;
+        CodePanel.IsVisible = enabled;
+
+        // Lower panel (Breakpoints) and its splitter
+        LowerPanel.IsVisible = enabled;
+        LowerPanelSplitter.IsVisible = enabled;
+
+        if (enabled)
+        {
+            cols[0].Width = new GridLength(300);
+            cols[0].MinWidth = 220;
+            cols[1].Width = new GridLength(4);
+            cols[3].Width = new GridLength(4);
+            cols[4].Width = new GridLength(400);
+            cols[4].MinWidth = 220;
+
+            // Restore screen row split
+            var rows = MainColumn.RowDefinitions;
+            rows[2].Height = new GridLength(4);
+            rows[3].Height = new GridLength(250);
+        }
+        else
+        {
+            cols[0].Width = new GridLength(0);
+            cols[0].MinWidth = 0;
+            cols[1].Width = new GridLength(0);
+            cols[3].Width = new GridLength(0);
+            cols[4].Width = new GridLength(0);
+            cols[4].MinWidth = 0;
+
+            // Screen takes full height (no lower panel)
+            var rows = MainColumn.RowDefinitions;
+            rows[2].Height = new GridLength(0);
+            rows[3].Height = new GridLength(0);
+        }
     }
 
     private void OnIgnoreBreakpointsClick(object? sender, RoutedEventArgs e)
