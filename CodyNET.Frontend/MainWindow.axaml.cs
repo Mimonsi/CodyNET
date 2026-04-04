@@ -46,7 +46,7 @@ public partial class MainWindow : Window
     private bool _isAssemblyDirty;
     private bool _suppressCodeEditorEvents;
     private bool _suppressClockSliderEvents;
-    private bool _debugModeActive;
+    private bool _debugUiActive;
     private int _lastClockComboIndex = 2;
     private BreakpointMargin? _breakpointMargin;
     private CurrentLineRenderer? _currentLineRenderer;
@@ -101,7 +101,12 @@ public partial class MainWindow : Window
     private void OnOpened(object? sender, EventArgs e)
     {
         screen?.Focus();
-        SetDebugMode(FrontendHostBridge.DebugMode);
+        
+        // Set buttons visible only if debug mode is enabled. Debug UI can also be disabled while debug mode is on
+        var debugMode = FrontendHostBridge.DebugMode;
+        DebugMenu.IsVisible = debugMode;
+        LoadAssemblyMenuItem.IsVisible = debugMode;
+        SetDebugUiActive(debugMode);
         RefreshRegisterValues();
         RefreshBreakpointsPanel();
         SyncInitialClockFrequency();
@@ -154,6 +159,8 @@ public partial class MainWindow : Window
 
     private void RefreshRegisterValues()
     {
+        if (!_debugUiActive)
+            return;
         var snapshot = FrontendHostBridge.GetRegisterSnapshot();
         if (snapshot == null)
         {
@@ -509,16 +516,17 @@ public partial class MainWindow : Window
         {
             show = ShowDebuggerMenuItem.IsChecked;
         }
-        SetDebugMode(show);
+        SetDebugUiActive(show);
     }
 
-    private void SetDebugMode(bool enabled)
+    private void SetDebugUiActive(bool enabled)
     {
-        _debugModeActive = enabled;
+        _debugUiActive = enabled;
         ShowDebuggerMenuItem.IsChecked = enabled;
 
         var cols = WorkspaceGrid.ColumnDefinitions;
 
+        IgnoreBreakpointsToggle.IsVisible = enabled;
         // Column 0: Left Sidebar, 1: Splitter, 3: Splitter, 4: Code Panel
         LeftSidebar.IsVisible = enabled;
         LeftSplitter.IsVisible = enabled;

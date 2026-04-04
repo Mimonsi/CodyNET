@@ -119,7 +119,7 @@
     <DockPanel LastChildFill="True"> <!-- Header Bar -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Header="Load _Assembly into Editor.." Click="OnLoadAssemblyClick" />
+                <MenuItem x:Name="LoadAssemblyMenuItem" Header="Load _Assembly into Editor.." Click="OnLoadAssemblyClick" />
                 <MenuItem Header="_Load UART1.." Click="OnLoadUart1Click" />
                 <MenuItem Header="_Exit" />
             </MenuItem>
@@ -142,11 +142,11 @@
                 <MenuItem Header="_5 MHz" Tag="5000000" Click="OnClockMenuClick" ToggleType="CheckBox"/>
                 <MenuItem Header="_Unthrottled" Tag="-1" Click="OnClockMenuClick" ToggleType="CheckBox"/>
             </MenuItem>
-            <MenuItem Header="_Debug">
+            <MenuItem x:Name="DebugMenu" Header="_Debug">
                 <MenuItem x:Name="ShowDebuggerMenuItem"
                           Header="Show _Debugger"
                           ToggleType="CheckBox"
-                          IsChecked="True"
+                          IsChecked="False"
                           Click="OnToggleDebuggerClick" />
                 <MenuItem x:Name="IgnoreBreakpointsMenuItem"
                           Header="_Ignore Breakpoints"
