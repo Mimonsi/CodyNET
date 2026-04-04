@@ -7,15 +7,15 @@ namespace CodyNET.Core.Cody;
 
 public class Memory
 {
-    private readonly byte[] ram = new byte[0xA000]; // 40 KB of RAM, leaving space for memory-mapped devices (0x0000 - 0x9FFF)
-    private readonly byte[] prop = new byte[0x4000]; // 16 KB of Prop RAM, for the Propeller microcontroller (0xA000 - 0xDFFF)
-    private readonly byte[] rom = new byte[0x2000]; // 8 KB of ROM, for BASIC and other built-in code (0xE000 - 0xFFFF)
-    private List<IMemoryMappedDevice> devices = [];
+    private readonly byte[] _ram = new byte[0xA000]; // 40 KB of RAM, leaving space for memory-mapped devices (0x0000 - 0x9FFF)
+    private readonly byte[] _prop = new byte[0x4000]; // 16 KB of Prop RAM, for the Propeller microcontroller (0xA000 - 0xDFFF)
+    private readonly byte[] _rom = new byte[0x2000]; // 8 KB of ROM, for BASIC and other built-in code (0xE000 - 0xFFFF)
+    private readonly List<IMemoryMappedDevice> _devices = [];
     // For efficient memory access, each read/write operation checks the exact address to see which device is mapped. This is far more efficient than iterating through all devices each time
-    private readonly IMemoryMappedDevice?[] readDeviceMap = new IMemoryMappedDevice?[ushort.MaxValue + 1];
-    private readonly List<IMemoryMappedDevice>?[] writeDeviceMap = new List<IMemoryMappedDevice>?[ushort.MaxValue + 1];
+    private readonly IMemoryMappedDevice?[] _readDeviceMap = new IMemoryMappedDevice?[ushort.MaxValue + 1];
+    private readonly List<IMemoryMappedDevice>?[] _writeDeviceMap = new List<IMemoryMappedDevice>?[ushort.MaxValue + 1];
     // All devices that want to tap into memory access (e.g. for debugging, logging, etc.) can register here and will be notified on every read/write
-    private List<IMemoryAccessTapDevice> taps = [];
+    private IMemoryAccessTapDevice[] _memoryTaps = [];
 
     /// <summary>
     /// Allows writes to ROM range (used for CPU tests / state restore).
@@ -27,7 +27,7 @@ public class Memory
     {
         Log.Debug("Registering device {DeviceType} at {StartAddress:X4}..{EndAddress:X4} (R:{SupportsRead} W:{SupportsWrite})",
             device.GetType().Name, device.StartAddress, device.EndAddress, device.SupportsRead, device.SupportsWrite);
-        devices.Add(device);
+        _devices.Add(device);
         RebuildDeviceMaps();
     }
     
@@ -35,7 +35,7 @@ public class Memory
     {
         Log.Debug("Unregistering device {DeviceType} at {StartAddress:X4}..{EndAddress:X4} (R:{SupportsRead} W:{SupportsWrite})",
             device.GetType().Name, device.StartAddress, device.EndAddress, device.SupportsRead, device.SupportsWrite);
-        devices.Remove(device);
+        _devices.Remove(device);
         RebuildDeviceMaps();
     }
 
@@ -44,27 +44,27 @@ public class Memory
     /// </summary>
     private void RebuildDeviceMaps()
     {
-        Array.Clear(readDeviceMap, 0, readDeviceMap.Length);
+        Array.Clear(_readDeviceMap, 0, _readDeviceMap.Length);
 
-        for (int i = 0; i < writeDeviceMap.Length; i++)
-            writeDeviceMap[i]?.Clear();
+        for (int i = 0; i < _writeDeviceMap.Length; i++)
+            _writeDeviceMap[i]?.Clear();
 
-        for (int i = 0; i < devices.Count; i++)
+        for (int i = 0; i < _devices.Count; i++)
         {
-            var device = devices[i];
+            var device = _devices[i];
             for (int addr = device.StartAddress; addr <= device.EndAddress; addr++)
             {
-                if (device.SupportsRead && readDeviceMap[addr] == null)
-                    readDeviceMap[addr] = device;
+                if (device.SupportsRead && _readDeviceMap[addr] == null)
+                    _readDeviceMap[addr] = device;
 
                 if (!device.SupportsWrite)
                     continue;
 
-                var writeTargets = writeDeviceMap[addr];
+                var writeTargets = _writeDeviceMap[addr];
                 if (writeTargets == null)
                 {
                     writeTargets = [];
-                    writeDeviceMap[addr] = writeTargets;
+                    _writeDeviceMap[addr] = writeTargets;
                 }
 
                 writeTargets.Add(device);
@@ -75,7 +75,10 @@ public class Memory
     public void RegisterTap(IMemoryAccessTapDevice device)
     {
         Log.Debug("Registering tap device {DeviceType} for memory access notifications", device.GetType().Name);
-        taps.Add(device);
+        // Sacrifice performance in RegisterTap for better performance in iteration
+        var tempList = _memoryTaps.ToList();
+        tempList.Add(device);
+        _memoryTaps = tempList.ToArray();
     }
     
     #region Load Memory
@@ -94,7 +97,7 @@ public class Memory
         {
             int ramOff = addr; // addr - 0000
             int can = Math.Min(remaining, 0xA000 - ramOff);
-            Buffer.BlockCopy(data, src, ram, ramOff, can);
+            Buffer.BlockCopy(data, src, _ram, ramOff, can);
             src += can; remaining -= can;
             addr = (ushort)(addr + can);
         }
@@ -104,7 +107,7 @@ public class Memory
         {
             int propOff = addr - 0xA000;
             int can = Math.Min(remaining, 0xE000 - addr);
-            Buffer.BlockCopy(data, src, prop, propOff, can);
+            Buffer.BlockCopy(data, src, _prop, propOff, can);
             src += can; remaining -= can;
             addr = (ushort)(addr + can);
         }
@@ -115,10 +118,10 @@ public class Memory
             int romOff = addr - 0xE000;
             int can = Math.Min(remaining, 0x10000 - addr); // up to 0xFFFF inclusive
 
-            if (romOff < 0 || romOff + can > rom.Length)
+            if (romOff < 0 || romOff + can > _rom.Length)
                 throw new ArgumentOutOfRangeException(nameof(startAddress), "Write exceeds ROM size.");
 
-            Buffer.BlockCopy(data, src, rom, romOff, can);
+            Buffer.BlockCopy(data, src, _rom, romOff, can);
             src += can; remaining -= can;
             addr = (ushort)(addr + can);
         }
@@ -138,9 +141,9 @@ public class Memory
     {
         if (zeroFill)
         {
-            Array.Clear(ram, 0, ram.Length);
-            Array.Clear(prop, 0, prop.Length);
-            Array.Clear(rom, 0, rom.Length);
+            Array.Clear(_ram, 0, _ram.Length);
+            Array.Clear(_prop, 0, _prop.Length);
+            Array.Clear(_rom, 0, _rom.Length);
         }
 
         bool oldRomWritable = RomIsWritable;
@@ -166,20 +169,20 @@ public class Memory
 
         for (int i = 0; i < 0xA000; i++)
         {
-            if (ram[i] != 0)
-                list.Add([i, ram[i]]);
+            if (_ram[i] != 0)
+                list.Add([i, _ram[i]]);
         }
 
         for (int i = 0; i < 0x4000; i++)
         {
-            if (prop[i] != 0)
-                list.Add([0xA000 + i, prop[i]]);
+            if (_prop[i] != 0)
+                list.Add([0xA000 + i, _prop[i]]);
         }
 
         for (int i = 0; i < 0x2000; i++)
         {
-            if (rom[i] != 0)
-                list.Add([0xE000 + i, rom[i]]);
+            if (_rom[i] != 0)
+                list.Add([0xE000 + i, _rom[i]]);
         }
 
         return list;
@@ -193,20 +196,21 @@ public class Memory
     /// </summary>
     /// <param name="address"></param>
     /// <returns></returns>
-    public byte Read(ushort address)
+    public byte Read(ushort address) // PERFORMANCE CRITICAL
     {
-        foreach(var tap in taps)
-            tap.OnRead(address);
+        if (_memoryTaps.Length > 0)
+            foreach(var tap in _memoryTaps)
+                tap.OnRead(address);
 
-        var device = readDeviceMap[address];
+        var device = _readDeviceMap[address];
         if (device != null)
             return device.Read(address);
         
         return address switch
         {
-            < 0xA000 => ram[address],
-            < 0xE000 => prop[address - 0xA000],
-            _        => rom[address - 0xE000],
+            < 0xA000 => _ram[address],
+            < 0xE000 => _prop[address - 0xA000],
+            _        => _rom[address - 0xE000],
         };
     }
     
@@ -224,12 +228,13 @@ public class Memory
     /// </summary>
     /// <param name="address"></param>
     /// <param name="value"></param>
-    public void Write(ushort address, byte value)
+    public void Write(ushort address, byte value) // PERFORMANCE CRITICAL
     {
-        foreach(var tap in taps)
-            tap.OnWrite(address, value);
+        if (_memoryTaps.Length > 0)
+            foreach(var tap in _memoryTaps)
+                tap.OnWrite(address, value);
 
-        var mapped = writeDeviceMap[address];
+        var mapped = _writeDeviceMap[address];
         if (mapped != null)
         {
             for (int i = 0; i < mapped.Count; i++)
@@ -240,16 +245,16 @@ public class Memory
         switch (address)
         {
             case < 0xA000:
-                ram[address] = value;
+                _ram[address] = value;
                 break;
             case < 0xE000:
-                prop[address - 0xA000] = value;
+                _prop[address - 0xA000] = value;
                 break;
             default:
                 // ROM: ignore writes (oder Debug-Log)
                 // optional: allow patching vectors via a privileged method
                 if (RomIsWritable)
-                    rom[address - 0xE000] = value;
+                    _rom[address - 0xE000] = value;
                 break;
         }
     }
@@ -262,7 +267,7 @@ public class Memory
     public Interrupt Update(long totalCyclesExecuted)
     {
         var interrupt = Interrupt.None;
-        foreach (var device in devices)
+        foreach (var device in _devices)
         {
             interrupt = interrupt.Or(device.Update(totalCyclesExecuted));
         }
@@ -285,7 +290,7 @@ public class Memory
         
         var sb = new StringBuilder();
         int currentAddress = 0;
-        var allDevices = devices.OrderBy(d => d.StartAddress).ToList();
+        var allDevices = _devices.OrderBy(d => d.StartAddress).ToList();
         foreach (var device in allDevices)
         {
             if (device.StartAddress > currentAddress)
