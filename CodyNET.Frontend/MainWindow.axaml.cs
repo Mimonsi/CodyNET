@@ -14,6 +14,7 @@ using Path = System.IO.Path;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
@@ -302,10 +303,11 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Uncheck all sibling scale items
+        // Uncheck sibling scale items (not render mode items)
         foreach (var child in viewMenu.Items)
         {
-            if (child is MenuItem sibling && sibling.ToggleType == MenuItemToggleType.CheckBox)
+            if (child is MenuItem sibling && sibling.ToggleType == MenuItemToggleType.CheckBox
+                && sibling.Tag is string t && (t == "auto" || double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture, out _)))
                 sibling.IsChecked = sibling == menuItem;
         }
 
@@ -325,6 +327,27 @@ public partial class MainWindow : Window
         }
     }
     
+    private static readonly string[] RenderModes = ["None", "LowQuality", "MediumQuality", "HighQuality"];
+
+    private void OnRenderModeClick(object? sender, RoutedEventArgs e)
+    {
+        if (screen == null || sender is not MenuItem menuItem || menuItem.Parent is not MenuItem viewMenu)
+            return;
+
+        // Uncheck sibling render mode items
+        foreach (var child in viewMenu.Items)
+        {
+            if (child is MenuItem sibling && sibling.Tag is string t && RenderModes.Contains(t))
+                sibling.IsChecked = sibling == menuItem;
+        }
+
+        if (menuItem.Tag is string modeTag && Enum.TryParse<BitmapInterpolationMode>(modeTag, out var mode))
+        {
+            RenderOptions.SetBitmapInterpolationMode(screen, mode);
+            screen.InvalidateVisual();
+        }
+    }
+
     private async void OnLoadUart1Click(object? sender, RoutedEventArgs e)
     {
         if (screen == null || sender is not MenuItem menuItem)

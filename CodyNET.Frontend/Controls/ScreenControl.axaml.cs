@@ -57,10 +57,8 @@ public partial class ScreenControl : Control, IScreenDevice
 
         currentFrame = new VideoFrame(DefaultWidth, DefaultHeight, emptyPixels);
         ClipToBounds = true;
-        
-        // Remove the following two lines to get the "blurry" effect back
-        //RenderOptions.SetBitmapInterpolationMode(this, BitmapInterpolationMode.None);
-        //UseLayoutRounding = true;
+        UseLayoutRounding = true;
+        RenderOptions.SetBitmapInterpolationMode(this, BitmapInterpolationMode.HighQuality);
     }
 
     protected override Size MeasureOverride(Size availableSize)

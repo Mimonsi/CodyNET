@@ -132,6 +132,11 @@
                 <MenuItem Header="Scale 400%" Tag="4.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
                 <MenuItem Header="Scale 600%" Tag="6.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
                 <MenuItem Header="Scale 800%" Tag="8.0" Click="OnScaleMenuClick" ToggleType="CheckBox"/>
+                <Separator/>
+                <MenuItem Header="Pixel Perfect" Tag="None" Click="OnRenderModeClick" ToggleType="CheckBox"/>
+                <MenuItem Header="Low Quality" Tag="LowQuality" Click="OnRenderModeClick" ToggleType="CheckBox"/>
+                <MenuItem Header="Medium Quality" Tag="MediumQuality" Click="OnRenderModeClick" ToggleType="CheckBox"/>
+                <MenuItem Header="High Quality" Tag="HighQuality" Click="OnRenderModeClick" ToggleType="CheckBox" IsChecked="True"/>
             </MenuItem>
             <MenuItem Header="_Emulator">
                 <MenuItem x:Name="MenuPauseResumeButton" Header="_Pause [F9]" Click="OnPauseResumeButtonClick"/>
