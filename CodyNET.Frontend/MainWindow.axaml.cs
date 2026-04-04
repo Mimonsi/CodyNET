@@ -599,13 +599,16 @@ public partial class MainWindow : Window
         lineNumberText.PointerPressed += OnBreakpointLineNumberClicked;
         row.Children.Add(CreateBreakpointCell(lineNumberText, 1, "code-text"));
 
-        row.Children.Add(CreateBreakpointCell(new TextBlock
+        var codeText = GetLineText(line).TrimStart();
+        var codeBlock = new TextBlock
         {
-            Text = GetLineText(line),
+            Text = codeText,
             Foreground = Brush.Parse(enabled ? "#00FF8E" : "#8191B0"),
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
-        }, 2, "code-text"));
+        };
+        ToolTip.SetTip(codeBlock, codeText);
+        row.Children.Add(CreateBreakpointCell(codeBlock, 2, "code-text"));
 
         var deleteButton = new Button
         {
@@ -628,8 +631,8 @@ public partial class MainWindow : Window
     {
         return new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("60,*,*,32"),
-            ColumnSpacing = 18,
+            ColumnDefinitions = new ColumnDefinitions("40,60,*,36"),
+            ColumnSpacing = 8,
         };
     }
 
