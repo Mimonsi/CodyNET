@@ -66,8 +66,11 @@ public class Profiler(TimeSpan snapshotInterval, TimeSpan? logInterval)
         if (_pendingSnapshots.Count == 0)
             return;
 
-        if (SNAPSHOTS_TILL_EXIT <= 0)
+        if (SNAPSHOTS_TILL_EXIT < 0)
+        {
+            Log.Info("Performance results done");
             return;
+        }
         SNAPSHOTS_TILL_EXIT--;
         try
         {
@@ -84,6 +87,11 @@ public class Profiler(TimeSpan snapshotInterval, TimeSpan? logInterval)
             var line = $"{ts}  freq={avgFreq,10} Hz  target={avgTarget,10} Hz  pct={freqPct,6}%  fps={avgFps,5:F1}  window={totalSeconds:F2}s\n";
             File.AppendAllText(DumpFilePath, line);
             _pendingSnapshots.Clear();
+            if (SNAPSHOTS_TILL_EXIT == 0)
+            {
+                Log.Info("Performance results done, exiting...");
+                Environment.Exit(0);
+            }
         }
         catch (Exception ex)
         {
