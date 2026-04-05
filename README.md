@@ -44,8 +44,8 @@ LOAD 1,1
 Additional documentation:
 
 - [CLI reference](./CodyNET.Host/codycli.md)
-- [Testing and external test data](./docs/TESTING.md)
-- [Debugger notes](./docs/DEBUGGER.md)
+- [Testing and external test data](./TESTING.md)
+- [Debugger notes](./DEBUGGER.md)
 - [Logging](./Logging.md)
 - [Release process](./How%20To%20Release.md)
 - [GitHub Actions release notes](./Github%20Action.md)
