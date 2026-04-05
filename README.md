@@ -38,16 +38,9 @@ RUN
 Binary files (.bin) can also be attached via UART. In Cody BASIC, load them with:
 
 ```text
-LOAD 1,1
+LOAD 1,1~~~~
 ```
 
 Additional documentation:
 
-- [CLI reference](./CodyNET.Host/codycli.md)
-- [Testing and external test data](./TESTING.md)
-- [Debugger notes](./DEBUGGER.md)
-- [Logging](./Logging.md)
-- [Release process](./How%20To%20Release.md)
-- [GitHub Actions release notes](./Github%20Action.md)
-- [Rust emulator notes](./Rust%20Emulator.md)
-- [Project TODOs](./TODO.md)
+- [CLI reference](./docs/CLI.md)
