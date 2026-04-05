@@ -20,11 +20,12 @@ public class Profiler(TimeSpan snapshotInterval, TimeSpan? logInterval)
     private long _targetFrequencyHz;
     public ProfilerSnapshot LastSnapshot = new();
     private readonly List<ProfilerSnapshot> _pendingSnapshots = [];
+    private bool TEST_MODE_ENABLED = false; // TODO: DIASBLE IN PRODUCTION
     private int SNAPSHOTS_TILL_EXIT = 5; // TODO: DIASBLE IN PRODUCTION
 
     static Profiler()
     {
-        try { File.WriteAllText(DumpFilePath, ""); }
+        try { File.WriteAllText(DumpFilePath, ""); } // Clear file on startup
         catch { /* ignore */ }
     }
 
@@ -87,7 +88,7 @@ public class Profiler(TimeSpan snapshotInterval, TimeSpan? logInterval)
             var line = $"{ts}  freq={avgFreq,10} Hz  target={avgTarget,10} Hz  pct={freqPct,6}%  fps={avgFps,5:F1}  window={totalSeconds:F2}s\n";
             File.AppendAllText(DumpFilePath, line);
             _pendingSnapshots.Clear();
-            if (SNAPSHOTS_TILL_EXIT == 0)
+            if (TEST_MODE_ENABLED && SNAPSHOTS_TILL_EXIT == 0)
             {
                 Log.Info("Performance results done, exiting...");
                 Environment.Exit(0);

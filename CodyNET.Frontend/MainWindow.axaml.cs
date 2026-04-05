@@ -450,7 +450,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            // User cancelled — restore previous ComboBox state without touching the emulator
+            // User cancelled - restore previous ComboBox state without touching the emulator
             _suppressClockSliderEvents = true;
             ClockSpeedComboBox.SelectedIndex = _lastClockComboIndex;
             _suppressClockSliderEvents = false;
@@ -914,7 +914,7 @@ public partial class MainWindow : Window
             .ToList();
 
         // Build finalCode and simultaneously track which pre.asm line number
-        // (after DBP expansion: each DBP → 2 lines) maps to which editor line.
+        // (after DBP expansion: each DBP -> STZ $FF00) maps to which editor line.
         var finalCode = new List<string>();
         var preAsmLineToSourceLine = new Dictionary<int, int>();
         int preAsmLine = 1;
@@ -926,12 +926,11 @@ public partial class MainWindow : Window
 
             if (_codeEditorBreakpointLines.TryGetValue(lineNumber, out var enabled) && enabled)
             {
-                // DBP → "LDA #$01\nSTA $FF00" (2 lines in pre.asm).
+                // DBP -> "STZ $FF00" (1 line in pre.asm).
                 // Map both expansion lines to this editor line so the highlight appears
-                // when the emulator pauses at the breakpoint trap (STA $FF00).
-                preAsmLineToSourceLine[preAsmLine]     = lineNumber; // LDA #$01
-                preAsmLineToSourceLine[preAsmLine + 1] = lineNumber; // STA $FF00
-                preAsmLine += 2;
+                // when the emulator pauses at the breakpoint trap (STZ $FF00).
+                preAsmLineToSourceLine[preAsmLine] = lineNumber; // STZ $FF00
+                preAsmLine += 1;
 
                 finalCode.Add($"DBP ; BREAKPOINT LINE {lineNumber}");
             }
@@ -946,7 +945,7 @@ public partial class MainWindow : Window
 
         var (_, addressToPreLine) = CodyAssembler.AssembleFileWithMap(inputFile);
 
-        // Combine: address → pre.asm line → original editor line
+        // Combine: address -> pre.asm line -> original editor line
         _addressToSourceLine = new Dictionary<ushort, int>();
         foreach (var (address, preLine) in addressToPreLine)
         {
@@ -1023,6 +1022,6 @@ public partial class MainWindow : Window
 
     private void OnCpuResetButtonClick(object? sender, RoutedEventArgs e)
     {
-        FrontendHostBridge.ResetEmulator();
+        FrontendHostBridge.ResetEmulator(); // TODO: This seems to delete the set frequency?
     }
 }

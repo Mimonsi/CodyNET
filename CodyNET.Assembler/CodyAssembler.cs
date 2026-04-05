@@ -58,7 +58,7 @@ public static class CodyAssembler
 
     /// <summary>
     /// Parses a 64tass --list output file and returns a mapping of
-    /// assembled address → 1-based line number in the preprocessed .asm file.
+    /// assembled address-> 1-based line number in the preprocessed .asm file.
     ///
     /// 64tass listing format (tab-separated, 6 columns):
     ///   [0] prefix+offset  e.g. ".0004" (code), "=$3000" (const), ">0000" (abs data)
@@ -94,18 +94,18 @@ public static class CodyAssembler
         {
             // Only '.' prefix lines are actual source code / data entries.
             // '=' lines are constant definitions, '>' lines are pre-org absolute data,
-            // ';' lines are listing header comments — all irrelevant for PC mapping.
+            // ';' lines are listing header comments - all irrelevant for PC mapping.
             if (!line.StartsWith('.')) continue;
 
             var cols = line.Split('\t');
             // Need at minimum: [0] offset, [1] PC, [2] bytes, [^1] source.
-            // NOTE: the number of columns varies with instruction length — 64tass omits
+            // NOTE: the number of columns varies with instruction length - 64tass omits
             // the padding tab for 3-byte instructions, giving 5 cols instead of 6.
             // Therefore we use cols[^1] (last element) for the source text, not a fixed index.
             if (cols.Length < 3) continue;
 
             var pcStr    = cols[1].Trim();   // PC address (hex)
-            var hexBytes = cols[2].Trim();   // assembled bytes (empty → no code emitted)
+            var hexBytes = cols[2].Trim();   // assembled bytes (empty -> no code emitted)
             var srcText  = cols[^1].Trim();  // verbatim source line (always the last column)
 
             // Skip entries that don't emit bytes (pure labels, .org, etc.)

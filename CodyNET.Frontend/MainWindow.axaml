@@ -295,13 +295,11 @@
                                        VerticalAlignment="Center" />
                         </StackPanel>
                         <ToggleButton Grid.Column="3"
-                                      x:Name="IgnoreBreakpointsToggle"
-                                      Content="Ignore BPs"
-                                      IsChecked="False"
-                                      Click="OnIgnoreBreakpointsClick"
-                                      VerticalAlignment="Center"
-                                      FontSize="13"
-                                      Padding="8,4" />
+                                x:Name="IgnoreBreakpointsToggle"
+                                Classes="code-toolbar-button"
+                                Content="Ignore BPs"
+                                IsChecked="False"
+                                Click="OnIgnoreBreakpointsClick"/>
                         <Button Grid.Column="4"
                                 x:Name="EmulatorPauseResumeButton"
                                 Classes="code-toolbar-button"
