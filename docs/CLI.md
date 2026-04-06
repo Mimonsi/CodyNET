@@ -8,7 +8,8 @@ When launched without arguments (or with `-i` / `--interactive`), an interactive
 
 | Option | Description |
 |---|---|
-| `--verbose`, `-v` | Enable verbose logging |
+| `--log-level <level>` | Console log level: `Error`, `Warn`, `Info`, `Debug`, `Verbose` (default: `Info`) |
+| `--verbose`, `-v` | Shorthand for `--log-level Verbose` |
 
 ## Commands
 
@@ -36,7 +37,7 @@ boot [OPTIONS]
 
 ```
 boot --debug --clock 2MHz
-boot --headless --uart1-source program.bas
+boot --uart1-source program.bas
 ```
 
 ### run
@@ -72,7 +73,7 @@ run <file> [OPTIONS]
 
 ```
 run program.bin --load-address 0x8000 --debug
-run cartridge.bin --as-cartridge --fast --headless
+run cartridge.bin --as-cartridge --fast
 ```
 
 ### assemble
