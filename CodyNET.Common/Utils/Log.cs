@@ -30,13 +30,13 @@ public static class Log
     private const string ConsoleErrorToStdErrEnvVar = "CODYNET_LOG_ERROR_TO_STDERR";
 
     private static readonly object InitLock = new();
-    private static readonly LoggingLevelSwitch ConsoleLevelSwitch = new(MapLevel(LogLevel.Debug));
+    private static readonly LoggingLevelSwitch ConsoleLevelSwitch = new(MapLevel(LogLevel.Info));
     private static readonly LoggingLevelSwitch FileLevelSwitch = new(MapLevel(LogLevel.Verbose));
     private static readonly DateTimeOffset ProcessStartTime = new(Process.GetCurrentProcess().StartTime);
 
     private static bool initialized;
-    private static LogLevel level = LogLevel.Debug;
-    private static LogLevel consoleLevel = LogLevel.Debug;
+    private static LogLevel level = LogLevel.Info;
+    private static LogLevel consoleLevel = LogLevel.Info;
     private static LogLevel fileLevel = LogLevel.Verbose;
     private static TimeSetting timeSetting =
         ParseTimeSetting(Environment.GetEnvironmentVariable(TimeSettingEnvVar)) ?? TimeSetting.Relative;

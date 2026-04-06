@@ -28,27 +28,35 @@ public static class Cli
         Option<bool> Headless,
         Option<bool> StartPaused);
     
-    private static void ApplyLogging(ParseResult parseResult, Option<bool> verboseOption)
+    private static void ApplyLogging(ParseResult parseResult, Option<bool> verboseOption, Option<LogLevel?> logLevelOption)
     {
-        if (parseResult.GetValue(verboseOption))
-            Log.Level = LogLevel.Verbose;
+        if (parseResult.GetValue(logLevelOption) is { } level)
+            Log.ConsoleLevel = level;
+        else if (parseResult.GetValue(verboseOption))
+            Log.ConsoleLevel = LogLevel.Verbose;
     }
-    
+
     public static RootCommand BuildRootCommand(bool useMainThreadScreenHost = true)
     {
         var root = new RootCommand("CodyNET");
 
         var verboseOption = new Option<bool>("--verbose", ["-v"])
         {
-            Description = "Enable verbose logging"
+            Description = "Enable verbose logging (shorthand for --log-level Verbose)"
         };
         root.Options.Add(verboseOption);
 
+        var logLevelOption = new Option<LogLevel?>("--log-level")
+        {
+            Description = "Console log level (Error, Warn, Info, Debug, Verbose)"
+        };
+        root.Options.Add(logLevelOption);
+
         root.Subcommands.Add(BuildListCommand());
-        root.Subcommands.Add(BuildBootCommand(verboseOption, useMainThreadScreenHost));
-        root.Subcommands.Add(BuildRunCommand(verboseOption, useMainThreadScreenHost));
-        root.Subcommands.Add(BuildAssembleCommand(verboseOption));
-        root.Subcommands.Add(BuildDisassembleCommand(verboseOption));
+        root.Subcommands.Add(BuildBootCommand(verboseOption, logLevelOption, useMainThreadScreenHost));
+        root.Subcommands.Add(BuildRunCommand(verboseOption, logLevelOption, useMainThreadScreenHost));
+        root.Subcommands.Add(BuildAssembleCommand(verboseOption, logLevelOption));
+        root.Subcommands.Add(BuildDisassembleCommand(verboseOption, logLevelOption));
         root.Subcommands.Add(BuildLogTestCommand());
 
         root.SetAction(_ =>
@@ -285,14 +293,14 @@ public static class Cli
         };
     }
 
-    private static Command BuildBootCommand(Option<bool> verboseOption, bool useMainThreadScreenHost)
+    private static Command BuildBootCommand(Option<bool> verboseOption, Option<LogLevel?> logLevelOption, bool useMainThreadScreenHost)
     {
         var cmd = new Command("boot", "Boot the emulator with the built-in CodyBASIC");
         var executionOptions = AddExecutionOptions(cmd, includeDebug: true);
         
         cmd.SetAction(parseResult =>
         {
-            ApplyLogging(parseResult, verboseOption);
+            ApplyLogging(parseResult, verboseOption, logLevelOption);
             var setupOptions = BuildSetupOptions(parseResult, executionOptions);
             var loadOptions = BuildSharedLoadOptions(parseResult, executionOptions);
 
@@ -324,7 +332,7 @@ public static class Cli
         });
     }
 
-    private static Command BuildRunCommand(Option<bool> verboseOption, bool useMainThreadScreenHost)
+    private static Command BuildRunCommand(Option<bool> verboseOption, Option<LogLevel?> logLevelOption, bool useMainThreadScreenHost)
     {
         var cmd = new Command("run", "Run a binary file with the emulator");
 
@@ -349,7 +357,7 @@ public static class Cli
         var irqVector = new Option<string?>("--irq-vector") { Description = "Override IRQ Vector (0xFFFE)" };
         var nmiVector = new Option<string?>("--nmi-vector") { Description = "Override NMI Vector (0xFFFA)" };
         var executionOptions = AddExecutionOptions(cmd, includeDebug: true);
-        
+
         cmd.Options.Add(asCartridge);
         cmd.Options.Add(loadAddress);
         cmd.Options.Add(resetVector);
@@ -358,7 +366,7 @@ public static class Cli
 
         cmd.SetAction(parseResult =>
         {
-            ApplyLogging(parseResult, verboseOption);
+            ApplyLogging(parseResult, verboseOption, logLevelOption);
 
             var inputFile = parseResult.GetValue(fileArg)
                             ?? throw new ArgumentException("Missing input file argument.");
@@ -433,7 +441,7 @@ public static class Cli
         commandException?.Throw();
     }
 
-    private static Command BuildAssembleCommand(Option<bool> verboseOption)
+    private static Command BuildAssembleCommand(Option<bool> verboseOption, Option<LogLevel?> logLevelOption)
     {
         var cmd = new Command("assemble", "Assemble a source file into a binary");
 
@@ -460,7 +468,7 @@ public static class Cli
 
         cmd.SetAction(parseResult =>
         {
-            ApplyLogging(parseResult, verboseOption);
+            ApplyLogging(parseResult, verboseOption, logLevelOption);
 
             var inputFile = parseResult.GetValue(fileArg)
                 ?? throw new ArgumentException("Missing input file argument.");
@@ -485,7 +493,7 @@ public static class Cli
         Log.Info("Assembled {InputFile} -> {OutputFile}", inputFile.FullName, outputFile.FullName);
     }
 
-    private static Command BuildDisassembleCommand(Option<bool> verboseOption)
+    private static Command BuildDisassembleCommand(Option<bool> verboseOption, Option<LogLevel?> logLevelOption)
     {
         var cmd = new Command("disassemble", "Disassemble a binary into assembly");
 
@@ -517,7 +525,7 @@ public static class Cli
 
         cmd.SetAction(parseResult =>
         {
-            ApplyLogging(parseResult, verboseOption);
+            ApplyLogging(parseResult, verboseOption, logLevelOption);
 
             var inputFile = parseResult.GetValue(fileArg)
                 ?? throw new ArgumentException("Missing input file argument.");
