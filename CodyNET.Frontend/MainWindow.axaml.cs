@@ -40,6 +40,10 @@ public partial class MainWindow : Window
     private ScreenControl? screen;
     private DispatcherTimer? registerRefreshTimer;
     private DispatcherTimer? footerRefreshTimer;
+    private const int MemoryViewBytesPerRow = 8;
+    private const int MemoryViewRowCount = 32;
+    private ushort _memoryViewStartAddress;
+    private readonly System.Text.StringBuilder _memoryDumpBuilder = new();
     private string? _loadedAssemblyPath;
     private static readonly long[] ClockStepFrequencies = [100_000, 500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000, -1];
     private static readonly string[] ClockStepLabels    = ["100 kHz", "500 kHz", "1 MHz", "2 MHz", "5 MHz", "10 MHz", "∞"];
@@ -109,6 +113,7 @@ public partial class MainWindow : Window
         LoadAssemblyMenuItem.IsVisible = debugMode;
         SetDebugUiActive(debugMode);
         RefreshRegisterValues();
+        SetMemoryViewStart(0);
         RefreshBreakpointsPanel();
         SyncInitialClockFrequency();
         registerRefreshTimer?.Start();
@@ -154,8 +159,123 @@ public partial class MainWindow : Window
         {
             Interval = FooterRefreshInterval
         };
-        registerRefreshTimer.Tick += (_, _) => RefreshRegisterValues();
+        registerRefreshTimer.Tick += (_, _) =>
+        {
+            RefreshRegisterValues();
+            RefreshMemoryView();
+        };
         footerRefreshTimer.Tick += (_, _) => RefreshFooter();
+    }
+
+    private void RefreshMemoryView()
+    {
+        if (!_debugUiActive)
+            return;
+        if (MemoryDumpText == null || !FrontendHostBridge.HasMemoryReader)
+            return;
+
+        _memoryDumpBuilder.Clear();
+        int start = _memoryViewStartAddress;
+        for (int row = 0; row < MemoryViewRowCount; row++)
+        {
+            int rowStart = start + row * MemoryViewBytesPerRow;
+            if (rowStart > 0xFFFF)
+                break;
+
+            _memoryDumpBuilder.Append(rowStart.ToString("X4"));
+            _memoryDumpBuilder.Append("  ");
+
+            // Hex bytes
+            for (int col = 0; col < MemoryViewBytesPerRow; col++)
+            {
+                int addr = rowStart + col;
+                if (addr > 0xFFFF)
+                {
+                    _memoryDumpBuilder.Append("   ");
+                    continue;
+                }
+                byte value = FrontendHostBridge.ReadMemory((ushort)addr);
+                _memoryDumpBuilder.Append(value.ToString("X2"));
+                _memoryDumpBuilder.Append(' ');
+            }
+
+            _memoryDumpBuilder.Append(' ');
+
+            // ASCII representation
+            for (int col = 0; col < MemoryViewBytesPerRow; col++)
+            {
+                int addr = rowStart + col;
+                if (addr > 0xFFFF)
+                    break;
+                byte value = FrontendHostBridge.ReadMemory((ushort)addr);
+                char c = value >= 0x20 && value < 0x7F ? (char)value : '.';
+                _memoryDumpBuilder.Append(c);
+            }
+
+            if (row < MemoryViewRowCount - 1)
+                _memoryDumpBuilder.Append('\n');
+        }
+
+        MemoryDumpText.Text = _memoryDumpBuilder.ToString();
+    }
+
+    private void SetMemoryViewStart(int address)
+    {
+        address &= ~(MemoryViewBytesPerRow - 1); // align
+        if (address < 0)
+            address = 0;
+        int maxStart = 0x10000 - MemoryViewBytesPerRow * MemoryViewRowCount;
+        if (maxStart < 0)
+            maxStart = 0;
+        if (address > maxStart)
+            address = maxStart;
+
+        _memoryViewStartAddress = (ushort)address;
+        if (MemoryAddressInput != null)
+            MemoryAddressInput.Text = _memoryViewStartAddress.ToString("X4");
+        RefreshMemoryView();
+    }
+
+    private void OnMemoryGoButtonClick(object? sender, RoutedEventArgs e)
+    {
+        JumpToMemoryInputAddress();
+    }
+
+    private void OnMemoryAddressInputKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            JumpToMemoryInputAddress();
+            e.Handled = true;
+        }
+    }
+
+    private void JumpToMemoryInputAddress()
+    {
+        if (MemoryAddressInput == null)
+            return;
+        var text = MemoryAddressInput.Text?.Trim();
+        if (string.IsNullOrEmpty(text))
+            return;
+        if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            text = text.Substring(2);
+        if (text.StartsWith("$"))
+            text = text.Substring(1);
+
+        if (int.TryParse(text, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int addr))
+        {
+            SetMemoryViewStart(addr);
+        }
+    }
+
+    private void OnMemoryNavClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not string tag)
+            return;
+        if (int.TryParse(tag, NumberStyles.Integer, CultureInfo.InvariantCulture, out int delta))
+        {
+            SetMemoryViewStart(_memoryViewStartAddress + delta);
+        }
     }
 
     private void RefreshRegisterValues()

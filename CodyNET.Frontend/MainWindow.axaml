@@ -255,7 +255,80 @@
                                 <TextBlock Classes="panel-header-text" Text="Memory" />
                             </Border>
                         </TabItem.Header>
-                        <TextBlock>Moin</TextBlock>
+                        <Grid RowDefinitions="Auto,Auto,*" Margin="12,10,12,12">
+                            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
+                                <TextBlock Grid.Column="0"
+                                           Classes="data-label"
+                                           Text="Addr:"
+                                           VerticalAlignment="Center" />
+                                <TextBox Grid.Column="1"
+                                         x:Name="MemoryAddressInput"
+                                         Text="0000"
+                                         FontFamily="Cascadia Mono, Consolas, monospace"
+                                         FontSize="13"
+                                         Padding="6,3"
+                                         MaxLength="4"
+                                         KeyDown="OnMemoryAddressInputKeyDown" />
+                                <Button Grid.Column="2"
+                                        x:Name="MemoryGoButton"
+                                        Content="Go"
+                                        FontSize="12"
+                                        Padding="10,3"
+                                        Click="OnMemoryGoButtonClick" />
+                            </Grid>
+                            <Grid Grid.Row="1"
+                                  Margin="0,8,0,6"
+                                  ColumnDefinitions="*,*,*,*"
+                                  ColumnSpacing="4">
+                                <Button Grid.Column="0"
+                                        Content="-1 KB"
+                                        FontSize="11"
+                                        Padding="0,3"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"
+                                        Click="OnMemoryNavClick"
+                                        Tag="-1024" />
+                                <Button Grid.Column="1"
+                                        Content="-64"
+                                        FontSize="11"
+                                        Padding="0,3"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"
+                                        Click="OnMemoryNavClick"
+                                        Tag="-64" />
+                                <Button Grid.Column="2"
+                                        Content="+64"
+                                        FontSize="11"
+                                        Padding="0,3"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"
+                                        Click="OnMemoryNavClick"
+                                        Tag="64" />
+                                <Button Grid.Column="3"
+                                        Content="+1 KB"
+                                        FontSize="11"
+                                        Padding="0,3"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"
+                                        Click="OnMemoryNavClick"
+                                        Tag="1024" />
+                            </Grid>
+                            <Border Grid.Row="2"
+                                    Background="#1A191D"
+                                    BorderBrush="#34313A"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="8,6">
+                                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                                              VerticalScrollBarVisibility="Auto">
+                                    <SelectableTextBlock x:Name="MemoryDumpText"
+                                                         FontFamily="Cascadia Mono, Consolas, monospace"
+                                                         FontSize="12"
+                                                         Foreground="#E7EAF2"
+                                                         LineHeight="16" />
+                                </ScrollViewer>
+                            </Border>
+                        </Grid>
                     </TabItem>
                 </TabControl>
             </Border>
