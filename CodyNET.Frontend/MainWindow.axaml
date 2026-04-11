@@ -255,7 +255,7 @@
                                 <TextBlock Classes="panel-header-text" Text="Memory" />
                             </Border>
                         </TabItem.Header>
-                        <Grid RowDefinitions="Auto,Auto,*" Margin="12,10,12,12">
+                        <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="12,10,12,12">
                             <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
                                 <TextBlock Grid.Column="0"
                                            Classes="data-label"
@@ -276,7 +276,33 @@
                                         Padding="10,3"
                                         Click="OnMemoryGoButtonClick" />
                             </Grid>
-                            <Grid Grid.Row="1"
+                            <ComboBox Grid.Row="1"
+                                      x:Name="MemoryShortcutComboBox"
+                                      Margin="0,6,0,0"
+                                      HorizontalAlignment="Stretch"
+                                      FontFamily="Cascadia Mono, Consolas, monospace"
+                                      FontSize="12"
+                                      PlaceholderText="Jump to…"
+                                      SelectionChanged="OnMemoryShortcutChanged">
+                                <ComboBoxItem Content="0000  Zero Page" Tag="0x0000" />
+                                <ComboBoxItem Content="0100  Stack" Tag="0x0100" />
+                                <ComboBoxItem Content="0200  RAM (user)" Tag="0x0200" />
+                                <ComboBoxItem Content="9F00  VIA (I/O)" Tag="0x9F00" />
+                                <ComboBoxItem Content="A000  Prop RAM" Tag="0xA000" />
+                                <ComboBoxItem Content="D000  Video (VID)" Tag="0xD000" />
+                                <ComboBoxItem Content="D040  VID Control Bank" Tag="0xD040" />
+                                <ComboBoxItem Content="D060  VID Data Bank" Tag="0xD060" />
+                                <ComboBoxItem Content="D080  VID Sprite Banks" Tag="0xD080" />
+                                <ComboBoxItem Content="D480  UART1" Tag="0xD480" />
+                                <ComboBoxItem Content="D4A0  UART2" Tag="0xD4A0" />
+                                <ComboBoxItem Content="E000  ROM (BASIC)" Tag="0xE000" />
+                                <ComboBoxItem Content="FF00  Debugger" Tag="0xFF00" />
+                                <ComboBoxItem Content="FFFA  NMI Vector" Tag="0xFFFA" />
+                                <ComboBoxItem Content="FFFC  Reset Vector" Tag="0xFFFC" />
+                                <ComboBoxItem Content="FFFE  IRQ Vector" Tag="0xFFFE" />
+                                <ComboBoxItem Content="→  Jump to PC" Tag="PC" />
+                            </ComboBox>
+                            <Grid Grid.Row="2"
                                   Margin="0,8,0,6"
                                   ColumnDefinitions="*,*,*,*"
                                   ColumnSpacing="4">
@@ -313,7 +339,7 @@
                                         Click="OnMemoryNavClick"
                                         Tag="1024" />
                             </Grid>
-                            <Border Grid.Row="2"
+                            <Border Grid.Row="3"
                                     Background="#1A191D"
                                     BorderBrush="#34313A"
                                     BorderThickness="1"

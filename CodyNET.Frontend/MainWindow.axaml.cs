@@ -268,6 +268,30 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnMemoryShortcutChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.SelectedItem is not ComboBoxItem item || item.Tag is not string tag)
+            return;
+
+        if (tag == "PC")
+        {
+            var snapshot = FrontendHostBridge.GetRegisterSnapshot();
+            if (snapshot != null)
+                SetMemoryViewStart(snapshot.PC);
+        }
+        else
+        {
+            var text = tag.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? tag.Substring(2) : tag;
+            if (int.TryParse(text, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int addr))
+            {
+                SetMemoryViewStart(addr);
+            }
+        }
+
+        // Reset selection so the same entry can be chosen again
+        combo.SelectedItem = null;
+    }
+
     private void OnMemoryNavClick(object? sender, RoutedEventArgs e)
     {
         if (sender is not Button button || button.Tag is not string tag)
@@ -631,6 +655,9 @@ public partial class MainWindow : Window
             if (CodeEditorTextBox.TextArea.IsFocused)
                 return;
 
+            if (IsTextInputFocused())
+                return;
+
             var keyboard = FrontendHostBridge.Keyboard;
             if (keyboard == null)
                 return;
@@ -655,12 +682,20 @@ public partial class MainWindow : Window
         }
         if (CodeEditorTextBox.TextArea.IsFocused)
             return;
+        if (IsTextInputFocused())
+            return;
         var keyboard = FrontendHostBridge.Keyboard;
         if (keyboard == null)
             return;
 
         if (keyboard.KeyUp(e.Key.ToString(), e.KeySymbol))
             e.Handled = true;
+    }
+
+    private bool IsTextInputFocused()
+    {
+        var focused = FocusManager?.GetFocusedElement();
+        return focused is TextBox;
     }
 
     private void OnToggleDebuggerClick(object? sender, RoutedEventArgs e)
