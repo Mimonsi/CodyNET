@@ -40,6 +40,10 @@ public partial class MainWindow : Window
     private ScreenControl? screen;
     private DispatcherTimer? registerRefreshTimer;
     private DispatcherTimer? footerRefreshTimer;
+    private const int MemoryViewBytesPerRow = 8;
+    private const int MemoryViewRowCount = 32;
+    private ushort _memoryViewStartAddress;
+    private readonly System.Text.StringBuilder _memoryDumpBuilder = new();
     private string? _loadedAssemblyPath;
     private static readonly long[] ClockStepFrequencies = [100_000, 500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000, -1];
     private static readonly string[] ClockStepLabels    = ["100 kHz", "500 kHz", "1 MHz", "2 MHz", "5 MHz", "10 MHz", "∞"];
@@ -109,6 +113,7 @@ public partial class MainWindow : Window
         LoadAssemblyMenuItem.IsVisible = debugMode;
         SetDebugUiActive(debugMode);
         RefreshRegisterValues();
+        SetMemoryViewStart(0);
         RefreshBreakpointsPanel();
         SyncInitialClockFrequency();
         registerRefreshTimer?.Start();
@@ -154,8 +159,147 @@ public partial class MainWindow : Window
         {
             Interval = FooterRefreshInterval
         };
-        registerRefreshTimer.Tick += (_, _) => RefreshRegisterValues();
+        registerRefreshTimer.Tick += (_, _) =>
+        {
+            RefreshRegisterValues();
+            RefreshMemoryView();
+        };
         footerRefreshTimer.Tick += (_, _) => RefreshFooter();
+    }
+
+    private void RefreshMemoryView()
+    {
+        if (!_debugUiActive)
+            return;
+        if (MemoryDumpText == null || !FrontendHostBridge.HasMemoryReader)
+            return;
+
+        _memoryDumpBuilder.Clear();
+        int start = _memoryViewStartAddress;
+        for (int row = 0; row < MemoryViewRowCount; row++)
+        {
+            int rowStart = start + row * MemoryViewBytesPerRow;
+            if (rowStart > 0xFFFF)
+                break;
+
+            _memoryDumpBuilder.Append(rowStart.ToString("X4"));
+            _memoryDumpBuilder.Append("  ");
+
+            // Hex bytes
+            for (int col = 0; col < MemoryViewBytesPerRow; col++)
+            {
+                int addr = rowStart + col;
+                if (addr > 0xFFFF)
+                {
+                    _memoryDumpBuilder.Append("   ");
+                    continue;
+                }
+                byte value = FrontendHostBridge.ReadMemory((ushort)addr);
+                _memoryDumpBuilder.Append(value.ToString("X2"));
+                _memoryDumpBuilder.Append(' ');
+            }
+
+            _memoryDumpBuilder.Append(' ');
+
+            // ASCII representation
+            for (int col = 0; col < MemoryViewBytesPerRow; col++)
+            {
+                int addr = rowStart + col;
+                if (addr > 0xFFFF)
+                    break;
+                byte value = FrontendHostBridge.ReadMemory((ushort)addr);
+                char c = value >= 0x20 && value < 0x7F ? (char)value : '.';
+                _memoryDumpBuilder.Append(c);
+            }
+
+            if (row < MemoryViewRowCount - 1)
+                _memoryDumpBuilder.Append('\n');
+        }
+
+        MemoryDumpText.Text = _memoryDumpBuilder.ToString();
+    }
+
+    private void SetMemoryViewStart(int address)
+    {
+        address &= ~(MemoryViewBytesPerRow - 1); // align
+        if (address < 0)
+            address = 0;
+        int maxStart = 0x10000 - MemoryViewBytesPerRow * MemoryViewRowCount;
+        if (maxStart < 0)
+            maxStart = 0;
+        if (address > maxStart)
+            address = maxStart;
+
+        _memoryViewStartAddress = (ushort)address;
+        if (MemoryAddressInput != null)
+            MemoryAddressInput.Text = _memoryViewStartAddress.ToString("X4");
+        RefreshMemoryView();
+    }
+
+    private void OnMemoryGoButtonClick(object? sender, RoutedEventArgs e)
+    {
+        JumpToMemoryInputAddress();
+    }
+
+    private void OnMemoryAddressInputKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            JumpToMemoryInputAddress();
+            e.Handled = true;
+        }
+    }
+
+    private void JumpToMemoryInputAddress()
+    {
+        if (MemoryAddressInput == null)
+            return;
+        var text = MemoryAddressInput.Text?.Trim();
+        if (string.IsNullOrEmpty(text))
+            return;
+        if (text.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            text = text.Substring(2);
+        if (text.StartsWith("$"))
+            text = text.Substring(1);
+
+        if (int.TryParse(text, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int addr))
+        {
+            SetMemoryViewStart(addr);
+        }
+    }
+
+    private void OnMemoryShortcutChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.SelectedItem is not ComboBoxItem item || item.Tag is not string tag)
+            return;
+
+        if (tag == "PC")
+        {
+            var snapshot = FrontendHostBridge.GetRegisterSnapshot();
+            if (snapshot != null)
+                SetMemoryViewStart(snapshot.PC);
+        }
+        else
+        {
+            var text = tag.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? tag.Substring(2) : tag;
+            if (int.TryParse(text, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int addr))
+            {
+                SetMemoryViewStart(addr);
+            }
+        }
+
+        // Reset selection so the same entry can be chosen again
+        combo.SelectedItem = null;
+    }
+
+    private void OnMemoryNavClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Tag is not string tag)
+            return;
+        if (int.TryParse(tag, NumberStyles.Integer, CultureInfo.InvariantCulture, out int delta))
+        {
+            SetMemoryViewStart(_memoryViewStartAddress + delta);
+        }
     }
 
     private void RefreshRegisterValues()
@@ -450,7 +594,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            // User cancelled — restore previous ComboBox state without touching the emulator
+            // User cancelled - restore previous ComboBox state without touching the emulator
             _suppressClockSliderEvents = true;
             ClockSpeedComboBox.SelectedIndex = _lastClockComboIndex;
             _suppressClockSliderEvents = false;
@@ -511,6 +655,9 @@ public partial class MainWindow : Window
             if (CodeEditorTextBox.TextArea.IsFocused)
                 return;
 
+            if (IsTextInputFocused())
+                return;
+
             var keyboard = FrontendHostBridge.Keyboard;
             if (keyboard == null)
                 return;
@@ -535,12 +682,20 @@ public partial class MainWindow : Window
         }
         if (CodeEditorTextBox.TextArea.IsFocused)
             return;
+        if (IsTextInputFocused())
+            return;
         var keyboard = FrontendHostBridge.Keyboard;
         if (keyboard == null)
             return;
 
         if (keyboard.KeyUp(e.Key.ToString(), e.KeySymbol))
             e.Handled = true;
+    }
+
+    private bool IsTextInputFocused()
+    {
+        var focused = FocusManager?.GetFocusedElement();
+        return focused is TextBox;
     }
 
     private void OnToggleDebuggerClick(object? sender, RoutedEventArgs e)
@@ -914,7 +1069,7 @@ public partial class MainWindow : Window
             .ToList();
 
         // Build finalCode and simultaneously track which pre.asm line number
-        // (after DBP expansion: each DBP → 2 lines) maps to which editor line.
+        // (after DBP expansion: each DBP -> STZ $FF00) maps to which editor line.
         var finalCode = new List<string>();
         var preAsmLineToSourceLine = new Dictionary<int, int>();
         int preAsmLine = 1;
@@ -926,12 +1081,11 @@ public partial class MainWindow : Window
 
             if (_codeEditorBreakpointLines.TryGetValue(lineNumber, out var enabled) && enabled)
             {
-                // DBP → "LDA #$01\nSTA $FF00" (2 lines in pre.asm).
+                // DBP -> "STZ $FF00" (1 line in pre.asm).
                 // Map both expansion lines to this editor line so the highlight appears
-                // when the emulator pauses at the breakpoint trap (STA $FF00).
-                preAsmLineToSourceLine[preAsmLine]     = lineNumber; // LDA #$01
-                preAsmLineToSourceLine[preAsmLine + 1] = lineNumber; // STA $FF00
-                preAsmLine += 2;
+                // when the emulator pauses at the breakpoint trap (STZ $FF00).
+                preAsmLineToSourceLine[preAsmLine] = lineNumber; // STZ $FF00
+                preAsmLine += 1;
 
                 finalCode.Add($"DBP ; BREAKPOINT LINE {lineNumber}");
             }
@@ -946,7 +1100,7 @@ public partial class MainWindow : Window
 
         var (_, addressToPreLine) = CodyAssembler.AssembleFileWithMap(inputFile);
 
-        // Combine: address → pre.asm line → original editor line
+        // Combine: address -> pre.asm line -> original editor line
         _addressToSourceLine = new Dictionary<ushort, int>();
         foreach (var (address, preLine) in addressToPreLine)
         {
@@ -1023,6 +1177,6 @@ public partial class MainWindow : Window
 
     private void OnCpuResetButtonClick(object? sender, RoutedEventArgs e)
     {
-        FrontendHostBridge.ResetEmulator();
+        FrontendHostBridge.ResetEmulator(); // TODO: This seems to delete the set frequency?
     }
 }

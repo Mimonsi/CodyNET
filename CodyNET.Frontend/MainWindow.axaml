@@ -255,7 +255,116 @@
                                 <TextBlock Classes="panel-header-text" Text="Memory" />
                             </Border>
                         </TabItem.Header>
-                        <TextBlock>Moin</TextBlock>
+                        <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="10,10,10,12">
+                            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
+                                <TextBlock Grid.Column="0"
+                                           Classes="data-label"
+                                           Text="Addr:"
+                                           VerticalAlignment="Center" />
+                                <TextBox Grid.Column="1"
+                                         x:Name="MemoryAddressInput"
+                                         Text="0000"
+                                         FontFamily="Cascadia Mono, Consolas, monospace"
+                                         FontSize="12"
+                                         Height="26"
+                                         MinHeight="26"
+                                         Padding="6,0"
+                                         VerticalContentAlignment="Center"
+                                         MaxLength="4"
+                                         KeyDown="OnMemoryAddressInputKeyDown" />
+                                <Button Grid.Column="2"
+                                        x:Name="MemoryGoButton"
+                                        Content="Go"
+                                        FontSize="12"
+                                        Height="26"
+                                        MinHeight="26"
+                                        Padding="10,0"
+                                        VerticalContentAlignment="Center"
+                                        Click="OnMemoryGoButtonClick" />
+                            </Grid>
+                            <ComboBox Grid.Row="1"
+                                      x:Name="MemoryShortcutComboBox"
+                                      Margin="0,6,0,0"
+                                      HorizontalAlignment="Stretch"
+                                      FontFamily="Cascadia Mono, Consolas, monospace"
+                                      FontSize="12"
+                                      Height="26"
+                                      MinHeight="26"
+                                      Padding="8,0"
+                                      VerticalContentAlignment="Center"
+                                      PlaceholderText="Jump to…"
+                                      SelectionChanged="OnMemoryShortcutChanged">
+                                <ComboBoxItem Content="0000  Zero Page" Tag="0x0000" />
+                                <ComboBoxItem Content="0100  Stack" Tag="0x0100" />
+                                <ComboBoxItem Content="0200  RAM (user)" Tag="0x0200" />
+                                <ComboBoxItem Content="9F00  VIA (I/O)" Tag="0x9F00" />
+                                <ComboBoxItem Content="A000  Prop RAM" Tag="0xA000" />
+                                <ComboBoxItem Content="D000  Video (VID)" Tag="0xD000" />
+                                <ComboBoxItem Content="D040  VID Control Bank" Tag="0xD040" />
+                                <ComboBoxItem Content="D060  VID Data Bank" Tag="0xD060" />
+                                <ComboBoxItem Content="D080  VID Sprite Banks" Tag="0xD080" />
+                                <ComboBoxItem Content="D480  UART1" Tag="0xD480" />
+                                <ComboBoxItem Content="D4A0  UART2" Tag="0xD4A0" />
+                                <ComboBoxItem Content="E000  ROM (BASIC)" Tag="0xE000" />
+                                <ComboBoxItem Content="FF00  Debugger" Tag="0xFF00" />
+                                <ComboBoxItem Content="FFFA  NMI Vector" Tag="0xFFFA" />
+                                <ComboBoxItem Content="FFFC  Reset Vector" Tag="0xFFFC" />
+                                <ComboBoxItem Content="FFFE  IRQ Vector" Tag="0xFFFE" />
+                                <ComboBoxItem Content="→  Jump to PC" Tag="PC" />
+                            </ComboBox>
+                            <Grid Grid.Row="2"
+                                  Margin="0,8,0,6"
+                                  ColumnDefinitions="*,*,*,*"
+                                  ColumnSpacing="4">
+                                <Button Grid.Column="0"
+                                        Content="-1 KB"
+                                        FontSize="11"
+                                        Padding="0,3"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"
+                                        Click="OnMemoryNavClick"
+                                        Tag="-1024" />
+                                <Button Grid.Column="1"
+                                        Content="-64"
+                                        FontSize="11"
+                                        Padding="0,3"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"
+                                        Click="OnMemoryNavClick"
+                                        Tag="-64" />
+                                <Button Grid.Column="2"
+                                        Content="+64"
+                                        FontSize="11"
+                                        Padding="0,3"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"
+                                        Click="OnMemoryNavClick"
+                                        Tag="64" />
+                                <Button Grid.Column="3"
+                                        Content="+1 KB"
+                                        FontSize="11"
+                                        Padding="0,3"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Center"
+                                        Click="OnMemoryNavClick"
+                                        Tag="1024" />
+                            </Grid>
+                            <Border Grid.Row="3"
+                                    Background="#1A191D"
+                                    BorderBrush="#34313A"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="6,6">
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="Auto">
+                                    <SelectableTextBlock x:Name="MemoryDumpText"
+                                                         FontFamily="Cascadia Mono, Consolas, monospace"
+                                                         FontSize="12"
+                                                         Foreground="#E7EAF2"
+                                                         LineHeight="16" />
+                                </ScrollViewer>
+                            </Border>
+                        </Grid>
                     </TabItem>
                 </TabControl>
             </Border>
@@ -295,13 +404,11 @@
                                        VerticalAlignment="Center" />
                         </StackPanel>
                         <ToggleButton Grid.Column="3"
-                                      x:Name="IgnoreBreakpointsToggle"
-                                      Content="Ignore BPs"
-                                      IsChecked="False"
-                                      Click="OnIgnoreBreakpointsClick"
-                                      VerticalAlignment="Center"
-                                      FontSize="13"
-                                      Padding="8,4" />
+                                x:Name="IgnoreBreakpointsToggle"
+                                Classes="code-toolbar-button"
+                                Content="Ignore BPs"
+                                IsChecked="False"
+                                Click="OnIgnoreBreakpointsClick"/>
                         <Button Grid.Column="4"
                                 x:Name="EmulatorPauseResumeButton"
                                 Classes="code-toolbar-button"

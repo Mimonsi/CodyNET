@@ -1,6 +1,6 @@
 ﻿namespace CodyNET.Core.Cody;
 
-public class Interrupt
+public struct Interrupt
 {
     public bool IRQ;
     public bool NMI;
@@ -13,8 +13,8 @@ public class Interrupt
     {
         return new Interrupt
         {
-            IRQ = this.IRQ || update.IRQ,
-            NMI = this.NMI || update.NMI
+            IRQ = IRQ || update.IRQ,
+            NMI = NMI || update.NMI
         };
     }
 }

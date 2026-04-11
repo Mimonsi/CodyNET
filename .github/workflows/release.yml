@@ -134,4 +134,4 @@ jobs:
         with:
           tag_name: ${{ needs.prepare.outputs.tag }}
           files: release-assets/**/*
-          generate_release_notes: true
+          body: ${{ github.event.head_commit.message || format('Release {0}', needs.prepare.outputs.tag) }}

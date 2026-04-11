@@ -62,6 +62,7 @@ public static class CodyFactory
         FrontendHostBridge.RegisterStatusSnapshotProvider(cody.GetStatusSnapshot);
         FrontendHostBridge.RegisterRunStateAction(cody.SetAllowedSteps);
         FrontendHostBridge.RegisterResetAction(cody.Reset);
+        FrontendHostBridge.RegisterMemoryReader(cody.Memory.Read);
     }
 
     private static IScreenDevice? CreateScreen()

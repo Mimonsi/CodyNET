@@ -217,7 +217,7 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
         }
         catch (Exception e)
         {
-            Log.Error(e, "Breakpoint error:");
+            Log.Error(e, "Breakpoint error:"); // TODO: Improve generic exception
         }
 
         return false;
