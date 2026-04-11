@@ -255,7 +255,7 @@
                                 <TextBlock Classes="panel-header-text" Text="Memory" />
                             </Border>
                         </TabItem.Header>
-                        <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="12,10,12,12">
+                        <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="10,10,10,12">
                             <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
                                 <TextBlock Grid.Column="0"
                                            Classes="data-label"
@@ -265,15 +265,21 @@
                                          x:Name="MemoryAddressInput"
                                          Text="0000"
                                          FontFamily="Cascadia Mono, Consolas, monospace"
-                                         FontSize="13"
-                                         Padding="6,3"
+                                         FontSize="12"
+                                         Height="26"
+                                         MinHeight="26"
+                                         Padding="6,0"
+                                         VerticalContentAlignment="Center"
                                          MaxLength="4"
                                          KeyDown="OnMemoryAddressInputKeyDown" />
                                 <Button Grid.Column="2"
                                         x:Name="MemoryGoButton"
                                         Content="Go"
                                         FontSize="12"
-                                        Padding="10,3"
+                                        Height="26"
+                                        MinHeight="26"
+                                        Padding="10,0"
+                                        VerticalContentAlignment="Center"
                                         Click="OnMemoryGoButtonClick" />
                             </Grid>
                             <ComboBox Grid.Row="1"
@@ -282,6 +288,10 @@
                                       HorizontalAlignment="Stretch"
                                       FontFamily="Cascadia Mono, Consolas, monospace"
                                       FontSize="12"
+                                      Height="26"
+                                      MinHeight="26"
+                                      Padding="8,0"
+                                      VerticalContentAlignment="Center"
                                       PlaceholderText="Jump to…"
                                       SelectionChanged="OnMemoryShortcutChanged">
                                 <ComboBoxItem Content="0000  Zero Page" Tag="0x0000" />
@@ -344,8 +354,8 @@
                                     BorderBrush="#34313A"
                                     BorderThickness="1"
                                     CornerRadius="4"
-                                    Padding="8,6">
-                                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                                    Padding="6,6">
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto"
                                               VerticalScrollBarVisibility="Auto">
                                     <SelectableTextBlock x:Name="MemoryDumpText"
                                                          FontFamily="Cascadia Mono, Consolas, monospace"
