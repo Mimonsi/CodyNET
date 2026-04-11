@@ -594,17 +594,7 @@ public static class OpcodeLookup
 
     public static Instruction FromOpcode(byte opcode)
     {
-        try
-        {
-            return ByOpcode[opcode];
-            //return Instructions.First(i => i.Opcode == opcode);
-        }
-        catch(Exception x)
-        {
-            Log.Warn("No instruction matching opcode: " + opcode.ToString("X2"));
-            return InvalidInstruction(opcode);
-            //throw x;
-        }
+        return ByOpcode[opcode];
     }
 
     public static List<Instruction> FromMnemonic(Mnemonic mnemonic)

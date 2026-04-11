@@ -169,13 +169,13 @@ public class Cody
                 Pause();
                 //break;
             }
-            _resumeEvent.Wait(); // Block here when paused — zero latency on resume
+            _resumeEvent.Wait(); // Block here when paused - zero latency on resume
             result = Cpu.Step();
             if (_allowedSteps > 0) // After step, reduce allowed steps, if limited
             {
                 _allowedSteps--;
                 if (_allowedSteps == 0)
-                    _resumeEvent.Reset(); // Single-step done → pause again
+                    _resumeEvent.Reset(); // Single-step done -> pause again
             }
             Profiler?.SampleCpu(Cpu.TotalCyclesExecuted, Cpu.CyclesPerSecond);
             // TEMP

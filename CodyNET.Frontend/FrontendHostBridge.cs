@@ -27,6 +27,7 @@ public static class FrontendHostBridge
     private static Func<CodyStatusSnapshot>? getStatusSnapshotFunc; // Display for Frequency and FPS
     private static Action<int>? setRunStateAction; // Buttons for Pause, Resume and Single Step
     private static Action? resetEmulatorAction; // Button for resetting the emulator
+    private static Func<ushort, byte>? readMemoryFunc; // Memory Inspector read access
 
     public static void Reset()
     {
@@ -39,6 +40,7 @@ public static class FrontendHostBridge
         getStatusSnapshotFunc = null;
         setRunStateAction = null;
         resetEmulatorAction = null;
+        readMemoryFunc = null;
     }
 
     public static void SetScreen(IScreenDevice screen)
@@ -128,6 +130,18 @@ public static class FrontendHostBridge
     {
         return getStatusSnapshotFunc?.Invoke();
     }
-    
+
+    public static void RegisterMemoryReader(Func<ushort, byte> reader)
+    {
+        readMemoryFunc = reader;
+    }
+
+    public static bool HasMemoryReader => readMemoryFunc != null;
+
+    public static byte ReadMemory(ushort address)
+    {
+        return readMemoryFunc?.Invoke(address) ?? (byte)0;
+    }
+
     #endregion
 }

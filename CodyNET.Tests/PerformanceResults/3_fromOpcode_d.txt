@@ -1,0 +1,5 @@
+17:18:24.335  freq=   3005157 Hz  target=        -1 Hz  pct=  FAST%  fps= 58,8  window=5,01s
+17:18:29.370  freq=   4106146 Hz  target=        -1 Hz  pct=  FAST%  fps= 59,4  window=5,04s
+17:18:34.401  freq=   4107321 Hz  target=        -1 Hz  pct=  FAST%  fps= 59,6  window=5,03s
+17:18:39.433  freq=   4058104 Hz  target=        -1 Hz  pct=  FAST%  fps= 59,6  window=5,03s
+17:18:44.462  freq=   4184611 Hz  target=        -1 Hz  pct=  FAST%  fps= 59,6  window=5,03s

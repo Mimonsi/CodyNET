@@ -28,8 +28,7 @@ public class Program
             return InteractiveShell.Run(root, invocationConfig);
         }
 
-        Log.Level = LogLevel.Debug;
-        Log.ConsoleLevel = LogLevel.Debug;
+        Log.ConsoleLevel = LogLevel.Info;
         Log.Info("Starting logger. Log File Path: {LogFilePath}", Log.LogFilePath!);
 
         return root.Parse(startupOptions.CommandArgs).Invoke(invocationConfig);
