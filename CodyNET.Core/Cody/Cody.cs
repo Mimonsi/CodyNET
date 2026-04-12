@@ -28,7 +28,7 @@ public sealed record CodyLoadOptions
     public FileInfo? File { get; init; }
     public bool AsCartridge { get; init; }
     public ushort LoadAddress { get; init; } = 0xE000;
-    public bool AutoSetResetVector { get; set; } = false; // Only used when cartridge is loaded, set by program
+    public bool AutoSetResetVector { get; set; } = false; // Legacy, kept for Boot() — prefer automatic detection
     public ushort? ResetVectorOverride { get; init; }
     public ushort? IrqVectorOverride { get; init; }
     public ushort? NmiVectorOverride { get; init; }
@@ -257,7 +257,9 @@ public class Cody
         // Uart2 load here
         var (image, loadAddress) = ParseImage(bytes, options);
         LoadImage(image, loadAddress);
-        ApplyVectors(loadAddress, options);
+
+        ushort lastWrittenAddress = (ushort)(loadAddress + image.Length - 1);
+        ApplyVectors(loadAddress, lastWrittenAddress, options);
     }
 
     public void LoadAssemblyFile(CodyLoadOptions loadOptions)
@@ -344,16 +346,30 @@ public class Cody
 
         var image = new byte[len];
         Buffer.BlockCopy(bytes, 4, image, 0, len);
-        options.AutoSetResetVector = true; // Auto set reset vector to start of cartridge if not explicitly overridden
         return (image, start);
     }
 
-    private void ApplyVectors(ushort loadAddress, CodyLoadOptions options)
+    private void ApplyVectors(ushort loadAddress, ushort lastWrittenAddress, CodyLoadOptions options)
     {
+        bool dataCoversResetVector = loadAddress <= Cpu.RESET_VECTOR && lastWrittenAddress >= Cpu.RESET_VECTOR + 1;
+
         if (options.ResetVectorOverride.HasValue)
+        {
+            Log.Info("Setting reset vector to 0x{resetVector:X4} (explicit override)", options.ResetVectorOverride.Value);
             SetResetVector(options.ResetVectorOverride.Value);
-        else if (options.AutoSetResetVector)
+        }
+        else if (!dataCoversResetVector)
+        {
+            // Loaded data does not cover the reset vector location — fall back to load address
+            // so the CPU jumps directly to the loaded program on startup (matches original emulator behavior)
+            Log.Info("Using load address 0x{loadAddress:X4} as reset vector, because the reset vector location was not written to", loadAddress);
             SetResetVector(loadAddress);
+        }
+        else
+        {
+            ushort existingVector = (ushort)(Memory.Read(Cpu.RESET_VECTOR) | (Memory.Read(Cpu.RESET_VECTOR + 1) << 8));
+            Log.Info("Using reset vector 0x{resetVector:X4} from loaded data", existingVector);
+        }
 
         if (options.IrqVectorOverride.HasValue)
             SetIrqVector(options.IrqVectorOverride.Value);

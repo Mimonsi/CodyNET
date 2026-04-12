@@ -334,11 +334,11 @@ public static class Cli
 
     private static Command BuildRunCommand(Option<bool> verboseOption, Option<LogLevel?> logLevelOption, bool useMainThreadScreenHost)
     {
-        var cmd = new Command("run", "Run a binary file with the emulator");
+        var cmd = new Command("run", "Run a binary or assembly file with the emulator");
 
         var fileArg = new Argument<FileInfo>("file")
         {
-            Description = "Binary file (raw or cartridge image if --as-cartridge is set)"
+            Description = "Binary file (.bin, or cartridge with --as-cartridge) or assembly source file (.asm)"
         }.AcceptExistingOnly();
         cmd.Arguments.Add(fileArg);
 
@@ -394,12 +394,23 @@ public static class Cli
         return cmd;
     }
 
+    private static bool IsAssemblyFile(CodyLoadOptions loadOptions) =>
+        loadOptions.File?.Name.EndsWith(".asm", StringComparison.OrdinalIgnoreCase) == true;
+
+    private static void RunFile(Cody cody, CodyLoadOptions loadOptions)
+    {
+        if (IsAssemblyFile(loadOptions))
+            cody.RunAssemblyFile(loadOptions);
+        else
+            cody.RunBinaryFile(loadOptions);
+    }
+
     private static void ExecuteRunCommand(CodySetupOptions setupOptions, CodyLoadOptions loadOptions)
     {
         Log.Info("Executing run command");
 
         Cody cody = CodyFactory.CreateCody(setupOptions);
-        cody.RunBinaryFile(loadOptions);
+        RunFile(cody, loadOptions);
     }
 
     private static void ExecuteRunCommandWithScreenHost(CodySetupOptions setupOptions, CodyLoadOptions loadOptions)
@@ -408,7 +419,7 @@ public static class Cli
         RunWithMainThreadScreenHost(() =>
         {
             var cody = CodyFactory.CreateCodyForHostedScreen(setupOptions);
-            cody.RunBinaryFile(loadOptions);
+            RunFile(cody, loadOptions);
         });
     }
 
