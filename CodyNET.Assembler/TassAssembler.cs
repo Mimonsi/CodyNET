@@ -88,7 +88,7 @@ internal static class TassAssembler
             if (!string.IsNullOrEmpty(stderr))
             {
                 Log.Error(stderr);
-                throw new Exception($"64tass reported errors:{Environment.NewLine}{stderr}");
+                throw new InvalidOperationException($"64tass reported errors:{Environment.NewLine}{stderr}");
             }
 
             if (proc.ExitCode != 0)

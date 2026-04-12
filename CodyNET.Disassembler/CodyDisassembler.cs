@@ -42,11 +42,11 @@ public class CodyDisassembler
             throw new ArgumentNullException(nameof(bytes));
 
         var builder = new StringBuilder();
-        /*if (loadAddress.HasValue) // TODO: Check if this is needed
+        if (loadAddress.HasValue)
         {
             builder.AppendLine($"* = ${loadAddress.Value:X4}");
             builder.AppendLine();
-        }*/
+        }
 
         int index = 0;
 
@@ -65,20 +65,30 @@ public class CodyDisassembler
             ushort instructionAddress = (ushort)((loadAddress ?? 0) + instructionStartIndex);
             var operands = new List<string>();
             string operand = FormatOperand(instruction.AddressingMode, bytes, ref index, instructionAddress, instruction.Bytes);
+            if (operand == "??")
+            {
+                // Ran out of bytes mid-instruction; emit the opcode as raw data
+                index = instructionStartIndex + 1;
+                builder.AppendLine($".byte ${opcode:X2}");
+                continue;
+            }
             if (!string.IsNullOrEmpty(operand))
                 operands.Add(operand);
 
             if (instruction.AddressingMode2.HasValue)
             {
                 string operand2 = FormatOperand(instruction.AddressingMode2.Value, bytes, ref index, instructionAddress, instruction.Bytes);
+                if (operand2 == "??")
+                {
+                    index = instructionStartIndex + 1;
+                    builder.AppendLine($".byte ${opcode:X2}");
+                    continue;
+                }
                 if (!string.IsNullOrEmpty(operand2))
                     operands.Add(operand2);
             }
 
-            if (operands.Count == 0)
-                builder.AppendLine(instruction.Mnemonic.ToString());
-            else
-                builder.AppendLine($"{instruction.Mnemonic} {string.Join(", ", operands)}");
+            builder.AppendLine(FormatInstruction(instruction.Mnemonic, operands));
         }
 
         return builder.ToString();
@@ -105,6 +115,25 @@ public class CodyDisassembler
         var program = new byte[length];
         Buffer.BlockCopy(bytes, 4, program, 0, length);
         return (program, start);
+    }
+
+    // Bit-manipulation instructions (RMB0-7, SMB0-7, BBR0-7, BBS0-7) embed the bit number
+    // in the mnemonic (e.g. RMB4), but 64tass expects it as a separate operand: rmb 4,$zp
+    private static string FormatInstruction(Mnemonic mnemonic, List<string> operands)
+    {
+        string name = mnemonic.ToString();
+        if (name.Length == 4)
+        {
+            string prefix = name[..3];
+            if (prefix is "RMB" or "SMB" or "BBR" or "BBS")
+            {
+                char bitNum = name[3];
+                return $"{prefix.ToLowerInvariant()} {bitNum},{string.Join(",", operands)}";
+            }
+        }
+        if (operands.Count == 0)
+            return name;
+        return $"{name} {string.Join(", ", operands)}";
     }
 
     private static string FormatOperand(AddressingMode mode, byte[] bytes, ref int index, ushort instructionAddress, int instructionSize)
