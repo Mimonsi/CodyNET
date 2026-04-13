@@ -77,8 +77,12 @@ internal static class TassAssembler
 
             var stdoutTask = proc.StandardOutput.ReadToEndAsync();
             var stderrTask = proc.StandardError.ReadToEndAsync();
-
-            proc.WaitForExit();
+            
+            if (!proc.WaitForExit(5000))
+            {
+                proc.Kill();
+                throw new InvalidOperationException("64tass timed out after 5 seconds.");
+            }
             Task.WaitAll(stdoutTask, stderrTask);
 
             string stdout = stdoutTask.Result;

@@ -321,7 +321,7 @@ public class VersatileInterfaceAdapter(KeyState keyState) : IMemoryMappedDevice
                     SetIfr((byte)(_ifr | IFR_TIMER1)); // Timer1 flag
                     
                     // ACR bit6: continuous? -> Disable timer if not continuous, otherwise reload from latch.
-                    if ((acr & IFR_TIMER1) == 0)
+                    if ((acr & 0x40) == 0)
                         _t1Enabled = false;
                 }
                 

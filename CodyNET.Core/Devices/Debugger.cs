@@ -143,7 +143,7 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
         if (WatchAddresses.All(w => w.Address != address))
         {
             WatchAddresses.Add(new WatchAddress { Address = address,  Enabled = enabled, WatchRead = watchRead, WatchWrite = watchWrite });
-            Log.Debug("[Debugger] Added watch on address {{address:X4}}. R: {watchRead}, W: {watchWrite}", address,
+            Log.Debug("[Debugger] Added watch on address {address:X4}. R: {watchRead}, W: {watchWrite}", address,
                 watchRead, watchWrite);
             return;
         }
@@ -159,7 +159,7 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
         }
         
         WatchAddresses.RemoveAll(w => w.Address == address);
-        Log.Debug("[Debugger] Removed watch on address {{address:X4}}", address);
+        Log.Debug("[Debugger] Removed watch on address {address:X4}", address);
     }
 
     private void DBP(byte value)
