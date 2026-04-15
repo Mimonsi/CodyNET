@@ -8,6 +8,11 @@ namespace CodyNET.Assembler;
 /// </summary>
 internal static class CodyPreprocessor
 {
+    private static Dictionary<string, string> commandReplacements = new Dictionary<string, string>
+    {
+        // Example: "DBP" is replaced by "STZ $FF00" (a dummy instruction that does nothing but can be used as a breakpoint)
+        { "DBP", "STZ $$FF00" }
+    };
     internal static void PreprocessFile(FileInfo inputFile, FileInfo? outputFile = null)
     {
         if (!inputFile.Exists)
@@ -42,12 +47,14 @@ internal static class CodyPreprocessor
 
             if (!string.IsNullOrEmpty(codeLine))
             {
-                var dbpText = "STZ $$FF00";
-                codeLine = Regex.Replace(
-                    codeLine,
-                    @"^(\s*)DBP\b",
-                    "$1" + dbpText,
-                    RegexOptions.IgnoreCase);
+                foreach (var replacement in commandReplacements) // TODO: Test
+                {
+                    codeLine = Regex.Replace(
+                        codeLine,
+                        @$"^(\s*){Regex.Escape(replacement.Key)}\b",
+                        "$1" + replacement.Value,
+                        RegexOptions.IgnoreCase);
+                }
             }
 
             code += $"{codeLine}\n";

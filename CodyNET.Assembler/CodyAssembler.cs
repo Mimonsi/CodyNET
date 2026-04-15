@@ -128,7 +128,7 @@ public static class CodyAssembler
 
         var guid = Guid.NewGuid().ToString("N");
         string tempInputFile = Path.Combine(Path.GetTempPath(), $"cody_{guid}.asm");
-        string tempOutputFile = Path.Combine(Path.GetTempPath(), $"cody_{guid}.asm");
+        string tempOutputFile = Path.Combine(Path.GetTempPath(), $"cody_{guid}.bin");
 
         try
         {
