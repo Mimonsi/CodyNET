@@ -192,27 +192,25 @@ public static class OpcodeLookup
             new(0x0E, ASL, AddressingMode.Absolute, 3, 6),
             new(0x1E, ASL, AddressingMode.AbsoluteIndexedX, 3, 7),
 
-            // BBR (Branch On Bit Reset) ☑
-            new(0x0F, BBR0, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3,
-                4), // +1 if branch taken
-            new(0x1F, BBR1, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
-            new(0x2F, BBR2, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
-            new(0x3F, BBR3, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
-            new(0x4F, BBR4, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
-            new(0x5F, BBR5, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
-            new(0x6F, BBR6, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
-            new(0x7F, BBR7, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
+            // BBR (Branch On Bit Reset) ☑ — 5 cycles fixed (WDC 65C02)
+            new(0x0F, BBR0, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
+            new(0x1F, BBR1, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
+            new(0x2F, BBR2, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
+            new(0x3F, BBR3, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
+            new(0x4F, BBR4, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
+            new(0x5F, BBR5, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
+            new(0x6F, BBR6, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
+            new(0x7F, BBR7, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
 
-            // BBS (Branch On Bit Set) ☑
-            new(0x8F, BBS0, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3,
-                4), // +1 if branch taken
-            new(0x9F, BBS1, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
-            new(0xAF, BBS2, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
-            new(0xBF, BBS3, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
-            new(0xCF, BBS4, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
-            new(0xDF, BBS5, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
-            new(0xEF, BBS6, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
-            new(0xFF, BBS7, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 4),
+            // BBS (Branch On Bit Set) ☑ — 5 cycles fixed (WDC 65C02)
+            new(0x8F, BBS0, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
+            new(0x9F, BBS1, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
+            new(0xAF, BBS2, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
+            new(0xBF, BBS3, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
+            new(0xCF, BBS4, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
+            new(0xDF, BBS5, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
+            new(0xEF, BBS6, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
+            new(0xFF, BBS7, AddressingMode.ZeroPage, AddressingMode.ProgramCounterRelative, 3, 5),
 
             // BCC (Branch if Carry Clear) ☑
             new(0x90, BCC, AddressingMode.ProgramCounterRelative, 2,
@@ -246,7 +244,7 @@ public static class OpcodeLookup
                 2), // +1 if branch taken, +2 if to a new page
 
             // BRA (Branch Always) ☑
-            new(0x80, BRA, AddressingMode.ProgramCounterRelative, 2, 3), // +1 if branch taken
+            new(0x80, BRA, AddressingMode.ProgramCounterRelative, 2, 2), // +1 taken, +2 page cross (same as other branches)
 
             // BRK (Break / Interrupt) ☑
             new(0x00, BRK, AddressingMode.None, 1, 7),

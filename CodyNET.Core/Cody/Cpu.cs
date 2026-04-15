@@ -401,19 +401,13 @@ public class Cpu()
     {
         var (value, _) = ReadValueOperand(ZeroPage);
         var (target, _) = ReadAddressOperand(ProgramCounterRelative);
-        // If bit in value is 0 => branch
+        // If bit in value is 0 => branch (fixed 5 cycles regardless)
         if (((value >> bit) & 0x01) == 0)
-        {
-            ushort oldPc = PC;
             PC = target;
-
-            // Extra cycles: +1 if branch taken, +2 if page boundary crossed
-            cycles += (((oldPc ^ target) & 0xFF00) != 0 ? 2 : 1);
-        }
 
         return true;
     }
-    
+
     /// <summary>
     /// Branch if Bit Set (bit = 1)
     /// </summary>
@@ -423,15 +417,9 @@ public class Cpu()
     {
         var (value, _) = ReadValueOperand(ZeroPage);
         var (target, _) = ReadAddressOperand(ProgramCounterRelative);
-        // If bit in value is 1 => branch
+        // If bit in value is 1 => branch (fixed 5 cycles regardless)
         if (((value >> bit) & 0x01) != 0)
-        {
-            ushort oldPc = PC;
             PC = target;
-
-            // Extra cycles: +1 if branch taken, +2 if page boundary crossed
-            cycles += (((oldPc ^ target) & 0xFF00) != 0 ? 2 : 1);
-        }
 
         return true;
     }
@@ -491,8 +479,7 @@ public class Cpu()
             A--;
             return true;
         }
-        var (address, pageCross) = ReadAddressOperand(instruction.AddressingMode);
-        if (pageCross && instruction.AddressingMode == AbsoluteIndexedX) cycles += 1;
+        var (address, _) = ReadAddressOperand(instruction.AddressingMode);
         var value = ReadByte(address);
         var newValue = (byte) (value - 1);
         Memory.Write(address, newValue);
@@ -515,8 +502,7 @@ public class Cpu()
             A++;
             return true;
         }
-        var (address, pageCross) = ReadAddressOperand(instruction.AddressingMode);
-        if (pageCross && instruction.AddressingMode == AbsoluteIndexedX) cycles += 1;
+        var (address, _) = ReadAddressOperand(instruction.AddressingMode);
         var value = ReadByte(address);
         var newValue = (byte)(value + 1);
         Memory.Write(address, newValue);
@@ -750,13 +736,10 @@ public class Cpu()
         int c = Status.Carry ? 1 : 0;          // 1 = no borrow
         int borrow = 1 - c;                    // 1 = borrow in
 
-        // Binary subtraction first (reference for C and V)
         int diff = a - m - borrow;
-        byte binaryResult = (byte)diff;
 
-        // Carry and overflow follow binary arithmetic on 65C02
+        // Carry follows binary arithmetic
         Status.Carry = diff >= 0; // carry set = no borrow
-        Status.Overflow = ((a ^ binaryResult) & (a ^ m) & 0x80) != 0;
 
         // BCD adjust
         int adjust = 0;
@@ -769,8 +752,12 @@ public class Cpu()
         if (diff < 0)
             adjust -= 0x60;
 
-        int bcdResult = diff + adjust;
-        A = (byte)bcdResult;
+        byte bcdResult = (byte)(diff + adjust);
+
+        // Overflow based on BCD-corrected result on 65C02
+        Status.Overflow = ((a ^ bcdResult) & (a ^ m) & 0x80) != 0;
+
+        A = bcdResult;
     }
     
     private bool DoSmb(int bit)
