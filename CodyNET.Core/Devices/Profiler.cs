@@ -8,7 +8,7 @@ namespace CodyNET.Core.Devices;
 public class Profiler
 {
     private static readonly string PerfResultsPath = Path.Combine(
-        AppContext.BaseDirectory, "perf-results.txt");
+        AppContext.BaseDirectory, "perf-results.csv");
 
     private readonly Stopwatch _snapshotStopwatch = Stopwatch.StartNew();
     private readonly Stopwatch _logStopwatch = Stopwatch.StartNew();
@@ -55,8 +55,8 @@ public class Profiler
             _warmupStopwatch = Stopwatch.StartNew();
             _remainingSamples = testSampleCount.Value;
 
-            // Clear the results file at start of a test run
-            try { File.WriteAllText(PerfResultsPath, ""); }
+            // Write CSV header
+            try { File.WriteAllText(PerfResultsPath, "Sample,FrequencyHz,FPS\n"); }
             catch { /* ignore */ }
         }
     }
@@ -103,22 +103,15 @@ public class Profiler
         {
             var totalSeconds = _pendingSnapshots.Sum(s => s.SecondsElapsed);
             var avgFreq = (long)_pendingSnapshots.Average(s => s.ActualFrequency);
-            var avgTarget = _pendingSnapshots[0].TargetFrequency;
             var totalFrames = _pendingSnapshots.Sum(s => s.ActualFrames);
-            var avgFps = totalSeconds > 0 ? totalFrames / totalSeconds : 0;
-            var freqPct = avgTarget > 0
-                ? ((double)avgFreq / avgTarget * 100).ToString("F1", CultureInfo.InvariantCulture)
-                : "FAST";
+            var fps = totalSeconds > 0 ? totalFrames / totalSeconds : 0;
+            var sampleNr = _testSampleCount!.Value - _remainingSamples + 1;
 
-            var ts = DateTime.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture);
-            var line = $"{ts}  freq={avgFreq,10} Hz  target={avgTarget,10} Hz  pct={freqPct,6}%  fps={avgFps,5:F1}  window={totalSeconds:F2}s\n";
-
-            File.AppendAllText(PerfResultsPath, line);
+            File.AppendAllText(PerfResultsPath,
+                string.Create(CultureInfo.InvariantCulture, $"{sampleNr},{avgFreq},{fps:F1}\n"));
             _allSampleFrequencies.Add(avgFreq);
             Log.Info("Perf sample {Sample}/{Total}: {Freq} Hz",
-                _testSampleCount!.Value - _remainingSamples + 1,
-                _testSampleCount.Value,
-                avgFreq);
+                sampleNr, _testSampleCount.Value, avgFreq);
 
             _pendingSnapshots.Clear();
 
@@ -128,8 +121,8 @@ public class Profiler
                 var avg = (long)_allSampleFrequencies.Average();
                 var min = _allSampleFrequencies.Min();
                 var max = _allSampleFrequencies.Max();
-                var summary = $"\nAverage: {avg} Hz  Min: {min} Hz  Max: {max} Hz  Samples: {_allSampleFrequencies.Count}\n";
-                File.AppendAllText(PerfResultsPath, summary);
+                File.AppendAllText(PerfResultsPath,
+                    string.Create(CultureInfo.InvariantCulture, $"Average,{avg},\nMin,{min},\nMax,{max},\n"));
 
                 Log.Info("Performance test complete — avg {Avg} Hz (min {Min}, max {Max}) — {Path}",
                     avg, min, max, PerfResultsPath);
@@ -162,6 +155,7 @@ public class Profiler
 
             _warmupComplete = true;
             _lastCycleCount = totalCyclesExecuted;
+            _lastFrameCount = 0;
             _snapshotStopwatch.Restart();
             _logStopwatch.Restart();
             Log.Info("Warmup complete. Now collecting {Count} performance samples", _testSampleCount);
