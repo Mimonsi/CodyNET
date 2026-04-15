@@ -26,7 +26,8 @@ public static class Cli
         Option<string?> Clock,
         Option<bool> Fast,
         Option<bool> Headless,
-        Option<bool> StartPaused);
+        Option<bool> StartPaused,
+        Option<int> TestPerformance);
     
     private static void ApplyLogging(ParseResult parseResult, Option<bool> verboseOption, Option<LogLevel?> logLevelOption)
     {
@@ -255,6 +256,13 @@ public static class Cli
             Description = "Start emulator in paused state"
         };
 
+        var testPerformance = new Option<int>("--test-performance")
+        {
+            Description = "Collect N performance samples after warmup, write to perf-results.txt, then exit (default: 5)",
+            Arity = ArgumentArity.ZeroOrOne,
+            DefaultValueFactory = _ => 5
+        };
+
         if (debug is not null)
             cmd.Add(debug);
         cmd.Add(uart1Source);
@@ -265,8 +273,9 @@ public static class Cli
         cmd.Add(fast);
         cmd.Add(headless);
         cmd.Add(startPaused);
-        
-        return new ExecutionOptions(debug, uart1Source, uart2Source, fixNewlines, physicalKeyboard, clock, fast, headless, startPaused);
+        cmd.Add(testPerformance);
+
+        return new ExecutionOptions(debug, uart1Source, uart2Source, fixNewlines, physicalKeyboard, clock, fast, headless, startPaused, testPerformance);
     }
 
     private static CodySetupOptions BuildSetupOptions(ParseResult parseResult, ExecutionOptions options)
@@ -279,7 +288,10 @@ public static class Cli
                 ? -1
                 : CliValueParser.ParseClock(parseResult.GetValue(options.Clock)),
             EnableScreen = !parseResult.GetValue(options.Headless),
-            StartPaused = parseResult.GetValue(options.StartPaused)
+            StartPaused = parseResult.GetValue(options.StartPaused),
+            PerfTestSamples = parseResult.GetResult(options.TestPerformance) is not null
+                ? parseResult.GetValue(options.TestPerformance)
+                : null
         };
     }
 

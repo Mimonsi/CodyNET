@@ -21,6 +21,14 @@ public sealed record CodySetupOptions
     public bool EnableScreen { get; init; } = true;
     public bool EnableProfiler { get; init; } = true;
     public bool StartPaused { get; init; } = false;
+    /// <summary>
+    /// When set, runs the profiler in test mode: waits for warmup, collects N samples, then exits.
+    /// </summary>
+    public int? PerfTestSamples { get; init; }
+    /// <summary>
+    /// Warmup duration before collecting performance samples (default 5s).
+    /// </summary>
+    public TimeSpan PerfWarmup { get; init; } = TimeSpan.FromSeconds(5);
 }
 
 public sealed record CodyLoadOptions
@@ -88,7 +96,11 @@ public class Cody
         // 2. Set up devices
         if (options.EnableProfiler)
         {
-            Profiler = new Profiler(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5)); // 5 second window for averaging
+            Profiler = new Profiler(
+                TimeSpan.FromSeconds(1),
+                TimeSpan.FromSeconds(5),
+                options.PerfTestSamples,
+                options.PerfTestSamples.HasValue ? options.PerfWarmup : null);
         }
         if (options.EnableDebugger)
         {
@@ -191,7 +203,7 @@ public class Cody
                     Profiler?.FrameRendered();
                 }
             }
-        } while (result != StepResult.Stopped);
+        } while (result != StepResult.Stopped && Profiler?.TestComplete != true);
     }
 
     /// <summary>

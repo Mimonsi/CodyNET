@@ -1,32 +1,64 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Globalization;
 using CodyNET.Common.Utils;
 using CodyNET.Core.Cody;
 
 namespace CodyNET.Core.Devices;
 
-public class Profiler(TimeSpan snapshotInterval, TimeSpan? logInterval)
+public class Profiler
 {
-    private static readonly string DumpFilePath = Path.Combine(
-        AppContext.BaseDirectory, "profiler.txt");
+    private static readonly string PerfResultsPath = Path.Combine(
+        AppContext.BaseDirectory, "perf-results.txt");
 
     private readonly Stopwatch _snapshotStopwatch = Stopwatch.StartNew();
     private readonly Stopwatch _logStopwatch = Stopwatch.StartNew();
-    private readonly TimeSpan? _logInterval = logInterval <= TimeSpan.Zero ? null : logInterval;
-    private readonly TimeSpan _snapshotInterval = snapshotInterval <= TimeSpan.Zero ? TimeSpan.FromSeconds(1) : snapshotInterval;
+    private readonly TimeSpan? _logInterval;
+    private readonly TimeSpan _snapshotInterval;
     private long _lastCycleCount;
     private long _lastFrameCount;
     private long _totalCyclesExecuted;
     private long _targetFrequencyHz;
     public ProfilerSnapshot LastSnapshot = new();
     private readonly List<ProfilerSnapshot> _pendingSnapshots = [];
-    private bool TEST_MODE_ENABLED = false; // Only enable for performance tests
-    private int SNAPSHOTS_TILL_EXIT = 5;
 
-    static Profiler()
+    // Test mode fields
+    private readonly int? _testSampleCount;
+    private readonly TimeSpan _warmupDuration;
+    private readonly Stopwatch? _warmupStopwatch;
+    private bool _warmupComplete;
+    private int _remainingSamples;
+    private readonly List<long> _allSampleFrequencies = [];
+
+    /// <summary>
+    /// True when a performance test run has collected all requested samples.
+    /// Checked by the emulator loop to stop gracefully.
+    /// </summary>
+    public bool TestComplete { get; private set; }
+
+    /// <param name="snapshotInterval">How often to compute a performance snapshot.</param>
+    /// <param name="logInterval">How often to flush aggregated snapshots to disk. Null or &lt;= 0 disables file output.</param>
+    /// <param name="testSampleCount">When set, enables test mode: collect this many flush cycles then signal completion. Null = normal profiling.</param>
+    /// <param name="warmupDuration">Time to wait before collecting test samples (lets the startup routine finish). Only used when testSampleCount is set.</param>
+    public Profiler(
+        TimeSpan snapshotInterval,
+        TimeSpan? logInterval,
+        int? testSampleCount = null,
+        TimeSpan? warmupDuration = null)
     {
-        try { File.WriteAllText(DumpFilePath, ""); } // Clear file on startup
-        catch { /* ignore */ }
+        _snapshotInterval = snapshotInterval <= TimeSpan.Zero ? TimeSpan.FromSeconds(1) : snapshotInterval;
+        _logInterval = logInterval <= TimeSpan.Zero ? null : logInterval;
+        _testSampleCount = testSampleCount;
+
+        if (testSampleCount.HasValue)
+        {
+            _warmupDuration = warmupDuration ?? TimeSpan.FromSeconds(3);
+            _warmupStopwatch = Stopwatch.StartNew();
+            _remainingSamples = testSampleCount.Value;
+
+            // Clear the results file at start of a test run
+            try { File.WriteAllText(PerfResultsPath, ""); }
+            catch { /* ignore */ }
+        }
     }
 
     public void CalculateSnapshot()
@@ -36,14 +68,14 @@ public class Profiler(TimeSpan snapshotInterval, TimeSpan? logInterval)
             return;
 
         var cyclesInWindow = _totalCyclesExecuted - _lastCycleCount;
-        var averageFrequencyHz = (long) (cyclesInWindow / (elapsedSeconds));
+        var averageFrequencyHz = (long)(cyclesInWindow / elapsedSeconds);
 
-        LastSnapshot = new ProfilerSnapshot()
+        LastSnapshot = new ProfilerSnapshot
         {
             ActualFrequency = averageFrequencyHz,
             TargetFrequency = _targetFrequencyHz,
             ActualFrames = _lastFrameCount,
-            TargetFrames = 60 * elapsedSeconds, // TODO: Find Target Frames
+            TargetFrames = 60 * elapsedSeconds,
             SecondsElapsed = elapsedSeconds
         };
 
@@ -51,22 +83,22 @@ public class Profiler(TimeSpan snapshotInterval, TimeSpan? logInterval)
         _lastFrameCount = 0;
         _snapshotStopwatch.Restart();
 
-        if (_logInterval.HasValue)
+        if (_testSampleCount.HasValue && _logInterval.HasValue)
         {
             _pendingSnapshots.Add(LastSnapshot);
             if (_logStopwatch.Elapsed >= _logInterval.Value)
             {
                 _logStopwatch.Restart();
-                FlushSnapshotsToFile();
+                FlushTestSamples();
             }
         }
     }
 
-    private void FlushSnapshotsToFile()
+    private void FlushTestSamples()
     {
         if (_pendingSnapshots.Count == 0)
             return;
-        
+
         try
         {
             var totalSeconds = _pendingSnapshots.Sum(s => s.SecondsElapsed);
@@ -80,24 +112,34 @@ public class Profiler(TimeSpan snapshotInterval, TimeSpan? logInterval)
 
             var ts = DateTime.Now.ToString("HH:mm:ss.fff", CultureInfo.InvariantCulture);
             var line = $"{ts}  freq={avgFreq,10} Hz  target={avgTarget,10} Hz  pct={freqPct,6}%  fps={avgFps,5:F1}  window={totalSeconds:F2}s\n";
-            File.AppendAllText(DumpFilePath, line);
+
+            File.AppendAllText(PerfResultsPath, line);
+            _allSampleFrequencies.Add(avgFreq);
+            Log.Info("Perf sample {Sample}/{Total}: {Freq} Hz",
+                _testSampleCount!.Value - _remainingSamples + 1,
+                _testSampleCount.Value,
+                avgFreq);
+
             _pendingSnapshots.Clear();
-            if (TEST_MODE_ENABLED)
+
+            _remainingSamples--;
+            if (_remainingSamples <= 0)
             {
-                if (SNAPSHOTS_TILL_EXIT == 0)
-                {
-                    Log.Info("Performance results done, exiting...");
-                    Environment.Exit(0);
-                }
-                else
-                {
-                    SNAPSHOTS_TILL_EXIT--;
-                }
+                var avg = (long)_allSampleFrequencies.Average();
+                var min = _allSampleFrequencies.Min();
+                var max = _allSampleFrequencies.Max();
+                var summary = $"\nAverage: {avg} Hz  Min: {min} Hz  Max: {max} Hz  Samples: {_allSampleFrequencies.Count}\n";
+                File.AppendAllText(PerfResultsPath, summary);
+
+                Log.Info("Performance test complete — avg {Avg} Hz (min {Min}, max {Max}) — {Path}",
+                    avg, min, max, PerfResultsPath);
+                TestComplete = true;
+                Environment.Exit(0);
             }
         }
         catch (Exception ex)
         {
-            Log.Warn("Failed to dump profiler snapshot: {Error}", ex.Message);
+            Log.Warn("Failed to write performance sample: {Error}", ex.Message);
         }
     }
 
@@ -105,6 +147,26 @@ public class Profiler(TimeSpan snapshotInterval, TimeSpan? logInterval)
     {
         _totalCyclesExecuted = totalCyclesExecuted;
         _targetFrequencyHz = targetFrequencyHz;
+
+        // During warmup, just track cycles but don't snapshot
+        if (_warmupStopwatch is not null && !_warmupComplete)
+        {
+            if (_warmupStopwatch.Elapsed < _warmupDuration)
+            {
+                // Keep resetting the snapshot window so the first real sample is clean
+                _lastCycleCount = totalCyclesExecuted;
+                _snapshotStopwatch.Restart();
+                _logStopwatch.Restart();
+                return;
+            }
+
+            _warmupComplete = true;
+            _lastCycleCount = totalCyclesExecuted;
+            _snapshotStopwatch.Restart();
+            _logStopwatch.Restart();
+            Log.Info("Warmup complete. Now collecting {Count} performance samples", _testSampleCount);
+        }
+
         if (_snapshotStopwatch.Elapsed >= _snapshotInterval)
             CalculateSnapshot();
     }
