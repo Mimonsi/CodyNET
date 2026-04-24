@@ -259,8 +259,7 @@ public static class Cli
         var testPerformance = new Option<int>("--test-performance")
         {
             Description = "Collect N performance samples after warmup, write to perf-results.txt, then exit (default: 5)",
-            Arity = ArgumentArity.ZeroOrOne,
-            DefaultValueFactory = _ => 5
+            Arity = ArgumentArity.ZeroOrOne
         };
 
         if (debug is not null)
@@ -289,8 +288,8 @@ public static class Cli
                 : CliValueParser.ParseClock(parseResult.GetValue(options.Clock)),
             EnableScreen = !parseResult.GetValue(options.Headless),
             StartPaused = parseResult.GetValue(options.StartPaused),
-            PerfTestSamples = parseResult.GetResult(options.TestPerformance) is not null
-                ? parseResult.GetValue(options.TestPerformance)
+            PerfTestSamples = parseResult.GetResult(options.TestPerformance) is { } perfResult
+                ? (perfResult.Tokens.Count > 0 ? parseResult.GetValue(options.TestPerformance) : 5)
                 : null
         };
     }
@@ -441,7 +440,7 @@ public static class Cli
 
         ExceptionDispatchInfo? commandException = null;
 
-        CodyNET.Frontend.Program.BuildAvaloniaApp().StartWithClassicDesktopLifetime([], desktop =>
+        Frontend.Program.BuildAvaloniaApp().StartWithClassicDesktopLifetime([], desktop =>
         {
             desktop.Startup += (_, _) =>
             {
