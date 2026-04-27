@@ -8,7 +8,7 @@ namespace CodyNET.Core.Devices;
 public class Profiler
 {
     private static readonly string PerfResultsPath = Path.Combine(
-        AppContext.BaseDirectory, "perf-results.csv");
+        AppContext.BaseDirectory, "benchmark.csv");
 
     private readonly Stopwatch _snapshotStopwatch = Stopwatch.StartNew();
     private readonly Stopwatch _logStopwatch = Stopwatch.StartNew();

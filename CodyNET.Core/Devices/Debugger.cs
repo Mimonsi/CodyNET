@@ -23,7 +23,7 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
 {
     private readonly object _breakpointsLock = new();
     public ushort StartAddress => 0xFF00;
-    public ushort EndAddress => 0xFFFF;
+    public ushort EndAddress => 0xFF0F;
     public bool SupportsRead { get; } = false;
     public bool SupportsWrite { get; } = true;
     

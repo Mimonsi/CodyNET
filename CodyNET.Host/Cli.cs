@@ -256,9 +256,9 @@ public static class Cli
             Description = "Start emulator in paused state"
         };
 
-        var testPerformance = new Option<int>("--test-performance")
+        var testPerformance = new Option<int>("--benchmark")
         {
-            Description = "Collect N performance samples after warmup, write to perf-results.txt, then exit (default: 5)",
+            Description = "Collect N performance samples after warmup, write to benchmark.txt, then exit (default: 5)",
             Arity = ArgumentArity.ZeroOrOne
         };
 
