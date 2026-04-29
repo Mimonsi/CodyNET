@@ -41,9 +41,11 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
     /// </summary>
     public volatile bool IgnoreBreakpoints;
 
+    private int drs_counter = 1;
+    private int dmp_counter = 1;
+
     public Interrupt Update(long cycle)
     {
-        // TODO: Check
         return Interrupt.None;
     }
 
@@ -54,7 +56,7 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
 
     public void Write(ushort address, byte value)
     {
-       switch (address)
+        switch (address)
        {
            case 0xFF00:
                DBP(value);
@@ -164,28 +166,20 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
 
     private void DBP(byte value)
     {
-        Log.Info("[Debugger] DBP: {value}", value);
+        // In earlier versions the value could be set as parameter for DBP command, but due to STZ this is no longer possible. Same for DRS and DMP
+        Log.Info("[Debugger] Breakpoint hit: {value}", value);
         _requestPause = true;
     }
     
     private void DRS(byte index)
     {
-        Log.Info("[Debugger] Register Dump #{index}\nPC={PC:X4} A={A:X2} X={X:X2} Y={Y:X2} S={S:X2} P={P:X2}",
-            index, cpu.PC, cpu.A, cpu.X, cpu.Y, cpu.S, cpu.Status.ToByte());
+        Log.Info("[Debugger] Register Dump #{counter}\nPC={PC:X4} A={A:X2} X={X:X2} Y={Y:X2} S={S:X2} P={P:X2}",
+            drs_counter++, cpu.PC, cpu.A, cpu.X, cpu.Y, cpu.S, cpu.Status.ToByte());
     }
     
     private void DMP(byte index)
     {
-        // TODO: Implement
-        /*string text = $"Memory Dump #{index}:\n";
-        foreach(var kvp in cpu.Memory.ram.Select((value, index) => new { value, index })) // TODO: Do not access ram directly
-        {
-            if (kvp.value != 0)
-            {
-                text += $"[{kvp.index:X4}] = {kvp.value:X2}\n";
-            }
-        }
-        Log.Info(text);*/
+        Log.Info("[Debugger] Memory Dump #{counter}:\n{dump}", dmp_counter++, cpu.Memory.Dump());
     }
 
     /// <summary>

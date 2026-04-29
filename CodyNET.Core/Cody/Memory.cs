@@ -304,4 +304,27 @@ public class Memory
 
         return sb.ToString();
     }
+
+    public string Dump()
+    {
+        var sb = new StringBuilder();
+        for (int addr = 0; addr <= 0xFFFF; addr += 8)
+        {
+            sb.Append($"{addr:X4}: ");
+            for (int i = 0; i < 8; i++)
+            {
+                ushort a = (ushort)(addr + i);
+                byte b = a switch
+                {
+                    < 0xA000 => _ram[a],
+                    < 0xE000 => _prop[a - 0xA000],
+                    _        => _rom[a - 0xE000],
+                };
+                sb.Append($"{b:X2}");
+                if (i < 7) sb.Append(' ');
+            }
+            sb.AppendLine();
+        }
+        return sb.ToString();
+    }
 }

@@ -11,7 +11,9 @@ internal static class CodyPreprocessor
     private static Dictionary<string, string> commandReplacements = new Dictionary<string, string>
     {
         // Example: "DBP" is replaced by "STZ $FF00" (a dummy instruction that does nothing but can be used as a breakpoint)
-        { "DBP", "STZ $$FF00" }
+        { "DBP", "STZ $$FF00" },
+        { "DRS", "STZ $$FF01" },
+        { "DMP", "STZ $$FF02" },
     };
     internal static void PreprocessFile(FileInfo inputFile, FileInfo? outputFile = null)
     {

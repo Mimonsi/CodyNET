@@ -81,7 +81,7 @@ public partial class MainWindow : Window
 
         CodeEditorTextBox.Document.TextChanged += OnCodeEditorDocumentTextChanged;
 
-        using var stream = AssetLoader.Open(new Uri("avares://CodyNET.Frontend/Assets/65C02.xshd"));
+        using var stream = AssetLoader.Open(new Uri("avares://CodyNET.Frontend/Assets/CodyNET.xshd"));
         using var xmlReader = XmlReader.Create(stream);
         var xshd = HighlightingLoader.LoadXshd(xmlReader);
         CodeEditorTextBox.SyntaxHighlighting = HighlightingLoader.Load(xshd, HighlightingManager.Instance);

@@ -507,8 +507,7 @@ public static class OpcodeLookup
             // WAI (Wait for Interrupt) ☑
             new(0xCB, WAI, AddressingMode.None, 1, 3)
         ];
-
-        //AddDebugInstructions(); TODO: Currently disabled, recheck
+        
         InitializeLookup();
     }
     
@@ -522,67 +521,6 @@ public static class OpcodeLookup
         {
             ByOpcode[instruction.Opcode] = instruction;
         }
-    }
-
-    /// <summary>
-    /// Add custom opcodes for Emulator Debugger
-    /// </summary>
-    private static void AddDebugInstructions()
-    {
-        Instructions.AddRange(
-        [
-            // DBP (Debugger Breakpoint)
-            new (0x42, DBP, AddressingMode.None, 1, 0),
-            // DRS #index (Dump Registers)
-            new (0x43, DRS, AddressingMode.Immediate, 2, 0),
-            // DMP (Dump Memory Page)
-            new (0x44, DMP, AddressingMode.None, 1, 0),
-        ]);
-
-        // Unofficial / undefined opcodes that behave as NOPs on the 65C02
-        // new (0x02, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x03, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x0B, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x13, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x1B, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x22, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x23, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x2B, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x33, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x3B, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x42, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x43, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x44, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x4B, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x53, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x54, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x5B, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x5C, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x62, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x63, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x6B, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x73, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x7B, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x82, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x83, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x8B, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x93, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0x9B, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0xA3, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0xAB, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0xB3, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0xBB, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0xC2, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0xC3, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0xD3, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0xD4, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0xDC, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0xE2, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0xE3, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0xEB, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0xF3, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0xF4, Mnemonic.NOP, AddressingMode.None, 1, 2),
-        // new (0xFB, Mnemonic.NOP, AddressingMode.None, 1, 2),
     }
 
     public static Instruction InvalidInstruction(byte opcode)
