@@ -28,7 +28,6 @@ public class Debugger(Cpu cpu) : IMemoryMappedDevice, IMemoryAccessTapDevice
     public bool SupportsWrite { get; } = true;
     
     // Addresses to watch for writes
-    // TODO: Get to work, IMemoryTap concept?
     public List<WatchAddress> WatchAddresses { get; set; } = [];
     // Breakpoints (Essentially watch PC)
     private List<Breakpoint> Breakpoints { get; } = [];

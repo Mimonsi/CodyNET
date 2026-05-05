@@ -3,7 +3,7 @@
         xmlns:controls="using:CodyNET.Frontend.Controls"
         xmlns:avaloniaEdit="using:AvaloniaEdit"
         x:Class="CodyNET.Frontend.MainWindow"
-        Title="Cody Computer Emulator"
+        Title="CodyNET - Cody Computer Emulator"
         Width="1500"
         Height="900"
         MinWidth="1000"
