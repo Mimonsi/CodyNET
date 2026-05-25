@@ -349,7 +349,8 @@ public static class Cli
 
         var fileArg = new Argument<FileInfo>("file")
         {
-            Description = "Binary file (.bin, or cartridge with --as-cartridge) or assembly source file (.asm)"
+            Description = "Binary file (.bin, or cartridge with --as-cartridge) or assembly source file (.asm)",
+            HelpName = "file"
         }.AcceptExistingOnly();
         cmd.Arguments.Add(fileArg);
 
@@ -469,7 +470,8 @@ public static class Cli
 
         var fileArg = new Argument<FileInfo>("file")
         {
-            Description = "Assembly source file (.asm)"
+            Description = "Assembly source file (.asm)",
+            HelpName = "file"
         }.AcceptExistingOnly();
 
         fileArg.CompletionSources.Add(_ =>
@@ -521,7 +523,8 @@ public static class Cli
 
         var fileArg = new Argument<FileInfo>("file")
         {
-            Description = "Binary file (raw or cartridge)"
+            Description = "Binary file (raw or cartridge)",
+            HelpName = "file"
         }.AcceptExistingOnly();
         cmd.Arguments.Add(fileArg);
 
